@@ -2,9 +2,28 @@
   "base_branch": "main",
   "loop_branch_prefix": "loop/",
   "task_branch_prefix": "task/",
+  "worktree_path": "../PlumSwordIdle_loop",
+  "default_bundle": "기본",
   "max_retries": 5,
   "test_command": "",
   "test_timeout_min": 30,
+  "watch_interval_sec": 60,
+  "agents": ["claude", "codex"],
+  "limit_retry_after_min": 60,
+  "usage_limit_patterns": {
+    "claude": [
+      "usage limit reached",
+      "hit your (usage )?limit",
+      "out of extra usage",
+      "rate_limit_error"
+    ],
+    "codex": [
+      "hit your usage limit",
+      "usage limit has been reached",
+      "usage_limit_reached",
+      "rate_limit_exceeded"
+    ]
+  },
   "claude_command": "claude",
   "claude_timeout_min": 60,
   "claude_permission_mode": "acceptEdits",
@@ -23,5 +42,12 @@
     "Bash(git branch:*)",
     "Bash(git stash:*)",
     "Bash(git tag:*)"
+  ],
+  "codex_command": "codex",
+  "codex_timeout_min": 60,
+  "codex_sandbox": "workspace-write",
+  "codex_extra_args": [
+    "-c", "sandbox_workspace_write.exclude_tmpdir_env_var=true",
+    "-c", "sandbox_workspace_write.exclude_slash_tmp=true"
   ]
 }

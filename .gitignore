@@ -115,3 +115,4 @@ InitTestScene*.unity*
 /tasks/
 /.loop/
 __pycache__/
+tools/loop/loop_config.local.json
