@@ -71,6 +71,20 @@ class AllAgentsLimited(Exception):
     """모든 에이전트가 사용량 한도에 걸려 루프를 멈췄다 (정리는 이미 끝남)."""
 
 
+class AgentFailure(Exception):
+    """에이전트 시간 초과·실행 실패. 실패한 시도 1회로 센다. transient 면 일시적 오류(네트워크 등)."""
+
+    def __init__(self, agent: str, detail: str, transient: bool = False):
+        super().__init__(detail)
+        self.agent = agent
+        self.detail = detail
+        self.transient = transient
+
+
+class TransientError(Exception):
+    """일시적 오류로 이번 실행을 접었다 (정리는 이미 끝남). 감시 모드는 간격을 두고 다시 시도한다."""
+
+
 class PreflightError(Exception):
     """시작 전 점검 실패."""
 
@@ -277,6 +291,48 @@ def save_state(state: dict) -> None:
     tmp.replace(STATE_PATH)
 
 
+def record_stop(reason: str) -> None:
+    """루프가 멈춘 이유를 상태 파일에 남긴다. 다음 실행이 남은 변경을 복구할 때 커밋 메시지와 알림에 쓴다."""
+    try:
+        state = load_state()
+        if state.get("status") != "active":
+            return
+        state["last_stop"] = {"at": _dt.datetime.now().isoformat(timespec="seconds"), "reason": truncate(reason, 500)}
+        save_state(state)
+    except Exception:
+        pass  # 기록 실패로 종료 처리를 막지 않는다
+
+
+# ───────────────────────── 사용자 폴더 감시 ─────────────────────────
+
+
+def root_snapshot() -> dict[str, tuple[int, int]]:
+    """에이전트가 건드리면 안 되는 사용자 폴더 파일(tasks, .env)의 크기와 수정 시각."""
+    snap: dict[str, tuple[int, int]] = {}
+    files = [p for folder in ALL_FOLDERS.values() if folder.exists() for p in folder.iterdir() if p.is_file()]
+    files.append(ROOT / ".env")
+    for p in files:
+        try:
+            st = p.stat()
+        except OSError:
+            continue
+        snap[p.relative_to(ROOT).as_posix()] = (st.st_size, st.st_mtime_ns)
+    return snap
+
+
+def snapshot_changes(before: dict, after: dict) -> list[str]:
+    changes = []
+    for key in sorted(set(before) | set(after)):
+        if key not in before:
+            if not key.startswith("tasks/todo/"):  # 사람이 실행 중에 새 작업 문서를 넣는 것은 정상
+                changes.append(f"{key} (새로 생김)")
+        elif key not in after:
+            changes.append(f"{key} (사라짐)")
+        elif before[key] != after[key]:
+            changes.append(f"{key} (바뀜)")
+    return changes
+
+
 # ───────────────────────── 작업 문서 ─────────────────────────
 
 _HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
@@ -452,8 +508,22 @@ def first_prompt(doc_name: str, branch: str) -> str:
 - tasks/ 폴더 문서의 이동·삭제·이름 변경 (작업 문서에 보고서를 덧붙이는 것만 허용)
 - docs/history/ 수정
 - .env 읽기·출력·수정
+- 현재 폴더(worktree) 밖에 쓰기, 원래 프로젝트 폴더 접근
 - 작업 문서의 "하지 말 것" 범위
+
+위 금지 사항은 검사 장치가 막는다. 막힌 호출을 다른 방법으로 우회하지 말고, 그것 없이는 진행할 수 없으면 blocked 로 보고해라.
 """
+
+
+def wip_note(loop_branch: str) -> str:
+    return f"""참고: 이 기능 브랜치에는 이전에 중단되거나 보류된 실행이 남긴 작업 중 커밋이 있다.
+git log {loop_branch}..HEAD 와 git diff {loop_branch}...HEAD 로 이미 된 부분을 확인하고 이어서 완성해라."""
+
+
+def interrupted_feedback(agent: str, detail: str) -> str:
+    return f"""이전 시도({agent})가 끝나지 못하고 중간에 끊겼다: {detail}
+작업 폴더에 하던 변경이 커밋 없이 남아 있을 수 있다. git status 와 git diff 로 확인하고 이어서 완성해라.
+같은 이유로 다시 끊기지 않게, 오래 걸리는 명령은 피하거나 나눠서 실행해라."""
 
 
 def retry_prompt(reason: str) -> str:
@@ -476,48 +546,142 @@ def _limit_hit(cfg: dict, agent: str, text: str) -> bool:
     return any(re.search(p, text or "", re.IGNORECASE) for p in patterns)
 
 
-def _run_child(cmd: list[str], prompt: str, timeout_min: int, label: str) -> subprocess.CompletedProcess:
+def _is_transient(cfg: dict, text: str) -> bool:
+    return any(re.search(p, text or "", re.IGNORECASE) for p in cfg.get("transient_error_patterns", []))
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """자식과 그 하위 프로세스까지 끝낸다 (에이전트가 띄운 프로세스가 남아 worktree 를 계속 고치지 않게)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=30)
+        else:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except Exception:
+        pass
+    try:
+        proc.kill()
+    except Exception:
+        pass
+
+
+def _run_proc(
+    cmd: list[str] | str, input_text: str | None, timeout_sec: float, shell: bool = False, env: dict | None = None
+) -> tuple[int | None, str, str]:
+    """worktree 에서 실행하고 (종료 코드, stdout, stderr) 를 돌려준다. 시간 초과면 종료 코드가 None."""
+    proc = subprocess.Popen(
+        cmd,
+        cwd=WT,
+        shell=shell,
+        stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        **CHILD_KW,
+    )
+    try:
+        out, err = proc.communicate(input_text, timeout=timeout_sec)
+        return proc.returncode, out or "", err or ""
+    except subprocess.TimeoutExpired:
+        _kill_tree(proc)
+        try:
+            out, err = proc.communicate(timeout=20)
+        except Exception:
+            out, err = "", ""
+        return None, out or "", err or ""
+    except BaseException:  # 즉시 중단(Ctrl+C 두 번) 포함
+        _kill_tree(proc)
+        raise
+
+
+def _run_child(cmd: list[str], prompt: str, timeout_min: float, label: str) -> subprocess.CompletedProcess:
+    """에이전트 CLI 실행. 시간 초과면 returncode 가 None."""
     env = os.environ.copy()
     for key in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT"):  # 다른 클로드 세션 안에서 실행할 때 대비
         env.pop(key, None)
     try:
-        return subprocess.run(
-            cmd,
-            cwd=WT,
-            input=prompt,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=env,
-            timeout=timeout_min * 60,
-            **CHILD_KW,
-        )
-    except subprocess.TimeoutExpired:
-        raise LoopError(f"{label} 실행 시간 초과 ({timeout_min}분)")
+        code, out, err = _run_proc(cmd, prompt, timeout_min * 60, env=env)
     except FileNotFoundError:
         raise LoopError(f"{label} CLI 를 찾을 수 없음: {cmd[0]}")
+    return subprocess.CompletedProcess(cmd, code, out, err)
 
 
 def _write_agent_log(log_name: str, proc: subprocess.CompletedProcess) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+    code = "시간 초과" if proc.returncode is None else proc.returncode
     (LOG_DIR / f"{log_name}.out.txt").write_text(
-        f"$ exit {proc.returncode}\n--- stdout ---\n{proc.stdout}\n--- stderr ---\n{proc.stderr}", encoding="utf-8"
+        f"$ exit {code}\n--- stdout ---\n{proc.stdout}\n--- stderr ---\n{proc.stderr}", encoding="utf-8"
     )
+
+
+def _rule_path(p: Path) -> str:
+    """클로드 권한 규칙의 절대 경로 표기: C:\\Users\\a → //c/Users/a"""
+    s = p.resolve().as_posix()
+    if re.match(r"^[A-Za-z]:/", s):
+        s = "/" + s[0].lower() + s[2:]
+    return "/" + s
+
+
+def claude_path_rules() -> list[str]:
+    """사용자 폴더와 그 .env 를 실제 경로 기준으로 막는 금지 규칙."""
+    root = _rule_path(ROOT)
+    return [f"Read({root}/.env)", f"Edit({root}/.env)", f"Edit({root}/**)"]
+
+
+def write_claude_settings() -> Path:
+    """검사 훅(claude_guard.py)을 등록한 설정 파일을 만들고 경로를 돌려준다.
+
+    훅은 worktree 가 아니라 사용자 폴더의 사본을 쓴다 (에이전트가 worktree 에서 훅을 고쳐 무력화하지 못하게).
+    """
+    guard = TOOL_DIR / "claude_guard.py"
+    if not guard.exists():
+        raise LoopError(f"검사 훅 {guard} 가 없음")
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "*",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": sys.executable,
+                            "args": [
+                                str(guard),
+                                "--worktree", str(WT),
+                                "--root", str(ROOT),
+                                "--log", str(LOG_DIR / "guard.log"),
+                            ],
+                            "timeout": 30,
+                            "onFailure": "block",
+                        }
+                    ],
+                }
+            ]
+        }
+    }  # fmt: skip
+    LOOP_DIR.mkdir(exist_ok=True)
+    path = LOOP_DIR / "claude_settings.json"
+    path.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
 
 
 def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str) -> dict:
     exe = shutil.which(cfg["claude_command"]) or cfg["claude_command"]
     cmd = [exe, "-p", "--output-format", "json", "--permission-mode", cfg["claude_permission_mode"]]
+    cmd += ["--settings", str(write_claude_settings())]
     if cfg.get("claude_allowed_tools"):
         cmd += ["--allowedTools", *cfg["claude_allowed_tools"]]
-    if cfg.get("claude_disallowed_tools"):
-        cmd += ["--disallowedTools", *cfg["claude_disallowed_tools"]]
+    cmd += ["--disallowedTools", *cfg.get("claude_disallowed_tools", []), *claude_path_rules()]
     if session_id:
         cmd += ["--resume", session_id]
 
     proc = _run_child(cmd, prompt, cfg["claude_timeout_min"], "클로드")
     _write_agent_log(log_name, proc)
+    if proc.returncode is None:
+        raise AgentFailure("claude", f"실행 시간 초과 ({cfg['claude_timeout_min']}분)")
 
     data: dict = {}
     out = proc.stdout.strip()
@@ -535,8 +699,13 @@ def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str) ->
     scan = "\n".join([result_text, proc.stdout[-3000:], proc.stderr[-3000:]]) if failed else result_text
     if _limit_hit(cfg, "claude", scan):
         raise UsageLimit("claude", tail(result_text or proc.stderr or proc.stdout, 500))
+    denials = data.get("permission_denials")
+    if isinstance(denials, list) and denials:
+        names = ", ".join(str(d.get("tool_name", "?")) if isinstance(d, dict) else "?" for d in denials[:10])
+        log(f"클로드 권한 거부 {len(denials)}건 ({names}). 자세한 내용: .loop/logs/{log_name}.out.txt, .loop/logs/guard.log")
     if failed:
-        raise LoopError(f"클로드 실행 실패 (코드 {proc.returncode}): {tail(result_text or proc.stderr or proc.stdout, 800)}")
+        detail = tail(result_text or proc.stderr or proc.stdout, 800)
+        raise AgentFailure("claude", f"실행 실패 (코드 {proc.returncode}): {detail}", _is_transient(cfg, detail))
     return data
 
 
@@ -557,6 +726,8 @@ def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
     ]  # fmt: skip
     proc = _run_child(cmd, prompt, cfg["codex_timeout_min"], "코덱스")
     _write_agent_log(log_name, proc)
+    if proc.returncode is None:
+        raise AgentFailure("codex", f"실행 시간 초과 ({cfg['codex_timeout_min']}분)")
 
     last_msg = last_msg_path.read_text(encoding="utf-8", errors="replace") if last_msg_path.exists() else ""
     turn_failed = False
@@ -580,7 +751,8 @@ def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
     if _limit_hit(cfg, "codex", scan):
         raise UsageLimit("codex", tail(errors or proc.stderr or last_msg, 500))
     if failed:
-        raise LoopError(f"코덱스 실행 실패 (코드 {proc.returncode}): {tail(errors or proc.stderr or last_msg, 800)}")
+        detail = tail(errors or proc.stderr or last_msg, 800)
+        raise AgentFailure("codex", f"실행 실패 (코드 {proc.returncode}): {detail}", _is_transient(cfg, detail))
     return {"result": last_msg}
 
 
@@ -599,22 +771,11 @@ def run_tests(cfg: dict) -> tuple[bool, str]:
     command = (cfg.get("test_command") or "").strip()
     if not command:
         return True, "테스트 명령이 비어 있어 건너뜀"
-    try:
-        proc = subprocess.run(
-            command,
-            cwd=WT,
-            shell=True,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=cfg["test_timeout_min"] * 60,
-            **CHILD_KW,
-        )
-    except subprocess.TimeoutExpired:
-        return False, f"테스트 시간 초과 ({cfg['test_timeout_min']}분)"
-    output = f"명령: {command}\n종료 코드: {proc.returncode}\n{proc.stdout}\n{proc.stderr}"
-    return proc.returncode == 0, output
+    code, out, err = _run_proc(command, None, cfg["test_timeout_min"] * 60, shell=True)
+    if code is None:
+        return False, f"테스트 시간 초과 ({cfg['test_timeout_min']}분)\n{tail(out + err, 3000)}"
+    output = f"명령: {command}\n종료 코드: {code}\n{out}\n{err}"
+    return code == 0, output
 
 
 def format_agents(entries: list[tuple[str, int | None]]) -> str:
@@ -692,14 +853,15 @@ class Loop:
         if not branch_exists(self.base):
             raise PreflightError(f"기준 브랜치 {self.base} 가 없음")
         self.ensure_worktree()
-        dirty = wt_dirty()
-        if dirty:
-            raise PreflightError(f"루프 worktree({WT})에 커밋 안 된 변경이 있음:\n{truncate(dirty, 1500)}")
-
         self.state = load_state()
         active = self.state.get("loop_branch") if self.state.get("status") == "active" else None
         if active and not branch_exists(active):
             raise PreflightError(f"상태 파일의 진행 중인 루프 브랜치 {active} 가 없음 (.loop/state.json 확인)")
+        dirty = wt_dirty()
+        if dirty:
+            self.recover_dirty(dirty, active)
+        if self.state.pop("last_stop", None) is not None:
+            save_state(self.state)  # 멈춘 이유는 바로 다음 실행의 복구에만 쓴다
         unmerged = [
             b for b in local_branches(self.cfg["loop_branch_prefix"]) if b != active and not is_ancestor(b, self.base)
         ]
@@ -710,6 +872,39 @@ class Loop:
             )
         self.loop_branch = active or ""
         self.bundle = self.state.get("bundle", self.cfg["default_bundle"]) if active else ""
+
+    def recover_dirty(self, dirty: str, active: str | None) -> None:
+        """이전 실행이 중간에 멈춰 worktree 에 남은 변경을 기능 브랜치에 작업 중 커밋으로 넣는다.
+
+        진행 중인 루프의 기능 브랜치(doing 문서 또는 상태 파일의 처리 중 작업)에 남은 변경만 복구한다.
+        그 밖의 변경은 출처를 알 수 없으므로 시작하지 않는다.
+        """
+        branch = wt_branch()
+        current = self.state.get("current") or {}
+        doing = {task_branch_name(self.cfg, p.name): p.name for p in task_docs(DOING)}
+        known = branch in doing or branch == current.get("branch")
+        if not (active and branch.startswith(self.cfg["task_branch_prefix"]) and known):
+            raise PreflightError(
+                f"루프 worktree({WT})에 커밋 안 된 변경이 있음 (현재 브랜치 {branch}, 자동 복구 대상이 아님):\n"
+                f"{truncate(dirty, 1500)}"
+            )
+        stop = self.state.get("last_stop") or {}
+        reason = stop.get("reason") or "기록 없음 (루프 프로세스가 강제 종료된 것으로 추정)"
+        when = stop.get("at") or "알 수 없음"
+        doc_name = doing.get(branch) or current.get("doc") or branch
+        wt_commit_all(
+            f"중단 복구(작업 중 상태): {Path(doc_name).stem}\n\n"
+            f"이전 실행이 중간에 멈춰 worktree 에 남은 변경을 그대로 커밋함.\n멈춘 이유: {reason}\n멈춘 시각: {when}\n"
+        )
+        self.state.pop("current", None)
+        save_state(self.state)
+        log(f"중단 복구: {doc_name} 의 남은 변경을 {branch} 에 작업 중 커밋으로 넣음 (멈춘 이유: {reason})")
+        self.n.send(
+            "LOG",
+            f"중단 복구: {doc_name}",
+            f"이전 실행이 중간에 멈춰 worktree 에 남은 변경을 `{branch}` 에 작업 중 커밋으로 넣고 이어서 진행합니다.\n\n"
+            f"**멈춘 이유**\n{truncate(reason, 1000)}\n\n**멈춘 시각**: {when}\n\n**남아 있던 변경**\n{truncate(dirty, 1000)}",
+        )
 
     # ── 선행 작업 판단 ──
     def unmet(self, doc: Doc, ref: str, use_done: bool) -> tuple[list[str], list[str]]:
@@ -898,6 +1093,9 @@ class Loop:
         name = doc.name
         log(f"작업 시작: {name}")
         tb = self.prepare_task_branch(name)
+        self.state["current"] = {"doc": name, "branch": tb}
+        save_state(self.state)
+        has_wip = wgit("rev-list", "--count", f"{self.loop_branch}..{tb}").stdout.strip() not in ("", "0")
         agent = self.current_agent()
         self.n.send("LOG", f"작업 시작: {name}", f"에이전트: {agent}\n기능 브랜치: `{tb}`\n루프 브랜치: `{self.loop_branch}`")
 
@@ -928,12 +1126,15 @@ class Loop:
                 prompt = retry_prompt(feedback)
             else:
                 prompt = first_prompt(name, tb)
+                if has_wip:
+                    prompt += "\n\n" + wip_note(self.loop_branch)
                 if handoff_from:
                     prompt += "\n\n" + handoff_note(handoff_from)
                 if feedback:
                     prompt += "\n\n" + retry_prompt(feedback)
 
             head_before = wgit("rev-parse", "HEAD").stdout.strip()
+            root_before = root_snapshot()
             try:
                 if agent == "claude":
                     data = run_claude(self.cfg, prompt, session_id, f"{stem}_attempt{attempt}_claude")
@@ -943,6 +1144,7 @@ class Loop:
                 else:
                     raise LoopError(f"알 수 없는 에이전트: {agent}")
             except UsageLimit as e:
+                self.check_root(root_before, agent, name)
                 self.undo_agent_commits(head_before, tb, agent, name)
                 attempt -= 1  # 한도로 끊긴 실행은 재시도 횟수에 넣지 않는다
                 self.limited_at[agent] = time.time()
@@ -959,7 +1161,22 @@ class Loop:
                 session_id = None
                 just_switched = True
                 continue
+            except AgentFailure as e:
+                self.check_root(root_before, agent, name)
+                self.undo_agent_commits(head_before, tb, agent, name)
+                if wt_doc_path(name).exists():
+                    sync_from_wt(doc)
+                if e.transient:  # 일시적 오류는 시도 횟수에 넣지 않고, 정리한 뒤 나중에 다시 시도한다
+                    self.park(doc, tb, "일시적 오류로 중단", f"{agent} {e.detail}")
+                    raise TransientError(f"{agent} {e.detail}")
+                entries.append((agent, attempt))
+                log(f"{agent} {e.detail.splitlines()[0]} → 실패한 시도로 처리: {name}")
+                last_failure = f"{agent} {e.detail}"
+                feedback = interrupted_feedback(agent, e.detail)
+                session_id = None  # 끊긴 세션은 이어 쓰지 않고 새로 시작한다
+                continue
 
+            self.check_root(root_before, agent, name)  # 사본을 되돌려 복사하기 전에 비교한다
             entries.append((agent, attempt))
             sync_from_wt(doc)
             self.undo_agent_commits(head_before, tb, agent, name)
@@ -991,6 +1208,20 @@ class Loop:
         )
         return "blocked"
 
+    def check_root(self, before: dict, agent: str, name: str) -> None:
+        """에이전트 실행 중 사용자 폴더의 tasks·.env 가 바뀌었으면 경고한다 (검사 훅을 비켜 간 쓰기 감지)."""
+        changes = snapshot_changes(before, root_snapshot())
+        if not changes:
+            return
+        listing = "\n".join(f"- {c}" for c in changes[:30])
+        log(f"경고: {agent} 실행 중 사용자 폴더가 바뀜 ({name}):\n{listing}")
+        self.n.send(
+            "STOPPED",
+            f"경고: 에이전트 실행 중 사용자 폴더가 바뀜 ({name})",
+            f"{agent} 가 실행되는 동안 아래 파일이 바뀌었습니다. 직접 바꾼 것이 아니면 에이전트가 worktree 밖에 쓴 것입니다.\n"
+            f"루프는 계속 진행합니다.\n\n{listing}",
+        )
+
     def undo_agent_commits(self, head_before: str, tb: str, agent: str, name: str) -> None:
         """에이전트가 규칙을 어기고 브랜치를 바꾸거나 커밋했으면 되돌린다 (변경 내용은 작업 트리에 남긴다)."""
         if wt_branch() != tb:
@@ -1015,6 +1246,7 @@ class Loop:
             raise LoopError(f"{tb} 에 기록 커밋이 확인되지 않음")
         self.ff_merge_into_loop(tb)
         move_doc(doc, DONE)
+        self.state.pop("current", None)
         self.mark_processed(doc.name, tb, agents)
         log(f"작업 완료: {doc.name} ({agents})")
         self.n.send(
@@ -1036,6 +1268,8 @@ class Loop:
         )
         moved = move_doc(doc, BLOCKED)
         wgit("checkout", self.loop_branch)
+        self.state.pop("current", None)
+        save_state(self.state)
         log(f"보류: {moved.name}")
         self.n.send(
             "BLOCKED",
@@ -1044,11 +1278,18 @@ class Loop:
             f"**추천안**\n{truncate(recommendation, 1000)}\n\n**기능 브랜치**: `{tb}`",
         )
 
-    def stop_for_usage_limit(self, doc: Path, tb: str, entries: list, detail: str = "") -> None:
+    def park(self, doc: Path, tb: str, title: str, reason: str) -> None:
+        """작업을 접는다: 작업 중 상태를 기능 브랜치에 커밋하고 문서를 todo 로 되돌린다. 다음 실행이 이어서 한다."""
         clear_wt_doc(doc.name)
-        wt_commit_all(f"사용량 한도로 중단(작업 중 상태): {doc.stem}\n")
+        wt_commit_all(f"{title}(작업 중 상태): {doc.stem}\n\n멈춘 이유: {truncate(reason, 1000)}\n")
         move_doc(doc, TODO)
         wgit("checkout", self.loop_branch)
+        self.state.pop("current", None)
+        save_state(self.state)
+        log(f"{title}: {doc.name} → todo 로 되돌림 (작업 중 상태는 {tb})")
+
+    def stop_for_usage_limit(self, doc: Path, tb: str, entries: list, detail: str = "") -> None:
+        self.park(doc, tb, "사용량 한도로 중단", detail or "모든 에이전트 사용량 한도 초과")
         log(f"모든 에이전트 사용량 한도 초과로 중단: {doc.name}")
         self.n.send(
             "STOPPED",
@@ -1161,10 +1402,36 @@ def main() -> int:
         interval = int(cfg["watch_interval_sec"])
         log(f"감시 모드 시작: {interval}초마다 확인 (worktree {WT})")
         notifier.send("LOG", "감시 모드 시작", f"{interval}초마다 todo 를 확인합니다.")
+        max_repeats = int(cfg.get("transient_max_repeats", 3))
+        retry_wait = int(cfg.get("transient_retry_wait_sec", 300))
+        last_sig, repeats = "", 0
         while not STOP.requested:
             try:
                 loop.run_pass()
                 notifier.reset("preflight")
+                last_sig, repeats = "", 0
+            except TransientError as e:
+                sig = re.sub(r"[0-9a-f]{8,}|\d+", "#", str(e).lower())[:200]  # 요청 번호 같은 숫자는 무시하고 비교
+                repeats = repeats + 1 if sig == last_sig else 1
+                last_sig = sig
+                if repeats >= max_repeats:
+                    log(f"같은 일시적 오류가 {repeats}회 연속 → 멈춤: {e}")
+                    notifier.send(
+                        "STOPPED",
+                        "루프 멈춤: 같은 오류가 계속됨",
+                        f"일시적 오류로 보고 다시 시도했지만 같은 오류가 {repeats}회 연속으로 났습니다.\n\n{truncate(str(e), 1500)}\n\n"
+                        f"작업은 todo 로 되돌렸고 작업 중 상태는 기능 브랜치에 커밋했습니다. 원인을 해결한 뒤 다시 실행하세요.\n"
+                        f"루프 브랜치: `{loop.loop_branch or '(없음)'}`",
+                    )
+                    return 1
+                log(f"일시적 오류 ({repeats}/{max_repeats}), {retry_wait}초 뒤 다시 시도: {e}")
+                notifier.send(
+                    "LOG",
+                    f"일시적 오류, 다시 시도 예정 ({repeats}/{max_repeats})",
+                    f"{truncate(str(e), 1500)}\n\n{retry_wait}초 뒤 다시 시도합니다. 같은 오류가 {max_repeats}회 연속이면 멈춥니다.",
+                )
+                _sleep(retry_wait)
+                continue
             except PreflightError as e:
                 log(f"시작 전 점검 실패, 기다림: {e}")
                 notifier.send_once(
@@ -1181,13 +1448,23 @@ def main() -> int:
         return 3
     except AllAgentsLimited:
         return 2
+    except TransientError as e:  # 한 번 돌기: 정리는 끝났으므로 다시 실행하면 이어진다
+        log(f"일시적 오류로 멈춤: {e}")
+        notifier.send(
+            "STOPPED",
+            "루프 멈춤: 일시적 오류",
+            f"{truncate(str(e), 1500)}\n\n작업은 todo 로 되돌렸고 작업 중 상태는 기능 브랜치에 커밋했습니다. 다시 실행하면 이어서 진행합니다.",
+        )
+        return 1
     except KeyboardInterrupt:
         log("사용자가 즉시 중단함")
-        notifier.send("STOPPED", "루프 멈춤: 사용자 즉시 중단", "상태는 그대로 둠. 다시 실행하면 점검 후 이어서 진행")
+        record_stop("사용자 즉시 중단 (Ctrl+C 두 번)")
+        notifier.send("STOPPED", "루프 멈춤: 사용자 즉시 중단", "상태는 그대로 둠. 다시 실행하면 남은 변경을 작업 중 커밋으로 넣고 이어서 진행")
         return 1
     except Exception as e:
         detail = traceback.format_exc()
         log(f"오류로 멈춤:\n{detail}")
+        record_stop(f"오류 {type(e).__name__}: {e}")
         branch = loop.loop_branch if loop and loop.loop_branch else "(없음)"
         notifier.send(
             "STOPPED",
