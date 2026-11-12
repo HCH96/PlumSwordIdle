@@ -5,7 +5,7 @@
   "worktree_path": "../PlumSwordIdle_loop",
   "default_bundle": "기본",
   "max_retries": 5,
-  "test_command": "",
+  "test_command": "{python} \"{loop_tools}/run_unity_tests.py\" --project .",
   "test_timeout_min": 30,
   "watch_interval_sec": 60,
   "agents": ["claude", "codex"],

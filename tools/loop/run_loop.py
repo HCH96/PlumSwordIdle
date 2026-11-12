@@ -771,10 +771,15 @@ def run_tests(cfg: dict) -> tuple[bool, str]:
     command = (cfg.get("test_command") or "").strip()
     if not command:
         return True, "테스트 명령이 비어 있어 건너뜀"
+    # {python}: 이 스크립트를 실행한 파이썬, {loop_tools}: 사용자 폴더의 tools/loop.
+    # 테스트 도구는 worktree 가 아니라 사용자 폴더의 사본을 쓴다 (에이전트가 worktree 에서 고쳐 통과시키지 못하게).
+    command = command.replace("{python}", f'"{sys.executable}"').replace("{loop_tools}", str(TOOL_DIR))
     code, out, err = _run_proc(command, None, cfg["test_timeout_min"] * 60, shell=True)
     if code is None:
         return False, f"테스트 시간 초과 ({cfg['test_timeout_min']}분)\n{tail(out + err, 3000)}"
     output = f"명령: {command}\n종료 코드: {code}\n{out}\n{err}"
+    if code == 2:  # 테스트를 실행할 수 없는 환경 문제. 에이전트가 고칠 수 없으므로 재시도하지 않고 멈춘다
+        raise LoopError(f"테스트를 실행할 수 없음 (환경 문제, 종료 코드 2):\n{tail(out + err, 1500)}")
     return code == 0, output
 
 
