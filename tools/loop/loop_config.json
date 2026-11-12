@@ -1,0 +1,27 @@
+{
+  "base_branch": "main",
+  "loop_branch_prefix": "loop/",
+  "task_branch_prefix": "task/",
+  "max_retries": 5,
+  "test_command": "",
+  "test_timeout_min": 30,
+  "claude_command": "claude",
+  "claude_timeout_min": 60,
+  "claude_permission_mode": "acceptEdits",
+  "claude_allowed_tools": ["Read", "Edit", "Write", "Glob", "Grep", "Bash", "PowerShell"],
+  "claude_disallowed_tools": [
+    "Read(./.env)",
+    "Edit(./.env)",
+    "Write(./.env)",
+    "Bash(git commit:*)",
+    "Bash(git push:*)",
+    "Bash(git checkout:*)",
+    "Bash(git switch:*)",
+    "Bash(git merge:*)",
+    "Bash(git rebase:*)",
+    "Bash(git reset:*)",
+    "Bash(git branch:*)",
+    "Bash(git stash:*)",
+    "Bash(git tag:*)"
+  ]
+}

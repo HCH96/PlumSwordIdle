@@ -110,3 +110,8 @@ InitTestScene*.unity*
 
 # Local secrets (API keys, webhook URLs)
 /.env
+
+# AI 자동 개발 루프: 로컬 상태판(작업 문서)과 실행 상태·로그
+/tasks/
+/.loop/
+__pycache__/
