@@ -3,7 +3,7 @@
   "loop_branch_prefix": "loop/",
   "task_branch_prefix": "task/",
   "max_retries": 5,
-  "test_command": "if exist tasks\\doing\\002_fail.md (echo TEMP: always fail for 002_fail & exit /b 1) else (exit /b 0)",
+  "test_command": "",
   "test_timeout_min": 30,
   "claude_command": "claude",
   "claude_timeout_min": 60,
