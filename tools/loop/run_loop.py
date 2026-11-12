@@ -500,10 +500,10 @@ class Loop:
         result: dict | None = None
         stem = Path(name).stem
 
-        for attempt in range(1, max_retries + 1):
+        for attempt in range(1, max_retries + 2):  # 처음 1회 + 재시도 max_retries 회
             if attempt > 1:
-                log(f"재시도 {attempt - 1}/{max_retries - 1}: {name}")
-                self.n.send("LOG", f"재시도 {attempt - 1}회째: {name}", truncate(last_failure, 1500))
+                log(f"재시도 {attempt - 1}/{max_retries}: {name}")
+                self.n.send("LOG", f"재시도 {attempt - 1}/{max_retries}회째: {name}", truncate(last_failure, 1500))
             RESULT_PATH.unlink(missing_ok=True)
             prompt = first_prompt(name, tb) if attempt == 1 or not session_id else retry_prompt(feedback)
             if attempt > 1 and not session_id:

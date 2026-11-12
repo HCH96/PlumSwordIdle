@@ -31,7 +31,7 @@ python tools/loop/run_loop.py
 | --- | --- | --- |
 | `base_branch` | `main` | 루프 브랜치를 따는 기준. 스크립트는 읽기만 한다 |
 | `loop_branch_prefix` / `task_branch_prefix` | `loop/` / `task/` | 브랜치 이름 앞부분 |
-| `max_retries` | `5` | 작업 하나당 클로드 실행 최대 횟수. 넘으면 보류 |
+| `max_retries` | `5` | 처음 실행이 실패한 뒤 다시 시도하는 최대 횟수(총 실행은 1 + 이 값). 넘으면 보류 |
 | `test_command` | `""` | 테스트 명령. 비어 있으면 건너뛰고 통과로 본다. 종료 코드 0이면 통과 |
 | `test_timeout_min` | `30` | 테스트 시간 제한(분) |
 | `claude_command` | `claude` | 클로드 코드 CLI 명령 |
