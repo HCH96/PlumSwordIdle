@@ -218,12 +218,15 @@ def main() -> int:
         # 참고 문서
         if "참고 문서" in by_title:
             refs = MD_PATH_RE.findall(by_title["참고 문서"])
-            for must in ("docs/index.md", "docs/architecture.md"):
+            for must in ("docs/index.md", "docs/dev/architecture.md"):
                 if must not in refs:
                     warns.append(f"{tag}: 참고 문서에 {must} 가 없다")
             if not any(r.startswith("docs/spec/") for r in refs):
                 no_spec.append(tag)
             for r in refs:
+                if r.startswith(("docs/design/", "docs/project/", "docs/archive/")):
+                    errors.append(f"{tag}: 참고 문서 {r} 는 사람용 문서다. 구현하는 에이전트는 읽지 않는다. 필요한 내용은 사양이나 요구사항 칸에 옮겨 적는다")
+                    continue
                 if not (root / r).exists():
                     errors.append(f"{tag}: 참고 문서 {r} 가 없다. 있는 문서만 적는다 (연결 지점은 그 기능의 사양 문서 docs/spec/… 를 가리킨다)")
                 elif tracked_set is not None and r not in tracked_set:

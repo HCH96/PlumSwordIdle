@@ -7,7 +7,7 @@ description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리
 
 자동 개발 루프는 `tasks/` 의 다섯 폴더(todo, wait, doing, blocked, done)를 상태판으로 쓴다. 문서가 어느 폴더에 있는지가 곧 작업 상태다. 루프는 옆 폴더의 worktree(`../PlumSwordIdle_loop`)에서 일하고, 진행 상황은 `.loop/state.json` 과 `.loop/logs/` 에 남는다. 이 스킬은 이것들을 **읽기만 해서** "지금 무엇이 돌고 있고, 무엇이 왜 멈춰 있고, 사용자가 할 일이 무엇인지"를 정리한다.
 
-루프 동작의 기준 문서는 `docs/loop.md` 다. 판단이 애매하면 그 문서를 따른다.
+루프 동작의 기준 문서는 `docs/dev/loop.md` 다. 판단이 애매하면 그 문서를 따른다.
 
 ## 지킬 것
 
@@ -65,7 +65,7 @@ description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리
 | todo 에 문서가 있는데 루프가 안 돎 | 루프 실행: `python tools/loop/run_loop.py` 또는 `python tools/loop/run_loop.py --watch` |
 | 상태 파일은 active 인데 이번 묶음에 남은 작업이 없음 | 루프를 한 번 실행하면 루프를 끝낸다 |
 | 루프가 돌고 있음 | 기다리면 된다 |
-| 검사 훅이 최근 24시간에 막은 기록이 있음 | `.loop/logs/guard.log` 확인 (docs/loop.md "클로드가 정상 작업 중에 막힐 때") |
+| 검사 훅이 최근 24시간에 막은 기록이 있음 | `.loop/logs/guard.log` 확인 (docs/dev/loop.md "클로드가 정상 작업 중에 막힐 때") |
 | 아무것도 없음 | `plan-feature` 로 기획하고 `make-tasks` 로 다음 작업을 만든다 |
 
 루프 실행 명령은 사용자에게 알려 주기만 한다. 이 스킬이 루프를 실행하지 않는다.

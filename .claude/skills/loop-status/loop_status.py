@@ -499,7 +499,7 @@ class Report:
         if self.state_note.startswith("읽을 수 없음"):
             self.add(0, f"`.loop/state.json` 을 {self.state_note}. 루프가 다음 실행에서 멈춘다. 파일 내용을 직접 확인한다.")
         if self.active_branch and not self.active_ok:
-            self.add(0, f"상태 파일의 진행 중인 루프 브랜치 `{self.active_branch}` 가 없다. 루프가 시작 전 점검에서 멈춘다. 브랜치를 지웠다면 `.loop/state.json` 을 정리한다 (docs/loop.md \"루프가 끝난 뒤 main에 합치기\").")
+            self.add(0, f"상태 파일의 진행 중인 루프 브랜치 `{self.active_branch}` 가 없다. 루프가 시작 전 점검에서 멈춘다. 브랜치를 지웠다면 `.loop/state.json` 을 정리한다 (docs/dev/loop.md \"루프가 끝난 뒤 main에 합치기\").")
 
         # 2. worktree 의 정리 안 된 변경 (자동 복구 대상이 아니면 루프가 시작하지 않음)
         wt = self.wt
@@ -525,7 +525,7 @@ class Report:
         # 4. 합쳐지지 않은 완료 루프
         if unmerged:
             lst = ", ".join(f"`{b}`" for b in unmerged)
-            self.add(1, f"끝났지만 {self.base} 에 합쳐지지 않은 루프 브랜치가 있다: {lst}. **이것이 남아 있으면 새 루프가 시작되지 않는다.** `review-loop` 스킬로 확인한 뒤 프로젝트 폴더(main)에서 `git merge <브랜치>` 로 합친다 (버리려면 docs/loop.md \"루프가 끝난 뒤 main에 합치기\").")
+            self.add(1, f"끝났지만 {self.base} 에 합쳐지지 않은 루프 브랜치가 있다: {lst}. **이것이 남아 있으면 새 루프가 시작되지 않는다.** `review-loop` 스킬로 확인한 뒤 프로젝트 폴더(main)에서 `git merge <브랜치>` 로 합친다 (버리려면 docs/dev/loop.md \"루프가 끝난 뒤 main에 합치기\").")
 
         # 5. 보류
         blocked = d["blocked"]
@@ -593,7 +593,7 @@ class Report:
         # 10. 검사 훅 기록 (참고)
         g = self.guard_info()
         if g and g["recent"]:
-            self.add(4, f"(참고) 검사 훅이 최근 24시간에 호출 {g['recent']}건을 막았다. 정상 작업이 막힌 것인지 `.loop/logs/guard.log` 를 확인한다 (docs/loop.md \"클로드가 정상 작업 중에 막힐 때\").")
+            self.add(4, f"(참고) 검사 훅이 최근 24시간에 호출 {g['recent']}건을 막았다. 정상 작업이 막힌 것인지 `.loop/logs/guard.log` 를 확인한다 (docs/dev/loop.md \"클로드가 정상 작업 중에 막힐 때\").")
 
     def task_branch(self, doc_name: str) -> str:
         stem = Path(doc_name).stem

@@ -27,7 +27,7 @@ HISTORY = "docs/history"
 TEMPLATE_HEADINGS = ("목표", "묶음", "선행 작업", "참고 문서", "요구사항", "완료 조건", "하지 말 것")
 HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)  # run_loop.py 와 같은 규칙
 
-# PlumSword.Core 에 들어오면 안 되는 것 (docs/architecture.md "순수 C# 규칙이 지켜지는 방식")
+# PlumSword.Core 에 들어오면 안 되는 것 (docs/dev/architecture.md "순수 C# 규칙이 지켜지는 방식")
 CORE_DIR = "Assets/Scripts/Core/"
 CORE_BANNED = [
     (r"\bUnityEngine\b", "UnityEngine 참조"),
@@ -44,7 +44,7 @@ CORE_BANNED = [
 SCENE_EXTS = (".unity", ".prefab", ".asset")
 # 루프 자체를 바꾸는 경로
 LOOP_SELF = ("tools/loop/", ".claude/", "CLAUDE.md", "AGENTS.md", ".gitignore", ".env")
-LOOP_DOCS = ("docs/loop.md", "docs/task_template.md", "docs/architecture.md")
+LOOP_DOCS = ("docs/dev/loop.md", "docs/dev/task_template.md", "docs/dev/architecture.md")
 TEST_DIR = "Assets/Tests/"
 TEST_ATTR_RE = re.compile(r"\[\s*(Test|TestCase|TestCaseSource|UnityTest|Theory)\b[^\]]*\]")
 METHOD_RE = re.compile(r"\b(?:public|internal|private|protected)\s+(?:static\s+|async\s+)*[\w<>\[\],.]+\s+(\w+)\s*\(")
@@ -587,7 +587,7 @@ def main() -> int:
     core_asm = git.show(tip, CORE_DIR + "PlumSword.Core.asmdef") or ""
     if not re.search(r'"noEngineReferences"\s*:\s*true', core_asm):
         asm.insert(0, "**`PlumSword.Core.asmdef` 의 `noEngineReferences` 가 켜져 있지 않다.** Core 의 순수 C# 규칙을 강제하는 장치가 꺼졌다")
-    check("어셈블리 정의 변경 (docs/architecture.md 를 함께 고쳤는지, 작업 문서에 근거가 있는지 본다)", "위반", asm)
+    check("어셈블리 정의 변경 (docs/dev/architecture.md 를 함께 고쳤는지, 작업 문서에 근거가 있는지 본다)", "위반", asm)
 
     scene = [f"{st} `{path}`{who(path)}" for st, path in all_changes
              if path.endswith(SCENE_EXTS) or path.startswith(("ProjectSettings/", "Packages/"))]
@@ -657,7 +657,7 @@ def main() -> int:
     p(md_list(game, "화면 코드·리소스 변경이 없다"))
 
     # ── 6. 명령 ──
-    p("\n## 6. 명령 (docs/loop.md 기준, 프로젝트 폴더의 main 에서)\n")
+    p("\n## 6. 명령 (docs/dev/loop.md 기준, 프로젝트 폴더의 main 에서)\n")
     task_branches = git.lines("for-each-ref", "--format=%(refname:short)", f"refs/heads/{task_prefix}")
     mine = [b for b in task_branches if git.ok("merge-base", "--is-ancestor", b, branch)]
     others = [b for b in task_branches if b not in mine]

@@ -29,6 +29,8 @@
 
 ## 참고 문서
 - docs/index.md
+- docs/dev/architecture.md
+- docs/spec/currency.md
 
 ## 요구사항
 - 구체적인 동작

@@ -7,7 +7,7 @@
 - Bash·PowerShell: 깃 상태를 바꾸는 명령, 사용자 폴더 경로나 .env 가 들어간 명령
 
 막을 때는 이유를 stderr 로 내고 종료 코드 2 로 끝낸다 (클로드에게 이유가 전달된다). 막은 기록은 --log 파일에 남긴다.
-검사 중 오류가 나도 종료 코드 2 로 막는다. 규칙과 한계는 docs/loop.md "클로드 권한" 참고.
+검사 중 오류가 나도 종료 코드 2 로 막는다. 규칙과 한계는 docs/dev/loop.md "클로드 권한" 참고.
 """
 
 from __future__ import annotations
