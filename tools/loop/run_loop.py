@@ -7,7 +7,7 @@ tasks/todo 의 작업 문서를 선행 작업과 묶음 규칙에 따라 하나�
   python tools/loop/run_loop.py           한 번 돌고 끝남
   python tools/loop/run_loop.py --watch   끝나지 않고 일정 간격으로 todo 를 확인
 
-종료 코드: 0 정상, 1 오류로 멈춤, 2 사용량 한도로 멈춤, 3 시작 전 점검 실패
+종료 코드: 0 정상, 1 오류로 멈춤, 2 사용량 한도로 멈춤, 3 시작 전 점검 실패, 4 같은 프로젝트에서 이미 실행 중
 """
 
 from __future__ import annotations
@@ -37,6 +37,7 @@ ALL_FOLDERS = {"todo": TODO, "doing": DOING, "wait": WAIT, "blocked": BLOCKED, "
 HISTORY_REL = "docs/history"
 LOOP_DIR = ROOT / ".loop"
 STATE_PATH = LOOP_DIR / "state.json"
+RUNNING_PATH = LOOP_DIR / "running.json"  # 지금 실행 중인 루프 프로세스 기록. 실행이 끝나면 지운다
 LOG_DIR = LOOP_DIR / "logs"
 WT: Path = ROOT  # 루프 전용 worktree. main() 에서 설정값으로 정한다
 
@@ -303,6 +304,109 @@ def record_stop(reason: str) -> None:
         pass  # 기록 실패로 종료 처리를 막지 않는다
 
 
+# ───────────────────────── 실행 중 기록 (.loop/running.json) ─────────────────────────
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if os.name == "nt":  # 윈도우의 os.kill 은 프로세스를 끝내 버리므로 쓰지 않는다
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return ctypes.get_last_error() == 5  # 접근 거부 = 프로세스는 있음
+        try:
+            code = ctypes.c_ulong()
+            return bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _pid_cmdline(pid: int) -> str | None:
+    """프로세스 명령줄. 알 수 없으면 None."""
+    try:
+        if os.name == "nt":
+            proc = subprocess.run(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                 f"(Get-CimInstance Win32_Process -Filter 'ProcessId={pid}').CommandLine"],
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30, **CHILD_KW,
+            )  # fmt: skip
+            out = proc.stdout.strip()
+            return out if proc.returncode == 0 and out else None
+        cmdline = Path(f"/proc/{pid}/cmdline")
+        if cmdline.exists():
+            return cmdline.read_bytes().replace(bytes(1), b" ").decode("utf-8", "replace").strip() or None
+        proc = subprocess.run(["ps", "-o", "args=", "-p", str(pid)], capture_output=True, text=True, timeout=30)
+        return proc.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def running_owner() -> dict | None:
+    """기록된 루프 프로세스가 아직 돌고 있으면 그 기록을 돌려준다. 강제 종료로 남은 기록이면 None."""
+    try:
+        info = json.loads(RUNNING_PATH.read_text(encoding="utf-8"))
+        pid = int(info.get("pid", 0))
+    except FileNotFoundError:
+        return None
+    except Exception:
+        return None  # 깨진 기록은 남은 기록으로 본다
+    if pid == os.getpid() or not _pid_alive(pid):
+        return None
+    cmdline = _pid_cmdline(pid)
+    if cmdline is not None and "run_loop" not in cmdline:
+        return None  # PID 가 다른 프로그램에 재사용됨
+    info["cmdline_known"] = cmdline is not None
+    return info
+
+
+def claim_running(mode: str) -> dict | None:
+    """실행 중 기록을 만든다. 다른 루프가 이미 돌고 있으면 만들지 않고 그 기록을 돌려준다."""
+    LOOP_DIR.mkdir(exist_ok=True)
+    record = {
+        "pid": os.getpid(),
+        "mode": mode,
+        "started_at": _dt.datetime.now().isoformat(timespec="seconds"),
+        "log_file": _log_file.name if _log_file else None,
+        "root": str(ROOT),
+        "script": str(Path(__file__).resolve()),
+    }
+    for _ in range(2):
+        try:
+            fd = os.open(RUNNING_PATH, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        except FileExistsError:
+            owner = running_owner()
+            if owner:
+                return owner
+            stale = RUNNING_PATH.read_text(encoding="utf-8", errors="replace") if RUNNING_PATH.exists() else ""
+            log(f"남은 실행 중 기록을 덮어씀 (기록된 루프 프로세스가 없음, 강제 종료 추정): {truncate(stale.strip(), 300)}")
+            RUNNING_PATH.unlink(missing_ok=True)
+            continue
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(record, f, ensure_ascii=False, indent=2)
+        return None
+    raise LoopError("실행 중 기록(.loop/running.json)을 만들지 못함")
+
+
+def release_running() -> None:
+    """내가 만든 실행 중 기록만 지운다."""
+    try:
+        info = json.loads(RUNNING_PATH.read_text(encoding="utf-8"))
+        if int(info.get("pid", 0)) == os.getpid():
+            RUNNING_PATH.unlink()
+    except Exception:
+        pass  # 지우지 못해도 다음 실행이 PID 를 보고 덮어쓴다
+
+
 # ───────────────────────── 사용자 폴더 감시 ─────────────────────────
 
 
@@ -321,15 +425,20 @@ def root_snapshot() -> dict[str, tuple[int, int]]:
 
 
 def snapshot_changes(before: dict, after: dict) -> list[str]:
+    """에이전트 실행 전후 스냅숏의 차이. 사람이 실행 중에 하는 정상 작업은 뺀다:
+    todo 에 새 문서 넣기, blocked 문서에 답 적기, blocked 문서를 todo 나 tasks 밖으로 옮기기.
+    처리 중인 문서(doing)와 .env 의 변경, 그 밖의 폴더 변경은 그대로 보고한다."""
     changes = []
     for key in sorted(set(before) | set(after)):
         if key not in before:
-            if not key.startswith("tasks/todo/"):  # 사람이 실행 중에 새 작업 문서를 넣는 것은 정상
+            if not key.startswith("tasks/todo/"):
                 changes.append(f"{key} (새로 생김)")
         elif key not in after:
-            changes.append(f"{key} (사라짐)")
+            if not key.startswith("tasks/blocked/"):
+                changes.append(f"{key} (사라짐)")
         elif before[key] != after[key]:
-            changes.append(f"{key} (바뀜)")
+            if not key.startswith("tasks/blocked/"):
+                changes.append(f"{key} (바뀜)")
     return changes
 
 
@@ -495,9 +604,16 @@ def first_prompt(doc_name: str, branch: str) -> str:
 
 순서:
 1. 프로젝트 규칙(CLAUDE.md, AGENTS.md — 같은 내용)을 따른다. docs/index.md 를 먼저 읽고, 작업 문서와 그 "참고 문서"를 읽는다.
+   작업 문서 끝에 "## 답변 (날짜 시각)" 절이 있으면, 그것은 사람이 바로 앞의 "## 보류 사유"에 답한 것이다. 앞의 보류 사유·보고서와 다르면 답변을 따른다 (답변이 여러 개면 마지막 것이 최신).
 2. 계획을 세운 뒤 구현한다. 완료 조건에 맞는 테스트가 필요하면 함께 작성한다.
-3. 바뀐 사양·중요한 결정·새 연결 지점을 docs/ 공용 문서에 반영하고, 필요하면 docs/index.md 를 갱신한다.
-4. 작업 문서(tasks/doing/{doc_name}) 맨 끝에 "## 보고서" 절을 추가한다: 한 일, 바뀐 파일, 가정, 테스트 결과.
+3. 바뀐 사양·중요한 결정을 docs/ 공용 문서에 반영하고, 필요하면 docs/index.md 를 갱신한다.
+   연결 지점(다른 기능이 부르는 공개 타입·메서드)의 원본은 사양 문서 docs/spec/<기능>.md 의 "연결 지점" 절이다. 구현하다 모양이 사양과 달라졌으면 그 절을 고치고 보고서의 가정에 적는다.
+4. 작업 문서(tasks/doing/{doc_name}) 맨 끝에 "## 보고서" 절을 추가한다. 아래 소제목 다섯 개를 글자와 순서 그대로 쓴다 (리뷰 도구가 이 제목으로 찾는다). 내용이 없으면 "없음"이라고 적는다.
+   ### 한 일
+   ### 바뀐 파일
+   ### 가정          (작업 문서와 사양에 없어 스스로 정한 것 전부. 임시 수치 포함)
+   ### 사람이 확인할 것  (완료 조건의 [사람 확인] 항목을 옮겨 적고, 테스트로 판정하지 못한 것을 더한다)
+   ### 테스트 결과
 5. 마지막으로 .loop/result.json 을 UTF-8 JSON 으로 쓴다.
    - 완료: {{"status": "done", "summary": "바뀐 내용 요약 (몇 줄)"}}
    - 스스로 판단할 수 없어 진행 불가: {{"status": "blocked", "reason": "막힌 이유", "question": "사람에게 할 질문", "recommendation": "추천안"}}
@@ -517,7 +633,8 @@ def first_prompt(doc_name: str, branch: str) -> str:
 
 def wip_note(loop_branch: str) -> str:
     return f"""참고: 이 기능 브랜치에는 이전에 중단되거나 보류된 실행이 남긴 작업 중 커밋이 있다.
-git log {loop_branch}..HEAD 와 git diff {loop_branch}...HEAD 로 이미 된 부분을 확인하고 이어서 완성해라."""
+git log {loop_branch}..HEAD 와 git diff {loop_branch}...HEAD 로 이미 된 부분을 확인하고 이어서 완성해라.
+작업 문서에 "## 답변" 절이 있으면 그 답에 맞게 이어간다. 이전 작업이 답변과 어긋나면 답변대로 고친다."""
 
 
 def interrupted_feedback(agent: str, detail: str) -> str:
@@ -1376,7 +1493,7 @@ def _sleep(seconds: int) -> None:
 
 
 def main() -> int:
-    global _log_file, WT
+    global _log_file
     parser = argparse.ArgumentParser(description="매화검 키우기 AI 자동 개발 루프")
     parser.add_argument("--watch", action="store_true", help="끝나지 않고 일정 간격으로 todo 를 확인")
     args = parser.parse_args()
@@ -1392,6 +1509,33 @@ def main() -> int:
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     _log_file = LOG_DIR / f"run_{_dt.datetime.now():%Y%m%d-%H%M%S}.log"
+    mode = "watch" if args.watch else "once"
+    log(f"실행 시작 (PID {os.getpid()}, 모드 {mode})")
+    code = 1
+    try:
+        owner = claim_running(mode)
+        if owner:
+            note = "" if owner.get("cmdline_known") else " (명령줄은 확인하지 못함. 그 루프가 아니라면 .loop/running.json 을 지우고 다시 실행)"
+            log(
+                f"이 프로젝트에서 루프가 이미 실행 중이라 시작하지 않음: PID {owner.get('pid')}, 모드 {owner.get('mode')}, "
+                f"시작 {owner.get('started_at')}, 로그 {owner.get('log_file')}{note}"
+            )
+            code = 4
+        else:
+            try:
+                code = _run(args)
+            finally:
+                release_running()
+        return code
+    except BaseException:
+        code = 1
+        raise
+    finally:
+        log(f"실행 끝 (종료 코드 {code})")
+
+
+def _run(args: argparse.Namespace) -> int:
+    global WT
     notifier = Notifier(load_env(ROOT / ".env"))
     loop: Loop | None = None
     try:
