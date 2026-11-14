@@ -42,6 +42,7 @@
 - **UI**: uGUI(`Canvas`, `Image`, `Button`)와 TextMeshPro를 코드로 만든다. 입력은 Input System을 쓰므로 `EventSystem`에는 `InputSystemUIInputModule`을 붙인다.
 - **화면 코드의 역할**: 입력을 Core에 전달하고 Core의 상태를 표시하는 것만 한다. 계산은 Core에 둔다.
 - **하지 않는 것**: `.unity`, `.prefab`, `.asset` 파일을 직접 고치지 않는다. 스프라이트 같은 리소스가 필요하면 `Resources.Load`로 읽고, 리소스가 없을 때도 동작하도록 단색 사각형 같은 대체 표시를 둔다.
+- **크기 기준**: 카메라, UI 기준 해상도, 스프라이트와 대체 표시의 크기는 [art.md](art.md)를 따른다 (가로 640×360, PPU 32).
 
 참고: `GameBootstrap`은 플레이 모드 테스트에서도 실행된다. 플레이 모드 테스트는 `[Game]` 루트가 이미 있다고 가정하고 쓴다.
 
