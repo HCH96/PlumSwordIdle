@@ -790,6 +790,10 @@ def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str) ->
     exe = shutil.which(cfg["claude_command"]) or cfg["claude_command"]
     cmd = [exe, "-p", "--output-format", "json", "--permission-mode", cfg["claude_permission_mode"]]
     cmd += ["--settings", str(write_claude_settings())]
+    if cfg.get("claude_model"):  # 비우면 CLI 기본 모델
+        cmd += ["--model", cfg["claude_model"]]
+    if cfg.get("claude_effort"):
+        cmd += ["--effort", cfg["claude_effort"]]
     if cfg.get("claude_allowed_tools"):
         cmd += ["--allowedTools", *cfg["claude_allowed_tools"]]
     cmd += ["--disallowedTools", *cfg.get("claude_disallowed_tools", []), *claude_path_rules()]
@@ -832,6 +836,11 @@ def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     last_msg_path = LOG_DIR / f"{log_name}.codex_last.txt"
     last_msg_path.unlink(missing_ok=True)
+    model_args: list[str] = []  # 비우면 ~/.codex/config.toml 값
+    if cfg.get("codex_model"):
+        model_args += ["-m", cfg["codex_model"]]
+    if cfg.get("codex_effort"):
+        model_args += ["-c", f"model_reasoning_effort={cfg['codex_effort']}"]
     cmd = [
         exe, "exec",
         "-s", cfg["codex_sandbox"],
@@ -839,6 +848,7 @@ def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
         "-C", str(WT),
         "--json", "--color", "never",
         "-o", str(last_msg_path),
+        *model_args,
         *cfg.get("codex_extra_args", []),
         "-",
     ]  # fmt: skip

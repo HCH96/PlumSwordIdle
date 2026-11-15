@@ -26,6 +26,8 @@
   },
   "claude_command": "claude",
   "claude_timeout_min": 60,
+  "claude_model": "claude-opus-5-5",
+  "claude_effort": "medium",
   "transient_error_patterns": [
     "connection error",
     "network error",
@@ -70,6 +72,8 @@
   ],
   "codex_command": "codex",
   "codex_timeout_min": 60,
+  "codex_model": "gpt-6.1-terra",
+  "codex_effort": "high",
   "codex_sandbox": "workspace-write",
   "codex_extra_args": [
     "-c", "sandbox_workspace_write.exclude_tmpdir_env_var=true",

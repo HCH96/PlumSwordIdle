@@ -100,6 +100,8 @@ python tools/loop/run_loop.py --watch   # 끝나지 않고 일정 간격으로 t
 | `transient_retry_wait_sec` | `300` | 감시 모드에서 일시적 오류 뒤 다시 시도하기까지 기다리는 시간(초) |
 | `transient_max_repeats` | `3` | 감시 모드에서 같은 일시적 오류가 이 횟수만큼 연속이면 멈춘다 |
 | `claude_*` | 설정 파일 참고 | 클로드 명령, 시간 제한, 권한 모드(`dontAsk`), 허용·금지 도구 (아래 "클로드 권한") |
+| `claude_model` / `claude_effort` | `claude-opus-5-5` / `medium` | 클로드 모델과 추론 강도. `claude -p`에 `--model`, `--effort`로 넘긴다. 비우거나 빼면 CLI 기본값 |
+| `codex_model` / `codex_effort` | `gpt-6.1-terra` / `high` | 코덱스 모델과 추론 강도. `codex exec`에 `-m`, `-c model_reasoning_effort=`로 넘긴다. 비우거나 빼면 `~/.codex/config.toml` 값 |
 | `codex_command` / `codex_timeout_min` / `codex_sandbox` | `codex` / `60` / `workspace-write` | 코덱스 명령, 시간 제한, 샌드박스 |
 | `codex_extra_args` | TEMP 쓰기 차단 옵션 | 코덱스에 덧붙이는 인자. 빌드 도구가 TEMP 폴더를 써야 하면 빼면 된다 |
 
@@ -296,7 +298,7 @@ git branch -d task/<문서이름> ...   # 필요하면
 
 - 클로드 실행이 사용량 한도로 판정되면 같은 작업 문서를 `codex exec`로 넘겨 계속한다. 작업 트리의 변경은 그대로 두고, 코덱스 프롬프트에 "이전 에이전트가 하던 변경이 남아 있다"는 안내와 마지막 실패 내용을 넣는다. 한도로 끊긴 실행은 재시도 횟수에 넣지 않는다. LOG "에이전트 전환".
 - 한 번 돌기에서는 클로드가 한도에 걸리면 **그 실행의 나머지 작업은 코덱스로** 처리한다. 감시 모드에서는 `limit_retry_after_min`이 지나면 다시 클로드를 먼저 시도한다.
-- 코덱스 실행: `codex exec -s workspace-write -c approval_policy=never -C <worktree> --json -o <로그> -` (+ `codex_extra_args`). 코덱스는 AGENTS.md를 읽고, 결과는 똑같이 `.loop/result.json`에 쓴다.
+- 코덱스 실행: `codex exec -s workspace-write -c approval_policy=never -C <worktree> --json -o <로그> -` (+ `codex_model`·`codex_effort`, `codex_extra_args`). 코덱스는 AGENTS.md를 읽고, 결과는 똑같이 `.loop/result.json`에 쓴다.
   - 권한: worktree 안 파일 수정만 허용(기본으로 TEMP 쓰기도 막음), 네트워크 차단, 승인 요청 없음. `--dangerously-*` 옵션은 쓰지 않는다.
   - 윈도우 확인(2026-11-12, codex-cli 0.167.2, `[windows] sandbox = "elevated"`): 워크트리 밖 사용자 폴더 쓰기는 "액세스 거부", 네트워크는 실패. TEMP 폴더는 기본으로 쓰기 허용이라 `codex_extra_args`로 막는다.
 - 클로드는 "클로드 권한"의 세 겹으로, 코덱스는 샌드박스로 worktree 밖 쓰기를 막는다.
