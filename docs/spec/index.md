@@ -7,3 +7,4 @@
 
 | 문서 | 기능 | 연결 지점 타입 |
 | --- | --- | --- |
+| [currency.md](currency.md) | 금화. 지급·소비 동작, 수치, 보유 금화 표시, 저장 값 | `PlumSword.Core.Currency.Wallet`, `PlumSword.Core.Currency.GoldText` |
