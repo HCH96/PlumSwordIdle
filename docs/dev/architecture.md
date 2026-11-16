@@ -9,6 +9,7 @@
 | `Assets/Scripts/Core/` | `PlumSword.Core` | 게임 로직. 재화, 강화 수치, 스테이지 진행, 경지 돌파, 오프라인 보상, 저장 데이터 | 없음 (순수 C#) |
 | `Assets/Scripts/Game/` | `PlumSword.Game` | 화면 코드. `MonoBehaviour`, 화면 조립, 입력 전달, 표시 | `PlumSword.Core`, uGUI, TextMeshPro, Input System |
 | `Assets/Tests/EditMode/` | `PlumSword.Core.Tests` | `PlumSword.Core`의 에딧 모드 테스트 | `PlumSword.Core`, NUnit |
+| `Assets/Tests/PlayMode/` | `PlumSword.Game.Tests` | 실제 실행이 필요한 플레이 모드 테스트. 게임이 켜지는지 보는 `GameBootTests`, 루프 증거용 화면 갈무리(`Capture/`) | `PlumSword.Core`, `PlumSword.Game`, uGUI, NUnit |
 
 - 기능별 하위 폴더를 만들고 네임스페이스를 폴더에 맞춘다. 예: `Assets/Scripts/Core/Currency/` → `PlumSword.Core.Currency`, 테스트는 `Assets/Tests/EditMode/Currency/` → `PlumSword.Core.Tests.Currency`.
 - 파일 하나에 공개 타입 하나, 파일 이름은 타입 이름과 같게 한다.
@@ -49,13 +50,16 @@
 ## 테스트
 
 - 게임 로직은 에딧 모드 테스트로 검사한다. 작업 문서의 완료 조건마다 테스트를 하나 이상 쓴다.
-- 플레이 모드 테스트는 실제 실행이 필요한 부분에만 쓴다. 아직 어셈블리가 없으며, 처음 필요해지는 작업에서 `Assets/Tests/PlayMode/`에 `PlumSword.Game.Tests`로 만들고 이 문서의 표에 추가한다.
+- 플레이 모드 테스트는 실제 실행이 필요한 부분에만 쓴다. `Assets/Tests/PlayMode/`의 `PlumSword.Game.Tests`에 넣는다 (네임스페이스 `PlumSword.Game.Tests.<기능>`).
+  - 테스트는 빈 씬에서 시작한다. 카메라가 필요하면 `SceneManager.LoadSceneAsync(0)`으로 첫 씬을 불러온다 (`GameBootTests` 참고). `[Game]` 루트는 씬을 바꿔도 남는다.
+  - 테스트 중에 오류 로그(`Debug.LogError`, 예외)가 나면 그 테스트는 실패한다. `GameBootTests`가 화면 조립 중의 오류를 이렇게 잡는다.
+  - `Capture/ScreenCaptureTests.cs`는 루프가 증거용 화면을 찍는 데 쓴다 ([loop.md](loop.md) "증거"). 작업에서 고치지 않는다.
 - 화면 없이 테스트를 돌리는 명령 (프로젝트 폴더에서):
   ```
   python tools/loop/run_unity_tests.py
   ```
   컴파일 오류, 실패한 테스트 이름과 메시지를 요약해 출력한다. 종료 코드 0이면 통과다. 테스트가 0개여도 실패다. 같은 프로젝트 폴더를 에디터로 열어 둔 상태에서는 실행할 수 없다.
-- 루프는 에이전트가 완료를 보고한 뒤 같은 래퍼로 전체 테스트를 돌려 판정한다 ([loop.md](loop.md) "테스트"). 에이전트는 보고 전에 직접 돌려 볼 수 있으면 돌려 보고, 돌릴 수 없는 환경이면 보고서에 "직접 실행하지 못함"이라고 적는다.
+- 루프는 에이전트가 완료를 보고한 뒤 같은 래퍼로 전체 테스트를 돌려 판정하고, 이어서 관문 검사와 교차 리뷰를 한다 ([loop.md](loop.md) "검증"). 있던 테스트를 지우거나 검사를 줄이면 관문에서 떨어진다. 에이전트는 보고 전에 직접 돌려 볼 수 있으면 돌려 보고, 돌릴 수 없는 환경이면 보고서에 "직접 실행하지 못함"이라고 적는다.
 
 ## `.meta` 파일
 

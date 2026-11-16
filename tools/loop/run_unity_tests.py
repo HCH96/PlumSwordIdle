@@ -6,7 +6,8 @@
 
 - 종료 코드: 0 통과, 1 실패(컴파일 오류, 테스트 실패, 테스트 0개, 시간 초과),
   2 실행할 수 없음(유니티를 못 찾음, 에디터가 같은 폴더를 열고 있음, 로그인 문제 등 코드로 고칠 수 없는 것)
-- 결과 파일과 로그는 <프로젝트>/.loop/test/ 에 남는다 (깃에서 제외된 폴더).
+- 결과 파일과 로그는 <프로젝트>/.loop/test/ 에 남는다 (깃에서 제외된 폴더). 합계는 summary.json 에도 쓴다.
+- --capture-dir <폴더> 를 주면 플레이 모드 테스트의 화면 갈무리(Assets/Tests/PlayMode/Capture)가 그 폴더에 PNG 를 남긴다.
 - 테스트 종류를 정하지 않으면 EditMode 를 돌리고, Assets/Tests/PlayMode 폴더가 있으면 PlayMode 도 돌린다.
 - 같은 프로젝트 폴더를 에디터로 열어 둔 상태에서는 실행할 수 없다.
 """
@@ -80,9 +81,9 @@ def _clip(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[:limit] + " …(잘림)"
 
 
-def _run(cmd: list[str], timeout_sec: float) -> int | None:
+def _run(cmd: list[str], timeout_sec: float, env: dict | None = None) -> int | None:
     """종료 코드를 돌려준다. 시간 초과면 하위 프로세스까지 끝내고 None."""
-    proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     try:
         return proc.wait(timeout=timeout_sec)
     except subprocess.TimeoutExpired:
@@ -134,8 +135,20 @@ def read_results(results_path: Path) -> tuple[dict, list[str]]:
     return counts, failures
 
 
-def run_platform(unity: Path, project: Path, platform: str, out_dir: Path, timeout_min: float) -> tuple[bool | None, str]:
-    """(통과 여부, 요약). 통과 여부가 None 이면 실행 환경 문제라 판정하지 못한 것."""
+CAPTURE_ENV = "PLUMSWORD_CAPTURE_DIR"  # Assets/Tests/PlayMode/Capture/ScreenCaptureTests.cs 가 읽는다
+
+
+def run_platform(
+    unity: Path, project: Path, platform: str, out_dir: Path, timeout_min: float, capture_dir: Path | None = None
+) -> tuple[bool | None, str, dict]:
+    """(통과 여부, 요약, 합계). 통과 여부가 None 이면 실행 환경 문제라 판정하지 못한 것."""
+    ok, text, counts = _run_platform(unity, project, platform, out_dir, timeout_min, capture_dir)
+    return ok, text, {"ok": ok, **counts}
+
+
+def _run_platform(
+    unity: Path, project: Path, platform: str, out_dir: Path, timeout_min: float, capture_dir: Path | None
+) -> tuple[bool | None, str, dict]:
     results = out_dir / f"results_{platform}.xml"
     log_path = out_dir / f"unity_{platform}.log"
     for stale in (results, log_path):
@@ -144,39 +157,43 @@ def run_platform(unity: Path, project: Path, platform: str, out_dir: Path, timeo
         str(unity), "-batchmode", "-projectPath", str(project), "-runTests", "-testPlatform", platform,
         "-testResults", str(results), "-logFile", str(log_path),
     ]  # fmt: skip
+    env = os.environ.copy()
+    env.pop(CAPTURE_ENV, None)
+    if capture_dir is not None and platform == "PlayMode":
+        env[CAPTURE_ENV] = str(capture_dir)
     started = time.time()
-    code = _run(cmd, timeout_min * 60)
+    code = _run(cmd, timeout_min * 60, env)
     took = f"{time.time() - started:.0f}초"
     head = f"[유니티 테스트] {platform}"
 
     if code is None:
-        return False, f"{head}: 실패 — 시간 초과 ({timeout_min:g}분). 로그: {log_path}"
+        return False, f"{head}: 실패 — 시간 초과 ({timeout_min:g}분). 로그: {log_path}", {}
 
     if not results.exists():
         errors, hints = read_log_problems(log_path)
         if errors:
             shown = "\n".join(errors[:MAX_COMPILE_ERRORS])
             more = f"\n…외 {len(errors) - MAX_COMPILE_ERRORS}건" if len(errors) > MAX_COMPILE_ERRORS else ""
-            return False, f"{head}: 실패 — 컴파일 오류 {len(errors)}건 ({took})\n{shown}{more}"
+            return False, f"{head}: 실패 — 컴파일 오류 {len(errors)}건 ({took})\n{shown}{more}", {}
         detail = "\n".join(hints[:10]) or "원인을 로그에서 찾지 못함"
         text = f"{head}: 실행할 수 없음 — 컴파일 오류 없이 테스트 결과 파일이 만들어지지 않음 (유니티 종료 코드 {code}, {took})\n"
-        return None, text + f"{detail}\n로그: {log_path}"
+        return None, text + f"{detail}\n로그: {log_path}", {}
 
     try:
         counts, failures = read_results(results)
     except (ET.ParseError, AttributeError, ValueError) as e:
-        return False, f"{head}: 실패 — 결과 파일을 읽을 수 없음 ({type(e).__name__}: {e}). 파일: {results}"
+        return False, f"{head}: 실패 — 결과 파일을 읽을 수 없음 ({type(e).__name__}: {e}). 파일: {results}", {}
 
     summary = f"{counts['total']}개 중 {counts['passed']}개 통과, {counts['failed']}개 실패"
     if counts["skipped"] or counts["inconclusive"]:
         summary += f", 건너뜀 {counts['skipped']}개, 판정 없음 {counts['inconclusive']}개"
     if counts["total"] == 0:
-        return False, f"{head}: 실패 — 테스트가 0개 ({took}). 테스트가 없으면 통과로 보지 않는다"
+        return False, f"{head}: 실패 — 테스트가 0개 ({took}). 테스트가 없으면 통과로 보지 않는다", counts
     if counts["failed"] or code != 0 or not counts["result"].startswith("Passed"):
         shown = "\n".join(failures[:MAX_FAILURES])
         more = f"\n…외 {len(failures) - MAX_FAILURES}건" if len(failures) > MAX_FAILURES else ""
-        return False, f"{head}: 실패 — {summary} ({took})\n{shown}{more}"
-    return True, f"{head}: 통과 — {summary} ({took})"
+        return False, f"{head}: 실패 — {summary} ({took})\n{shown}{more}", counts
+    return True, f"{head}: 통과 — {summary} ({took})", counts
 
 
 def main() -> int:
@@ -185,6 +202,7 @@ def main() -> int:
     parser.add_argument("--platform", action="append", choices=["EditMode", "PlayMode"], help="테스트 종류 (여러 번 줄 수 있음)")
     parser.add_argument("--unity", help="Unity 실행 파일 경로 (기본: 프로젝트 버전에 맞는 유니티 허브 설치)")
     parser.add_argument("--timeout-min", type=float, default=25, help="테스트 종류 하나의 시간 제한(분)")
+    parser.add_argument("--capture-dir", help="플레이 모드 테스트가 화면 갈무리(PNG)를 남길 폴더. 주지 않으면 갈무리하지 않는다")
     args = parser.parse_args()
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -205,11 +223,24 @@ def main() -> int:
     out_dir = project / ".loop" / "test"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    capture_dir = None
+    if args.capture_dir:
+        capture_dir = Path(args.capture_dir)
+        capture_dir = capture_dir if capture_dir.is_absolute() else project / capture_dir
+        capture_dir.mkdir(parents=True, exist_ok=True)
+        for stale in capture_dir.glob("*.png"):
+            stale.unlink()
+
+    summary_path = out_dir / "summary.json"
+    summary_path.unlink(missing_ok=True)
     outcomes = []
+    summary: dict = {}
     for platform in platforms:
-        ok, text = run_platform(unity, project, platform, out_dir, args.timeout_min)
+        ok, text, counts = run_platform(unity, project, platform, out_dir, args.timeout_min, capture_dir)
         print(text, flush=True)
         outcomes.append(ok)
+        summary[platform] = counts
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     if False in outcomes:  # 고칠 수 있는 실패가 하나라도 있으면 그것을 먼저 알린다
         print("[유니티 테스트] 결과: 실패")
         return 1

@@ -1,10 +1,12 @@
-"""매화검 키우기 — AI 자동 개발 루프 (2차 버전)
+"""매화검 키우기 — AI 자동 개발 루프 (3차 버전)
 
 tasks/todo 의 작업 문서를 선행 작업과 묶음 규칙에 따라 하나씩 꺼내, 루프 전용 git worktree 에서
-클로드 코드 CLI(한도 초과 시 코덱스 CLI)로 처리한다. 사용법과 규칙은 docs/dev/loop.md 참고.
+클로드 코드 CLI(한도 초과 시 코덱스 CLI)로 처리한다. 작업마다 테스트, 관문 검사, 교차 리뷰를 통과해야 완료되고,
+묶음이 끝나면 증거(docs/evidence)를 남기고 통합 브랜치에 합친 뒤 다음 묶음으로 넘어간다.
+main 에 올리는 것과 푸시는 사람이 한다. 사용법과 규칙은 docs/dev/loop.md 참고.
 
 실행:
-  python tools/loop/run_loop.py           한 번 돌고 끝남
+  python tools/loop/run_loop.py           꺼낼 작업이 없을 때까지 돌고 끝남
   python tools/loop/run_loop.py --watch   끝나지 않고 일정 간격으로 todo 를 확인
 
 종료 코드: 0 정상, 1 오류로 멈춤, 2 사용량 한도로 멈춤, 3 시작 전 점검 실패, 4 같은 프로젝트에서 이미 실행 중
@@ -29,6 +31,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]  # 사용자 폴더 (항상 main). tasks, .env, .loop 는 여기 것을 쓴다
 TOOL_DIR = Path(__file__).resolve().parent
+if str(TOOL_DIR) not in sys.path:  # 다른 스크립트가 이 모듈을 불러 쓸 때도 옆의 모듈을 찾게 한다
+    sys.path.insert(0, str(TOOL_DIR))
+
+import loop_evidence  # noqa: E402
+import loop_gate  # noqa: E402
+
 CONFIG_PATH = TOOL_DIR / "loop_config.json"
 LOCAL_CONFIG_PATH = TOOL_DIR / "loop_config.local.json"
 TASKS = ROOT / "tasks"
@@ -536,6 +544,27 @@ def append_section(doc: Path, title: str, body: str) -> None:
         f.write(f"\n\n## {title} ({stamp})\n\n{body.strip()}\n")
 
 
+_TAIL_TITLES = ("보고서", "보류 사유", "답변", "루프 기록")  # 양식 칸 뒤에 덧붙는 절
+
+
+def doc_head(text: str) -> str:
+    """작업 문서에서 사람이 승인한 부분(양식 칸). 보고서·보류 사유·답변·루프 기록 앞까지다."""
+    for m in _HEADING_RE.finditer(text):
+        if m.group(1).strip().startswith(_TAIL_TITLES):
+            return text[: m.start()]
+    return text
+
+
+def restore_doc_head(doc: Path, original_head: str) -> bool:
+    """에이전트가 작업 문서의 양식 칸(요구사항, 완료 조건, 관문 예외 등)을 고쳤으면 원래대로 되돌린다."""
+    text = doc.read_text(encoding="utf-8-sig")
+    head = doc_head(text)
+    if head.strip() == original_head.strip():
+        return False
+    doc.write_text(original_head.rstrip("\n") + "\n\n" + text[len(head) :].lstrip("\n"), encoding="utf-8")
+    return True
+
+
 def cycle_members(graph: dict[str, list[str]]) -> dict[str, list[str]]:
     """순환에 걸린 문서 → 순환 경로. graph 는 아직 끝나지 않은 문서끼리의 선행 작업 관계."""
     found: dict[str, list[str]] = {}
@@ -651,6 +680,105 @@ def retry_prompt(reason: str) -> str:
 
 원인을 고친 뒤 작업 문서의 "## 보고서" 절을 갱신하고, .loop/result.json 을 다시 써라.
 규칙과 "하지 말 것"은 처음 지시와 같다."""
+
+
+def gate_feedback(violations: str, loop_branch: str) -> str:
+    return f"""테스트는 통과했지만 관문 검사(스크립트가 하는 규칙 검사)에 걸렸다. 이 상태로는 합쳐지지 않는다.
+
+{violations}
+
+위반을 없애라.
+- 바꾸면 안 되는 파일을 바꿨으면 원래 내용으로 되돌린다. 깃으로 되돌리는 명령은 막혀 있으니
+  `git show {loop_branch}:<경로>` 로 원래 내용을 보고 고쳐 쓴다. 새로 만든 파일이면 지운다 (.meta 도 같이).
+- 테스트를 지우거나 약하게 만들었으면 되살린다. 완료 조건마다 그것을 실제로 검사하는 테스트가 있어야 한다.
+- 작업 문서가 그 변경을 꼭 요구해서 없앨 수 없으면, 우회하지 말고 blocked 로 보고해라 (사람의 승인이 필요하다)."""
+
+
+def review_feedback(review: dict) -> str:
+    items = [f for f in review.get("findings") or [] if f.get("severity") in ("fix", "human")]
+    listing = "\n".join(f"- {f.get('text', '')}" for f in items) or "- (지적 목록이 비어 있다. 요약을 보고 판단해라)"
+    return f"""테스트와 관문은 통과했지만, 다른 에이전트의 리뷰가 아래 문제를 찾았다. 이 상태로는 합쳐지지 않는다.
+
+리뷰 요약: {review.get("summary", "")}
+
+고칠 것:
+{listing}
+
+하나씩 확인하고 고쳐라. 지적이 틀렸다고 판단하면 고치지 말고, 왜 틀렸는지를 보고서의 "### 가정" 아래에 근거(파일과 줄)와 함께 적어라.
+리뷰어는 그 설명을 읽고 다시 판단한다."""
+
+
+def review_prompt(doc_name: str, loop_branch: str, snapshot: str, gate_warnings: list[str], implementer: str) -> str:
+    warnings = "\n".join("- " + w for w in gate_warnings) or "- 없음"
+    return f"""너는 자동 개발 루프의 리뷰어다. 다른 에이전트({implementer})가 작업 문서 하나를 구현했고, 테스트와 기계 검사(관문)는 통과했다.
+네 판정이 "pass" 면 사람의 확인 없이 통합 브랜치에 합쳐진다. 사람은 자리에 없다. 구현한 에이전트의 보고서를 믿지 말고 코드를 직접 읽어라.
+
+작업 폴더: 루프 전용 git worktree (현재 폴더). **아무것도 고치지 않는다. 읽기만 한다.**
+작업 문서: tasks/doing/{doc_name} (끝의 "## 보고서"는 구현한 에이전트가 쓴 것이다)
+이 작업의 변경: `git diff {loop_branch} {snapshot}` (파일 목록은 `--stat`). 파일 전체는 작업 폴더에서 그대로 읽으면 된다.
+규칙: CLAUDE.md, docs/dev/architecture.md, 작업 문서의 "참고 문서"에 적힌 사양(docs/spec/). docs/design/, docs/project/, docs/archive/ 는 읽지 않는다.
+
+기계 검사가 "사람이 볼 것"으로 남긴 항목:
+{warnings}
+
+확인할 것:
+1. 완료 조건마다 그것을 실제로 검사하는 테스트가 있는가. 이름만 보지 말고 본문의 검사(Assert)가 그 조건의 상황과 기대 결과(숫자 포함)를 확인하는지 읽는다.
+   [테스트]·[플레이 모드]·표시 없는 조건은 테스트가 있어야 한다. [컴파일]은 "루프가 판정", [사람 확인]은 "사람 확인"으로 적고 문제 삼지 않는다.
+   "기존 테스트가 모두 통과한다" 같은 조건도 "루프가 판정"이다.
+2. 요구사항이 빠짐없이 구현됐는가. 보고서에 했다고 적힌 것이 코드에 정말 있는가.
+3. 테스트를 통과시키려고 테스트나 기대값을 구현에 맞춰 바꾸지 않았는가. 위 기계 검사 항목에 지워진 검사가 있으면 뜻이 약해졌는지 읽는다.
+4. 작업 문서의 "하지 말 것"을 건드리지 않았는가. 다른 기능의 내부 코드를 직접 고치지 않았는가 (연결 지점으로만 쓴다).
+5. 계산이 화면 코드(Assets/Scripts/Game)에 들어가지 않았는가. 화면 코드는 입력 전달과 표시만 한다.
+6. 보고서의 "가정"이 사양(docs/spec/)과 어긋나지 않는가. 보고서에 적히지 않은 임시 수치나 스스로 정한 동작이 코드에 있는가.
+7. 작업 문서에 "## 답변" 절이 있으면 사람의 답대로 구현됐는가.
+
+판정:
+- "pass": 위 항목에 문제가 없다. 사소한 지적(이름, 주석, 정리)은 severity "note" 로 남기고 pass 로 한다.
+- "fix": 구현한 에이전트가 고칠 수 있는 문제가 있다 (테스트 없는 완료 조건, 약한 테스트, 빠진 요구사항, 하지 말 것 침범, 화면 코드의 계산).
+- "human": 사람의 결정이 필요하다 (사양과 어긋나는 가정, 다른 기능의 연결 지점을 바꿈, 사양이 서로 모순됨, 작업 문서대로 하면 규칙을 어기게 됨).
+확신이 없으면 pass 로 하지 않는다. 다만 취향 차이나 작업 범위 밖의 개선을 이유로 fix 를 주지 않는다. 구현한 에이전트가 보고서에 지적이 틀린 이유를 적었으면 그 근거를 확인하고 다시 판단한다.
+
+마지막 메시지는 아래 JSON 하나만 쓴다 (설명이나 코드 블록 표시 없이). 글은 한국어로 쓴다.
+{{"verdict": "pass" | "fix" | "human",
+  "summary": "한두 문장",
+  "criteria": [{{"condition": "완료 조건을 짧게", "test": "테스트 클래스.메서드 (없으면 -)", "verdict": "있음" | "약함" | "빠짐" | "루프가 판정" | "사람 확인"}}],
+  "findings": [{{"severity": "fix" | "human" | "note", "text": "무엇이 문제인지와 위치 (파일:줄)"}}],
+  "question": "verdict 가 human 일 때 사람에게 할 질문 (아니면 빈 문자열)",
+  "recommendation": "verdict 가 human 일 때 추천안 (아니면 빈 문자열)"}}
+"""
+
+
+def parse_review(text: str) -> dict | None:
+    """리뷰어의 마지막 메시지에서 판정 JSON 을 찾는다. 형식이 맞지 않으면 None."""
+    text = text or ""
+    decoder = json.JSONDecoder()
+    found = None
+    for m in re.finditer(r"\{", text):
+        try:
+            obj, _ = decoder.raw_decode(text[m.start() :])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict) and obj.get("verdict") in ("pass", "fix", "human"):
+            found = obj
+            break
+    if found is None:
+        return None
+    clean = {
+        "verdict": found["verdict"],
+        "summary": str(found.get("summary", ""))[:1500],
+        "question": str(found.get("question", ""))[:1500],
+        "recommendation": str(found.get("recommendation", ""))[:1500],
+        "criteria": [],
+        "findings": [],
+    }
+    for c in found.get("criteria") or []:
+        if isinstance(c, dict):
+            clean["criteria"].append({k: str(c.get(k, ""))[:400] for k in ("condition", "test", "verdict")})
+    for f in found.get("findings") or []:
+        if isinstance(f, dict) and f.get("text"):
+            sev = f.get("severity") if f.get("severity") in ("fix", "human", "note") else "note"
+            clean["findings"].append({"severity": sev, "text": str(f["text"])[:1200]})
+    return clean
 
 
 def handoff_note(prev_agent: str) -> str:
@@ -786,7 +914,8 @@ def write_claude_settings() -> Path:
     return path
 
 
-def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str) -> dict:
+def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str, review: bool = False) -> dict:
+    """review=True 면 리뷰어로 실행한다: 파일을 고치는 도구를 뺀 허용 목록을 쓴다."""
     exe = shutil.which(cfg["claude_command"]) or cfg["claude_command"]
     cmd = [exe, "-p", "--output-format", "json", "--permission-mode", cfg["claude_permission_mode"]]
     cmd += ["--settings", str(write_claude_settings())]
@@ -794,16 +923,18 @@ def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str) ->
         cmd += ["--model", cfg["claude_model"]]
     if cfg.get("claude_effort"):
         cmd += ["--effort", cfg["claude_effort"]]
-    if cfg.get("claude_allowed_tools"):
-        cmd += ["--allowedTools", *cfg["claude_allowed_tools"]]
+    allowed = cfg.get("claude_review_allowed_tools") if review else cfg.get("claude_allowed_tools")
+    if allowed:
+        cmd += ["--allowedTools", *allowed]
     cmd += ["--disallowedTools", *cfg.get("claude_disallowed_tools", []), *claude_path_rules()]
     if session_id:
         cmd += ["--resume", session_id]
 
-    proc = _run_child(cmd, prompt, cfg["claude_timeout_min"], "클로드")
+    timeout_min = cfg.get("review_timeout_min", 30) if review else cfg["claude_timeout_min"]
+    proc = _run_child(cmd, prompt, timeout_min, "클로드")
     _write_agent_log(log_name, proc)
     if proc.returncode is None:
-        raise AgentFailure("claude", f"실행 시간 초과 ({cfg['claude_timeout_min']}분)")
+        raise AgentFailure("claude", f"실행 시간 초과 ({timeout_min}분)")
 
     data: dict = {}
     out = proc.stdout.strip()
@@ -831,7 +962,8 @@ def run_claude(cfg: dict, prompt: str, session_id: str | None, log_name: str) ->
     return data
 
 
-def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
+def run_codex(cfg: dict, prompt: str, log_name: str, review: bool = False) -> dict:
+    """review=True 면 리뷰어로 실행한다: 읽기 전용 샌드박스를 쓴다."""
     exe = shutil.which(cfg["codex_command"]) or cfg["codex_command"]
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     last_msg_path = LOG_DIR / f"{log_name}.codex_last.txt"
@@ -843,7 +975,7 @@ def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
         model_args += ["-c", f"model_reasoning_effort={cfg['codex_effort']}"]
     cmd = [
         exe, "exec",
-        "-s", cfg["codex_sandbox"],
+        "-s", cfg.get("codex_review_sandbox", "read-only") if review else cfg["codex_sandbox"],
         "-c", "approval_policy=never",
         "-C", str(WT),
         "--json", "--color", "never",
@@ -852,10 +984,11 @@ def run_codex(cfg: dict, prompt: str, log_name: str) -> dict:
         *cfg.get("codex_extra_args", []),
         "-",
     ]  # fmt: skip
-    proc = _run_child(cmd, prompt, cfg["codex_timeout_min"], "코덱스")
+    timeout_min = cfg.get("review_timeout_min", 30) if review else cfg["codex_timeout_min"]
+    proc = _run_child(cmd, prompt, timeout_min, "코덱스")
     _write_agent_log(log_name, proc)
     if proc.returncode is None:
-        raise AgentFailure("codex", f"실행 시간 초과 ({cfg['codex_timeout_min']}분)")
+        raise AgentFailure("codex", f"실행 시간 초과 ({timeout_min}분)")
 
     last_msg = last_msg_path.read_text(encoding="utf-8", errors="replace") if last_msg_path.exists() else ""
     turn_failed = False
@@ -895,8 +1028,24 @@ def read_result() -> dict | None:
     return data if isinstance(data, dict) and data.get("status") in ("done", "blocked") else None
 
 
-def run_tests(cfg: dict) -> tuple[bool, str]:
-    command = (cfg.get("test_command") or "").strip()
+def test_dir() -> Path:
+    return WT / ".loop" / "test"
+
+
+def read_test_summary() -> dict:
+    """테스트 래퍼가 남긴 합계 (.loop/test/summary.json). 없으면 빈 값."""
+    try:
+        data = json.loads((test_dir() / "summary.json").read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def run_tests(cfg: dict, final: bool = False) -> tuple[bool, str]:
+    """final=True 면 루프를 합치기 직전의 전체 테스트다 (final_test_command. 화면 갈무리도 남긴다)."""
+    command = (cfg.get("final_test_command") if final else "") or cfg.get("test_command") or ""
+    command = command.strip()
+    (test_dir() / "summary.json").unlink(missing_ok=True)
     if not command:
         return True, "테스트 명령이 비어 있어 건너뜀"
     # {python}: 이 스크립트를 실행한 파이썬, {loop_tools}: 사용자 폴더의 tools/loop.
@@ -944,8 +1093,22 @@ class Loop:
         self.limited_at: dict[str, float] = {}  # 에이전트 → 한도에 걸린 시각
 
     @property
-    def base(self) -> str:
+    def main(self) -> str:
+        """사람이 일하는 브랜치. 스크립트는 읽기만 한다."""
         return self.cfg["base_branch"]
+
+    @property
+    def base(self) -> str:
+        """루프 브랜치를 따고 합치는 기준: 통합 브랜치. 설정이 비어 있으면 main 과 같다."""
+        return self.cfg.get("integration_branch") or self.cfg["base_branch"]
+
+    @property
+    def auto_merge(self) -> bool:
+        return bool(self.cfg.get("auto_merge", True))
+
+    @property
+    def loop_id(self) -> str:
+        return self.loop_branch[len(self.cfg["loop_branch_prefix"]) :]
 
     def doc(self, path: Path) -> Doc:
         return Doc(path, self.cfg["default_bundle"])
@@ -977,14 +1140,19 @@ class Loop:
                 raise PreflightError(f"{WT} 가 이미 있지만 이 저장소의 worktree 가 아님. 확인 후 지우거나 worktree_path 를 바꿔 주세요")
             return
         git("worktree", "prune")
-        git("worktree", "add", "--detach", str(WT), self.base)
+        git("worktree", "add", "--detach", str(WT), self.main)
         log(f"루프 worktree 생성: {WT}")
 
     def preflight(self) -> None:
         if git("rev-parse", "--is-inside-work-tree", check=False).returncode != 0:
             raise PreflightError("깃 저장소가 아님")
-        if not branch_exists(self.base):
-            raise PreflightError(f"기준 브랜치 {self.base} 가 없음")
+        if not branch_exists(self.main):
+            raise PreflightError(f"기준 브랜치 {self.main} 가 없음")
+        if self.auto_merge and self.base == self.main:
+            raise PreflightError(
+                f"auto_merge 가 켜져 있는데 통합 브랜치가 {self.main} 과 같음. {self.main} 은 사용자 폴더에 체크아웃되어 있어 "
+                "스크립트가 합칠 수 없습니다. integration_branch 를 정하거나 auto_merge 를 끄세요"
+            )
         self.ensure_worktree()
         self.state = load_state()
         active = self.state.get("loop_branch") if self.state.get("status") == "active" else None
@@ -995,16 +1163,47 @@ class Loop:
             self.recover_dirty(dirty, active)
         if self.state.pop("last_stop", None) is not None:
             save_state(self.state)  # 멈춘 이유는 바로 다음 실행의 복구에만 쓴다
+        self.sync_integration(moving=not active)
         unmerged = [
             b for b in local_branches(self.cfg["loop_branch_prefix"]) if b != active and not is_ancestor(b, self.base)
         ]
         if unmerged:
             raise PreflightError(
-                f"완료됐지만 {self.base} 에 합쳐지지 않은 루프 브랜치가 있음. 확인 후 직접 합치거나 정리해 주세요:\n"
+                f"끝났지만 {self.base} 에 합쳐지지 않은 루프 브랜치가 있음. 확인 후 직접 합치거나 정리해 주세요:\n"
                 + "\n".join(f"- {b}" for b in unmerged)
             )
         self.loop_branch = active or ""
         self.bundle = self.state.get("bundle", self.cfg["default_bundle"]) if active else ""
+
+    def sync_integration(self, moving: bool) -> None:
+        """통합 브랜치가 없으면 main 에서 만들고, main 에 새 커밋(사양 문서 등)이 있으면 통합 브랜치에 합친다.
+
+        루프가 진행 중일 때(moving=False)는 만들기만 하고 합치지 않는다. 기준이 루프 도중에 움직이지 않게 한다.
+        """
+        integ, main = self.base, self.main
+        if integ == main:
+            return
+        if not branch_exists(integ):
+            git("branch", integ, main)
+            log(f"통합 브랜치 생성: {integ} ({main} 에서)")
+            return
+        if not moving or is_ancestor(main, integ):
+            return
+        if wgit("checkout", integ, check=False).returncode != 0:
+            raise PreflightError(
+                f"통합 브랜치 {integ} 를 루프 worktree 에서 체크아웃할 수 없음. 다른 폴더(사용자 폴더 등)에서 "
+                f"{integ} 를 체크아웃하고 있으면 {main} 으로 돌아가 주세요"
+            )
+        merged = wgit("merge", "--no-edit", main, check=False)
+        if merged.returncode != 0:
+            wgit("merge", "--abort", check=False)
+            wgit("checkout", "--detach")
+            raise PreflightError(
+                f"{main} 의 새 커밋을 통합 브랜치 {integ} 에 합치다 충돌함. 직접 풀어 주세요 "
+                f"(루프 worktree 에서 git checkout {integ} → git merge {main}):\n{truncate(merged.stdout + merged.stderr, 800)}"
+            )
+        wgit("checkout", "--detach")
+        log(f"{main} 의 새 커밋을 통합 브랜치 {integ} 에 합침")
 
     def recover_dirty(self, dirty: str, active: str | None) -> None:
         """이전 실행이 중간에 멈춰 worktree 에 남은 변경을 기능 브랜치에 작업 중 커밋으로 넣는다.
@@ -1040,22 +1239,24 @@ class Loop:
         )
 
     # ── 선행 작업 판단 ──
-    def unmet(self, doc: Doc, ref: str, use_done: bool) -> tuple[list[str], list[str]]:
-        """(미완료 선행 작업 '이름(폴더)', 어디에도 없는 선행 작업)"""
+    def unmet(self, doc: Doc, ref: str) -> tuple[list[str], list[str]]:
+        """(미완료 선행 작업 '이름(폴더)', 어디에도 없는 선행 작업)
+
+        완료 판정은 ref(통합 브랜치, 루프 안에서는 루프 브랜치)의 docs/history 기록뿐이다.
+        tasks/done 에 있어도 합쳐지지 않은 작업은 끝난 것으로 보지 않는다.
+        """
         pending, missing = [], []
         for dep in doc.deps:
-            if use_done and (DONE / f"{dep}.md").exists():
-                continue
             if file_in_branch(ref, f"{HISTORY_REL}/{dep}.md"):
                 continue
             folder = find_doc(dep)
             if folder:
-                pending.append(f"{dep}({folder})")
+                pending.append(f"{dep}({'done, 아직 합쳐지지 않음' if folder == 'done' else folder})")
             else:
                 missing.append(dep)
         return pending, missing
 
-    def triage(self, ref: str, use_done: bool) -> None:
+    def triage(self, ref: str) -> None:
         """순환은 blocked 로, 선행 작업이 안 끝난 todo 문서는 wait 로 옮긴다."""
         graph: dict[str, list[str]] = {}
         for folder in (TODO, WAIT, BLOCKED, DOING):
@@ -1079,7 +1280,7 @@ class Loop:
 
         for p in task_docs(TODO):
             doc = self.doc(p)
-            pending, missing = self.unmet(doc, ref, use_done)
+            pending, missing = self.unmet(doc, ref)
             if not pending and not missing:
                 continue
             move_doc(p, WAIT)
@@ -1093,7 +1294,7 @@ class Loop:
                 log(f"대기: {p.name} ← {', '.join(pending)}")
                 self.n.send("LOG", f"대기로 이동: {p.name}", f"기다리는 선행 작업: {', '.join(pending)}")
 
-    def promote(self, ref: str, use_done: bool, bundle: str | None, trigger: str | None = None) -> None:
+    def promote(self, ref: str, bundle: str | None, trigger: str | None = None) -> None:
         """선행 작업이 모두 끝난 wait 문서를 todo 로 올린다."""
         for p in task_docs(WAIT):
             doc = self.doc(p)
@@ -1101,17 +1302,17 @@ class Loop:
                 continue
             if trigger is not None and trigger not in doc.deps:
                 continue
-            pending, missing = self.unmet(doc, ref, use_done)
+            pending, missing = self.unmet(doc, ref)
             if pending or missing:
                 continue
             move_doc(p, TODO)
             log(f"대기 해제 → todo: {p.name}")
             self.n.send("LOG", f"대기 해제: {p.name}", f"선행 작업이 모두 끝나 todo 로 올림 ({', '.join(doc.deps)})\n기준: `{ref}`")
 
-    def wait_summary(self, ref: str, use_done: bool) -> str:
+    def wait_summary(self, ref: str) -> str:
         lines = []
         for p in task_docs(WAIT):
-            pending, missing = self.unmet(self.doc(p), ref, use_done)
+            pending, missing = self.unmet(self.doc(p), ref)
             why = ", ".join(pending + [f"{m}(없음)" for m in missing]) or "(선행 작업 완료, 다음 확인 때 올라감)"
             lines.append(f"- {p.name} ← {why}")
         return "\n".join(lines)
@@ -1125,14 +1326,15 @@ class Loop:
             log(f"진행 중인 루프 이어서 실행: {self.loop_branch} (묶음 {self.bundle})")
             return True
 
-        self.promote(self.base, use_done=False, bundle=None)
-        self.triage(self.base, use_done=False)
+        self.promote(self.base, bundle=None)
+        self.triage(self.base)
         todo = task_docs(TODO)
         if not todo and not task_docs(DOING):
-            waiting = self.wait_summary(self.base, use_done=False)
+            waiting = self.wait_summary(self.base)
             log("꺼낼 작업이 없음. 루프를 만들지 않음")
             if waiting:
                 self.n.send_once("idle", waiting, "LOG", "꺼낼 작업 없음 (대기 중)", f"**대기 중인 작업**\n{waiting}")
+            self.notify_all_done(waiting)
             return False
         self.n.reset("idle")
 
@@ -1159,8 +1361,31 @@ class Loop:
         )
         return True
 
-    def mark_processed(self, name: str, branch: str, agents: str = "") -> None:
-        self.state.setdefault("processed", []).append({"doc": name, "branch": branch, "agents": agents})
+    def notify_all_done(self, waiting: str) -> None:
+        """꺼낼 작업이 없고 통합 브랜치가 main 보다 앞서 있으면, 사람이 확인할 차례라고 한 번 알린다."""
+        if self.base == self.main or not branch_exists(self.base):
+            return
+        ahead = git("rev-list", "--count", f"{self.main}..{self.base}").stdout.strip()
+        if ahead in ("", "0"):
+            return
+        merges = git("log", "--first-parent", "--merges", "--format=- %s", f"{self.main}..{self.base}").stdout.strip()
+        blocked = "\n".join(f"- {p.name}" for p in task_docs(BLOCKED))
+        tip = git("rev-parse", self.base).stdout.strip()
+        body = (
+            f"todo 가 비었습니다. 통합 브랜치 `{self.base}` 가 `{self.main}` 보다 커밋 {ahead}개 앞서 있습니다.\n\n"
+            f"**합쳐진 루프**\n{merges or '- (루프 병합 없음)'}\n\n"
+            f"**확인**: `git show {self.base}:{loop_evidence.EVIDENCE_REL}/index.md` (루프별 증거 색인)\n"
+            f"**올리기**: {self.main} 에서 `git merge --ff-only {self.base}` → 확인 후 푸시"
+        )
+        if blocked:
+            body += f"\n\n**보류 (답이 필요함)**\n{blocked}"
+        if waiting:
+            body += f"\n\n**대기 중**\n{waiting}"
+        log(f"꺼낼 작업 없음. {self.base} 가 {self.main} 보다 커밋 {ahead}개 앞섬 (사람이 확인할 차례)")
+        self.n.send_once("all-done", f"{tip}|{blocked}", "DONE", "모든 작업 끝: 확인할 차례", body)
+
+    def mark_processed(self, name: str, branch: str, agents: str = "", extra: dict | None = None) -> None:
+        self.state.setdefault("processed", []).append({"doc": name, "branch": branch, "agents": agents, **(extra or {})})
         save_state(self.state)
 
     def ff_merge_into_loop(self, task_branch: str) -> None:
@@ -1233,6 +1458,11 @@ class Loop:
         self.n.send("LOG", f"작업 시작: {name}", f"에이전트: {agent}\n기능 브랜치: `{tb}`\n루프 브랜치: `{self.loop_branch}`")
 
         max_retries = int(self.cfg["max_retries"])
+        max_fix_rounds = int(self.cfg.get("review_max_fix_rounds", 2))
+        fix_rounds = 0
+        # 사람이 승인한 부분(양식 칸)과 거기 적힌 관문 예외. 에이전트가 고쳐도 이것을 기준으로 한다
+        original_head = doc_head(doc.read_text(encoding="utf-8-sig"))
+        exceptions = loop_gate.doc_exceptions(original_head)
         entries: list[tuple[str, int | None]] = []
         session_id: str | None = None
         feedback = ""
@@ -1283,7 +1513,7 @@ class Loop:
                 self.limited_at[agent] = time.time()
                 entries.append((agent, None))
                 if wt_doc_path(name).exists():
-                    sync_from_wt(doc)
+                    self.pull_doc(doc, original_head)
                 nxt = self.current_agent()
                 if nxt is None:
                     self.stop_for_usage_limit(doc, tb, entries, e.detail)
@@ -1298,7 +1528,7 @@ class Loop:
                 self.check_root(root_before, agent, name)
                 self.undo_agent_commits(head_before, tb, agent, name)
                 if wt_doc_path(name).exists():
-                    sync_from_wt(doc)
+                    self.pull_doc(doc, original_head)
                 if e.transient:  # 일시적 오류는 시도 횟수에 넣지 않고, 정리한 뒤 나중에 다시 시도한다
                     self.park(doc, tb, "일시적 오류로 중단", f"{agent} {e.detail}")
                     raise TransientError(f"{agent} {e.detail}")
@@ -1311,7 +1541,7 @@ class Loop:
 
             self.check_root(root_before, agent, name)  # 사본을 되돌려 복사하기 전에 비교한다
             entries.append((agent, attempt))
-            sync_from_wt(doc)
+            self.pull_doc(doc, original_head)
             self.undo_agent_commits(head_before, tb, agent, name)
 
             result = read_result()
@@ -1325,11 +1555,80 @@ class Loop:
 
             ok, test_output = run_tests(self.cfg)
             log(f"테스트: {'통과' if ok else '실패'} ({test_output.splitlines()[0] if test_output else ''})")
-            if ok:
-                self.complete(doc, tb, result.get("summary", ""), entries)
-                return "done"
-            last_failure = "테스트 실패\n" + tail(test_output, 1500)
-            feedback = "테스트가 실패했다.\n" + tail(test_output, 6000)
+            if not ok:
+                last_failure = "테스트 실패\n" + tail(test_output, 1500)
+                feedback = "테스트가 실패했다.\n" + tail(test_output, 6000)
+                continue
+            tests = read_test_summary()
+
+            # 관문: 스크립트가 하는 규칙 검사. 작업 중 상태를 스냅숏 커밋으로 만들어 루프 브랜치와 비교한다
+            snap, tree = self.snapshot()
+            doc_text = doc.read_text(encoding="utf-8-sig")
+            gate = loop_gate.check(WT, self.loop_branch, snap, mode="task", doc_text=doc_text, exceptions=exceptions)
+            if gate["violations"]:
+                listing = loop_gate.format_violations(gate)
+                log(f"관문: 위반 {len(gate['violations'])}건 → 다시 시도: {name}\n{truncate(listing, 1500)}")
+                last_failure = "관문 검사 위반\n" + truncate(listing, 1500)
+                feedback = gate_feedback(truncate(listing, 5000), self.loop_branch)
+                continue
+            log(f"관문: 위반 없음 (확인 필요 {len(gate['warnings'])}건, 새 테스트 {len(gate['stats']['new_tests'])}개)")
+
+            # 교차 리뷰: 구현하지 않은 쪽 에이전트가 읽기만 하며 확인한다
+            review = self.review(doc, tb, snap, tree, gate, entries, stem, attempt)
+            if review is None:
+                self.stop_for_usage_limit(doc, tb, entries, "리뷰할 에이전트가 모두 사용량 한도에 걸림")
+                raise AllAgentsLimited()
+            review["fix_rounds"] = fix_rounds
+            who = f"{review.get('reviewer', '-')}{'' if review.get('cross', True) else ' (같은 에이전트)'}"
+            log(f"리뷰: {review['verdict']} ({who}) {truncate(review.get('summary', ''), 300)}")
+            problems = "\n".join(f"- [{f['severity']}] {f['text']}" for f in review.get("findings", []) if f["severity"] != "note")
+            if review["verdict"] == "fix":
+                fix_rounds += 1
+                if fix_rounds > max_fix_rounds:
+                    self.block(
+                        doc, tb,
+                        f"교차 리뷰({who})를 {max_fix_rounds}번 고친 뒤에도 통과하지 못함.\n리뷰 요약: {review.get('summary', '')}\n{problems}",
+                        "리뷰 지적이 맞는지 확인하고, 맞으면 작업 문서를 고치거나 어떻게 고칠지 알려 주세요. 틀렸으면 그대로 진행하라고 답해 주세요.",
+                        "지적이 사소하면 '리뷰 지적은 무시하고 진행'이라고 답한다. 답변은 리뷰어에게도 전달된다",
+                        entries,
+                    )  # fmt: skip
+                    return "blocked"
+                last_failure = f"교차 리뷰({who})가 고칠 것을 찾음 ({fix_rounds}/{max_fix_rounds})\n{truncate(problems, 1500)}"
+                feedback = review_feedback(review)
+                continue
+            if review["verdict"] == "human":
+                self.block(
+                    doc, tb,
+                    f"교차 리뷰({who})가 사람의 결정이 필요하다고 판정함.\n리뷰 요약: {review.get('summary', '')}\n{problems}",
+                    review.get("question") or "위 지적을 어떻게 처리할까요?",
+                    review.get("recommendation") or "지적을 확인하고 방향을 정해 답한다",
+                    entries,
+                )  # fmt: skip
+                return "blocked"
+            if review["verdict"] != "pass":
+                self.block(
+                    doc, tb,
+                    f"교차 리뷰를 실행하지 못함: {review.get('summary', '')}",
+                    "리뷰 에이전트가 왜 실패했는지 확인해 주세요 (.loop/logs 의 *_review*_ 로그).",
+                    "원인을 해결한 뒤 todo 로 옮긴다. 리뷰 없이 진행하려면 loop_config.local.json 에 review_enabled: false",
+                    entries,
+                )  # fmt: skip
+                return "blocked"
+
+            evidence = {
+                "summary": result.get("summary", ""),
+                "review": review,
+                "tests": tests,
+                "new_tests": gate["stats"]["new_tests"],
+                "screen_files": gate["stats"]["screen_files"],
+                "human_conditions": gate["stats"]["human_conditions"],
+                "gate_warnings": gate["warnings"],
+                "assumptions": loop_gate.report_items(doc_text, "가정"),
+                "human_report": loop_gate.report_items(doc_text, "사람이 확인할 것"),
+                "exceptions": sorted(exceptions),
+            }
+            self.complete(doc, tb, result.get("summary", ""), entries, evidence)
+            return "done"
 
         self.block(
             doc,
@@ -1340,6 +1639,82 @@ class Loop:
             entries,
         )
         return "blocked"
+
+    def pull_doc(self, doc: Path, original_head: str) -> None:
+        """worktree 의 작업 문서 사본을 사용자 폴더로 되돌려 복사한다. 양식 칸이 바뀌었으면 원래대로 되돌린다."""
+        sync_from_wt(doc)
+        if restore_doc_head(doc, original_head):
+            sync_to_wt(doc)
+            log(f"에이전트가 작업 문서의 양식 칸을 고침 → 원래대로 되돌림: {doc.name}")
+            self.n.send("LOG", f"작업 문서 되돌림: {doc.name}", "에이전트가 작업 문서의 양식 칸(요구사항, 완료 조건 등)을 고쳐서 원래 내용으로 되돌렸습니다. 보고서는 그대로 둡니다.")
+
+    def snapshot(self) -> tuple[str, str]:
+        """작업 트리의 지금 상태를 브랜치를 움직이지 않는 스냅숏 커밋으로 만든다. (커밋, 트리)"""
+        wgit("add", "-A")
+        tree = wgit("write-tree").stdout.strip()
+        commit = wgit("commit-tree", tree, "-p", "HEAD", "-m", "관문 스냅숏 (브랜치에 들어가지 않음)").stdout.strip()
+        return commit, tree
+
+    def review(self, doc: Path, tb: str, snap: str, tree: str, gate: dict, entries: list, stem: str, attempt: int) -> dict | None:
+        """교차 리뷰를 실행하고 판정을 돌려준다. 쓸 수 있는 에이전트가 없으면 None.
+
+        리뷰어는 구현한 에이전트가 아닌 쪽을 먼저 고른다. 리뷰어가 작업 폴더를 고쳤으면 스냅숏으로 되돌린다.
+        """
+        if not self.cfg.get("review_enabled", True):
+            return {"verdict": "pass", "skipped": True, "summary": "", "criteria": [], "findings": []}
+        implementer = next((a for a, n in reversed(entries) if n is not None), "")
+        prompt = review_prompt(doc.name, self.loop_branch, snap, gate["warnings"], implementer or "?")
+        failures, last_error = 0, ""
+        while failures < 2:
+            self.current_agent()  # 감시 모드에서 한도 대기 시간이 지난 에이전트를 다시 쓸 수 있게 한다
+            available = [a for a in self.cfg["agents"] if a not in self.limited_at]
+            if not available:
+                return None
+            reviewer = next((a for a in available if a != implementer), available[0])
+            log_name = f"{stem}_attempt{attempt}_review{failures + 1}_{reviewer}"
+            log(f"리뷰 시작 ({reviewer}{'' if reviewer != implementer else ', 같은 에이전트'}): {doc.name}")
+            head_before = wgit("rev-parse", "HEAD").stdout.strip()
+            root_before = root_snapshot()
+            error: Exception | None = None
+            data: dict = {}
+            try:
+                if reviewer == "claude":
+                    data = run_claude(self.cfg, prompt, None, log_name, review=True)
+                elif reviewer == "codex":
+                    data = run_codex(self.cfg, prompt, log_name, review=True)
+                else:
+                    raise LoopError(f"알 수 없는 에이전트: {reviewer}")
+            except (UsageLimit, AgentFailure) as e:
+                error = e
+            self.check_root(root_before, reviewer, doc.name)
+            self.undo_agent_commits(head_before, tb, reviewer, doc.name)
+            wgit("add", "-A")
+            if wgit("write-tree").stdout.strip() != tree:
+                wgit("read-tree", "--reset", "-u", tree)
+                log(f"리뷰어({reviewer})가 작업 폴더를 고침 → 리뷰 전 상태로 되돌림: {doc.name}")
+                self.n.send("LOG", f"리뷰어 변경 되돌림: {doc.name}", f"{reviewer} 가 리뷰 중에 작업 폴더를 고쳐서 리뷰 전 상태로 되돌렸습니다.")
+            if isinstance(error, UsageLimit):
+                self.limited_at[reviewer] = time.time()
+                log(f"{reviewer} 사용량 한도 (리뷰) → 다른 에이전트로 리뷰: {doc.name}")
+                continue
+            if isinstance(error, AgentFailure):
+                if error.transient:
+                    self.park(doc, tb, "일시적 오류로 중단", f"{reviewer}(리뷰) {error.detail}")
+                    raise TransientError(f"{reviewer}(리뷰) {error.detail}")
+                failures += 1
+                last_error = f"{reviewer} {error.detail}"
+                log(f"리뷰 실패 ({failures}/2): {last_error.splitlines()[0]}")
+                continue
+            parsed = parse_review(str(data.get("result", "")))
+            if parsed is None:
+                failures += 1
+                last_error = f"{reviewer} 의 마지막 메시지가 판정 JSON 형식이 아님"
+                log(f"리뷰 실패 ({failures}/2): {last_error}")
+                continue
+            parsed["reviewer"] = reviewer
+            parsed["cross"] = reviewer != implementer
+            return parsed
+        return {"verdict": "error", "summary": last_error, "criteria": [], "findings": []}
 
     def check_root(self, before: dict, agent: str, name: str) -> None:
         """에이전트 실행 중 사용자 폴더의 tasks·.env 가 바뀌었으면 경고한다 (검사 훅을 비켜 간 쓰기 감지)."""
@@ -1366,9 +1741,18 @@ class Loop:
         log(f"{agent} 가 직접 커밋함 → 커밋만 되돌리고 변경은 남김: {name}")
         self.n.send("LOG", f"에이전트 커밋 되돌림: {name}", f"{agent} 가 규칙을 어기고 커밋해서 `{head_before[:7]}` 로 되돌렸습니다 (변경 내용은 유지).")
 
-    def complete(self, doc: Path, tb: str, summary: str, entries: list) -> None:
+    def complete(self, doc: Path, tb: str, summary: str, entries: list, evidence: dict | None = None) -> None:
         agents = format_agents(entries)
-        append_section(doc, "루프 기록", f"- 작업 에이전트: {agents}\n- 기능 브랜치: {tb}\n- 루프 브랜치: {self.loop_branch}")
+        review = (evidence or {}).get("review") or {}
+        if review.get("skipped") or not review:
+            review_line = "리뷰 안 함"
+        else:
+            review_line = f"{review.get('reviewer')} ({'교차' if review.get('cross') else '같은 에이전트'}) 통과"
+            review_line += f", 고침 {review['fix_rounds']}회" if review.get("fix_rounds") else ""
+        append_section(
+            doc, "루프 기록",
+            f"- 작업 에이전트: {agents}\n- 리뷰: {review_line}\n- 기능 브랜치: {tb}\n- 루프 브랜치: {self.loop_branch}",
+        )  # fmt: skip
         history_dir = WT / HISTORY_REL
         history_dir.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(doc, history_dir / doc.name)
@@ -1380,12 +1764,12 @@ class Loop:
         self.ff_merge_into_loop(tb)
         move_doc(doc, DONE)
         self.state.pop("current", None)
-        self.mark_processed(doc.name, tb, agents)
-        log(f"작업 완료: {doc.name} ({agents})")
+        self.mark_processed(doc.name, tb, agents, evidence)
+        log(f"작업 완료: {doc.name} ({agents}, 리뷰: {review_line})")
         self.n.send(
             "DONE",
             f"작업 완료: {doc.name}",
-            f"**바뀐 내용**\n{truncate(summary, 2500)}\n\n**작업 에이전트**: {agents}\n"
+            f"**바뀐 내용**\n{truncate(summary, 2500)}\n\n**작업 에이전트**: {agents}\n**리뷰**: {review_line}\n"
             f"**기능 브랜치**: `{tb}`\n**루프 브랜치**: `{self.loop_branch}`",
         )
 
@@ -1429,72 +1813,184 @@ class Loop:
             "루프 멈춤: 사용량 한도 초과",
             f"에이전트 {', '.join(self.cfg['agents'])} 모두 한도에 걸림 ({format_agents(entries)}).\n"
             f"작업 `{doc.name}` 은 todo 로 되돌림. 작업 중 상태는 `{tb}` 에 커밋됨.\n"
-            f"루프 브랜치 `{self.loop_branch}` 는 그대로 둠. 한도가 풀리면 다시 실행하세요.\n\n{truncate(detail, 800)}",
+            f"루프 브랜치 `{self.loop_branch}` 는 그대로 둠. "
+            + (f"감시 모드: {self.cfg['limit_retry_after_min']}분 뒤 다시 시도합니다." if self.watch else "한도가 풀리면 다시 실행하세요.")
+            + f"\n\n{truncate(detail, 800)}",
         )
 
     # ── 루프 끝 ──
     def bundle_docs(self, *folders: Path) -> list[Path]:
         return [p for f in folders for p in task_docs(f) if self.doc(p).bundle == self.bundle]
 
-    def finish(self) -> None:
-        if self.bundle_docs(TODO, DOING):
-            return  # 종료 요청으로 중간에 멈춤. 루프는 진행 중으로 남는다
-        blocked = self.bundle_docs(BLOCKED)
-        waiting = self.wait_summary(self.loop_branch, use_done=True)
-        if blocked:
-            listing = "\n".join(f"- {d.name}" for d in blocked)
-            log(f"이번 묶음의 todo 가 비어 종료. 보류 {len(blocked)}건 남음 → 루프는 진행 중으로 유지")
-            self.n.send_once(
-                "loop-blocked",
-                f"{self.loop_branch}|{listing}",
-                "LOG",
-                f"대기 비어 종료 (루프 진행 중, 묶음 {self.bundle})",
-                f"보류 {len(blocked)}건 남음:\n{listing}\n\n루프 브랜치: `{self.loop_branch}`",
-            )
-            return
+    def finish(self) -> bool:
+        """이번 묶음의 todo 가 비었으면 루프를 닫는다: 검증 → 증거 → 통합 브랜치에 합침. 닫았으면 True.
 
+        보류(blocked)가 남아 있어도 닫는다. 보류 작업과 그것을 기다리는 작업은 답을 받은 뒤 다음 루프에서 처리한다.
+        """
+        if self.bundle_docs(TODO, DOING):
+            return False  # 종료 요청으로 중간에 멈춤. 루프는 진행 중으로 남는다
+        processed = self.state.get("processed", [])
+        blocked = [d.name for d in self.bundle_docs(BLOCKED)]
+        if not processed:
+            return self.close_empty(blocked)
+        if not self.auto_merge:
+            return self.finish_manual(blocked)
+
+        tag = self.cfg.get("merge_tag_prefix", "loop-merged/") + self.loop_id
+        report_rel = f"{loop_evidence.EVIDENCE_REL}/{self.loop_id}/report.md"
+        if is_ancestor(self.loop_branch, self.base):  # 이전 실행이 합친 직후에 끊김. 뒷정리만 한다
+            wgit("checkout", "--detach")
+            return self.after_merge(tag, report_rel, processed, blocked)
+
+        wgit("checkout", self.loop_branch)
+        log(f"루프 검증 시작: {self.loop_branch} (작업 {len(processed)}건)")
+        exceptions = {e for p in processed for e in p.get("exceptions", [])}
+        gate = loop_gate.check(ROOT, self.base, self.loop_branch, mode="loop", exceptions=exceptions)
+        if gate["violations"]:
+            return self.reject("관문 검사 위반", loop_gate.format_violations(gate), processed)
+
+        ok, output = run_tests(self.cfg, final=True)
+        log(f"합치기 전 전체 테스트: {'통과' if ok else '실패'}")
+        if not ok:
+            return self.reject("합치기 전 전체 테스트 실패", tail(output, 3000), processed)
+        tests = read_test_summary()
+        shots = sorted((test_dir() / "screenshots").glob("*.png"))
+        wgit("add", "-A")  # 줄 끝만 바뀐 파일은 여기서 걸러진다
+        discarded = wgit("diff", "--cached", "--name-status", "HEAD").stdout.strip()
+        wgit("reset", "--hard")
+        wgit("clean", "-fd")
+        if discarded:  # 테스트 실행이 만든 변경(유니티가 저절로 고친 설정 등)은 합치지 않는다
+            log(f"합치기 전 테스트 실행이 만든 변경을 버림:\n{truncate(discarded, 800)}")
+
+        loop_evidence.write(
+            WT, loop_id=self.loop_id, loop_branch=self.loop_branch, bundle=self.bundle, base=self.base, main=self.main,
+            tag=tag, tag_prefix=self.cfg.get("merge_tag_prefix", "loop-merged/"), tasks=processed, gate=gate,
+            test_summary=tests, screenshots=shots, discarded=discarded, blocked=blocked,
+        )  # fmt: skip
+        wt_commit_all(f"증거: {self.loop_branch}\n\n{report_rel}\n")
+
+        names = "\n".join(f"- {Path(p['doc']).stem}" for p in processed)
+        wgit("checkout", self.base)
+        merged = wgit(
+            "merge", "--no-ff", "-m", f"루프 합침: {self.loop_branch} (묶음 {self.bundle})",
+            "-m", f"작업 {len(processed)}건\n{names}\n\n증거: {report_rel}", self.loop_branch, check=False,
+        )  # fmt: skip
+        if merged.returncode != 0:
+            wgit("merge", "--abort", check=False)
+            wgit("checkout", self.loop_branch)
+            raise LoopError(f"{self.loop_branch} 를 {self.base} 에 합치지 못함:\n{truncate(merged.stdout + merged.stderr, 1000)}")
+        git("tag", "-f", tag, wgit("rev-parse", "HEAD").stdout.strip())
+        wgit("checkout", "--detach")
+        return self.after_merge(tag, report_rel, processed, blocked)
+
+    def after_merge(self, tag: str, report_rel: str, processed: list, blocked: list[str]) -> bool:
+        self.state.update(
+            status="finished", finished_at=_dt.datetime.now().isoformat(timespec="seconds"),
+            merged_into=self.base, tag=tag, evidence=report_rel,
+        )  # fmt: skip
+        self.state.pop("current", None)
+        save_state(self.state)
+        for branch in [self.loop_branch] + [p.get("branch", "") for p in processed]:
+            if branch and branch_exists(branch) and is_ancestor(branch, self.base):
+                git("branch", "-D", branch)  # 합쳐진 브랜치는 지운다. 병합 커밋은 태그가 가리킨다
+        lines = "\n".join(f"- {p['doc']} ({p.get('agents') or '-'})" for p in processed) or "- (없음)"
+        extra = f"\n\n**보류로 남은 작업 (답이 필요함)**\n" + "\n".join(f"- {b}" for b in blocked) if blocked else ""
+        waiting = self.wait_summary(self.base)
+        if waiting:
+            extra += f"\n\n**대기 중(wait)**\n{waiting}"
+        log(f"루프 합침: {self.loop_branch} → {self.base} (묶음 {self.bundle}, 태그 {tag})")
+        self.n.send(
+            "DONE",
+            f"루프 합침: 묶음 {self.bundle}",
+            f"**처리한 작업 {len(processed)}건**\n{lines}\n\n**통합 브랜치**: `{self.base}` (병합 커밋 태그 `{tag}`)\n"
+            f"**증거**: `{report_rel}`\n관문·전체 테스트·교차 리뷰를 통과해 합쳤습니다. {self.main} 에는 올리지 않았습니다.{extra}",
+        )
+        return True
+
+    def reject(self, title: str, detail: str, processed: list) -> bool:
+        """합치기 전 검증에서 떨어진 루프: 합치지 않고, 브랜치는 이름을 바꿔 남기고, 작업은 보류로 보낸다."""
+        wgit("checkout", "--detach")
+        kept = self.cfg.get("rejected_branch_prefix", "rejected/") + self.loop_id
+        git("branch", "-M", self.loop_branch, kept)
+        moved = []
+        for p in processed:
+            done_doc = DONE / p["doc"]
+            if done_doc.exists():
+                append_section(
+                    done_doc,
+                    "보류 사유",
+                    f"- 사유: 이 작업이 들어 있던 루프({self.loop_branch})가 합치기 전 검증에서 떨어짐 — {title}\n"
+                    f"- 질문: 원인을 확인하고, 이 작업을 다시 처리할지 알려 주세요.\n"
+                    f"- 추천안: 아래 내용을 보고 작업 문서를 고친 뒤 todo 로 옮기면 처음부터 다시 처리합니다\n"
+                    f"- 남은 브랜치: {kept} (이 루프의 변경 전체. 통합 브랜치에는 합쳐지지 않음)\n\n"
+                    f"```\n{truncate(detail, 2500)}\n```",
+                )
+                moved.append(move_doc(done_doc, BLOCKED).name)
+            branch = p.get("branch", "")
+            if branch and branch_exists(branch):
+                git("branch", "-D", branch)  # 변경은 남긴 브랜치에 들어 있다. 다시 처리할 때는 새로 시작한다
+        self.state.update(
+            status="rejected", finished_at=_dt.datetime.now().isoformat(timespec="seconds"), rejected_branch=kept, reject_reason=title
+        )  # fmt: skip
+        self.state.pop("current", None)
+        save_state(self.state)
+        log(f"루프를 합치지 않음: {self.loop_branch} → {kept} ({title})\n{truncate(detail, 1500)}")
+        self.n.send(
+            "BLOCKED",
+            f"루프를 합치지 않음: 묶음 {self.bundle} ({title})",
+            f"합치기 전 검증에서 떨어져 통합 브랜치에 합치지 않았습니다.\n\n```\n{truncate(detail, 2000)}\n```\n\n"
+            f"**남긴 브랜치**: `{kept}`\n**보류로 옮긴 작업**\n" + ("\n".join(f"- {m}" for m in moved) or "- (없음)"),
+        )
+        return True
+
+    def close_empty(self, blocked: list[str]) -> bool:
+        """완료된 작업이 하나도 없는 루프: 합칠 것이 없으므로 브랜치만 지우고 닫는다."""
+        wgit("checkout", "--detach")
+        if is_ancestor(self.loop_branch, self.base):
+            git("branch", "-D", self.loop_branch)
+        self.state.update(status="finished", finished_at=_dt.datetime.now().isoformat(timespec="seconds"), merged_into=None)
+        self.state.pop("current", None)
+        save_state(self.state)
+        listing = "\n".join(f"- {b}" for b in blocked) or "- (없음)"
+        log(f"루프 닫음 (완료된 작업 없음, 합칠 것 없음): {self.loop_branch}, 보류 {len(blocked)}건")
+        self.n.send("LOG", f"루프 닫음: 묶음 {self.bundle} (합칠 것 없음)", f"완료된 작업이 없습니다.\n\n**보류**\n{listing}")
+        return True
+
+    def finish_manual(self, blocked: list[str]) -> bool:
+        """auto_merge 가 꺼져 있을 때: 합치지 않고 사람이 확인하길 기다린다 (다음 루프는 합친 뒤에 시작한다)."""
         self.state["status"] = "finished"
         self.state["finished_at"] = _dt.datetime.now().isoformat(timespec="seconds")
         save_state(self.state)
         wgit("checkout", "--detach")  # 사용자가 합친 뒤 루프 브랜치를 지울 수 있게 worktree 를 떼어 둔다
         done = self.state.get("processed", [])
         lines = "\n".join(f"- {p['doc']} (`{p['branch']}`, {p.get('agents') or '-'})" for p in done) or "- (없음)"
-        others = [p.name for p in task_docs(TODO)]
-        extra = ""
-        if waiting:
-            extra += f"\n\n**대기 중(wait)**\n{waiting}"
-        if others:
-            extra += f"\n\n**다른 묶음 todo**\n" + "\n".join(f"- {o}" for o in others)
-        log(f"루프 종료: {self.loop_branch} (묶음 {self.bundle})")
+        extra = f"\n\n**보류**\n" + "\n".join(f"- {b}" for b in blocked) if blocked else ""
+        log(f"루프 종료 (자동 합치기 꺼짐): {self.loop_branch} (묶음 {self.bundle})")
         self.n.send(
             "DONE",
             f"루프 종료: 묶음 {self.bundle}",
             f"**처리한 작업 {len(done)}건**\n{lines}\n\n**확인할 루프 브랜치**: `{self.loop_branch}`\n"
-            f"확인 후 {self.base} 에 직접 합쳐 주세요.{extra}",
+            f"확인 후 {self.main} 에 직접 합쳐 주세요. 합쳐야 다음 루프가 시작됩니다.{extra}",
         )
-        if waiting or others:
-            self.n.send(
-                "LOG",
-                "다음 루프 대기 중인 작업",
-                f"루프 브랜치 `{self.loop_branch}` 를 {self.base} 에 합치면 다음 루프에서 처리합니다.{extra}",
-            )
+        return False
 
-    def run_pass(self) -> None:
+    def run_pass(self) -> bool:
+        """루프 하나를 진행한다. 루프를 닫았으면(합침·합치지 않음·합칠 것 없음) True: 바로 다음 묶음을 볼 수 있다."""
         self.preflight()
         if not self.open_loop():
-            return
+            return False
         self.reconcile()
-        self.promote(self.loop_branch, use_done=True, bundle=self.bundle)
-        self.triage(self.loop_branch, use_done=True)
+        self.promote(self.loop_branch, bundle=self.bundle)
+        self.triage(self.loop_branch)
         while not STOP.requested:
             todo = self.bundle_docs(TODO)
             if not todo:
                 break
             name = todo[0].stem
             if self.process(todo[0]) == "done":
-                self.promote(self.loop_branch, use_done=True, bundle=self.bundle, trigger=name)
-            self.triage(self.loop_branch, use_done=True)
-        self.finish()
+                self.promote(self.loop_branch, bundle=self.bundle, trigger=name)
+            self.triage(self.loop_branch)
+        return self.finish()
 
 
 def _sleep(seconds: int) -> None:
@@ -1554,7 +2050,12 @@ def _run(args: argparse.Namespace) -> int:
         WT = (ROOT / cfg["worktree_path"]).resolve()
         loop = Loop(cfg, notifier, args.watch)
         if not args.watch:
-            loop.run_pass()
+            passes = 0
+            while loop.run_pass() and not STOP.requested:
+                passes += 1
+                if passes >= int(cfg.get("max_loops_per_run", 50)):
+                    log(f"한 번 실행에서 닫은 루프가 {passes}개에 이르러 멈춤 (max_loops_per_run)")
+                    break
             if STOP.requested:
                 notifier.send("LOG", "루프 종료 (요청)", "종료 요청에 따라 하던 작업까지 끝내고 멈췄습니다.")
             return 0
@@ -1567,9 +2068,16 @@ def _run(args: argparse.Namespace) -> int:
         last_sig, repeats = "", 0
         while not STOP.requested:
             try:
-                loop.run_pass()
+                closed = loop.run_pass()
                 notifier.reset("preflight")
                 last_sig, repeats = "", 0
+                if closed:
+                    continue  # 루프 하나를 닫았으면 기다리지 않고 다음 묶음을 본다
+            except AllAgentsLimited:
+                wait_min = int(cfg["limit_retry_after_min"])
+                log(f"모든 에이전트 사용량 한도. {wait_min}분 뒤 다시 시도")
+                _sleep(wait_min * 60)
+                continue
             except TransientError as e:
                 sig = re.sub(r"[0-9a-f]{8,}|\d+", "#", str(e).lower())[:200]  # 요청 번호 같은 숫자는 무시하고 비교
                 repeats = repeats + 1 if sig == last_sig else 1
