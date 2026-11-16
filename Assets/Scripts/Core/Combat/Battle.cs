@@ -35,6 +35,12 @@ namespace PlumSword.Core.Combat
         private double _accumulatedSeconds;
         private int _nextIndex;
 
+        // 체력 강화의 늘어난 양을 구하려고 기억해 두는 직전 최대 체력. 생성자와 Reset 에서 upgrades.MaxHealth 로 맞춘다.
+        private long _lastMaxHealth;
+
+        // Reset 마다 1 씩 는다. 한 칸 진행 중 알림을 보낸 뒤 값이 바뀌었으면 알림 안에서 Reset 이 불린 것이므로 그 칸을 그만둔다.
+        private int _resetGeneration;
+
         /// <summary>
         /// upgrades: 제자의 공격력·최대 체력·공격 간격을 읽을 곳. null 이면 ArgumentNullException.
         /// 시작 상태: 제자 좌표 0, 체력 = upgrades.MaxHealth, 공격 대기 0, 적 없음, 멈추지 않음, 패배 아님.
@@ -47,6 +53,10 @@ namespace PlumSword.Core.Combat
             DiscipleAttackCooldown = 0.0;
             IsDiscipleDefeated = false;
             Paused = false;
+            _lastMaxHealth = _upgrades.MaxHealth;
+
+            // Battle 과 StatUpgrades 는 게임에 하나씩이고 수명이 같아 구독을 끊지 않는다.
+            _upgrades.Upgraded += OnUpgraded;
         }
 
         public event Action<Enemy> EnemyAdded;
@@ -124,14 +134,25 @@ namespace PlumSword.Core.Combat
             }
 
             // 한 칸 동안 적 목록은 칸을 시작할 때 떠 둔 복사본을 돈다 (알림 안에서 목록이 바뀌어도 안전하게).
+            // 알림 안에서 추가된 적은 이 복사본에 없으므로 다음 칸부터 움직이고 공격한다.
             var snapshot = new List<Enemy>(_enemies);
+            int generation = _resetGeneration;
 
             ReduceCooldowns(snapshot);
             MoveDisciple(snapshot);
             MoveEnemies(snapshot);
-            AttackByDisciple(snapshot);
-            AttackByEnemies(snapshot);
-            ResolveDefeats(snapshot);
+
+            if (!AttackByDisciple(snapshot, generation))
+            {
+                return;
+            }
+
+            if (!AttackByEnemies(snapshot, generation))
+            {
+                return;
+            }
+
+            ResolveDefeats(snapshot, generation);
         }
 
         /// <summary>
@@ -173,6 +194,8 @@ namespace PlumSword.Core.Combat
             _enemies.Clear();
             _nextIndex = 0;
             _accumulatedSeconds = 0.0;
+            _lastMaxHealth = _upgrades.MaxHealth;
+            _resetGeneration++;
 
             ResetCompleted?.Invoke();
         }
@@ -241,11 +264,12 @@ namespace PlumSword.Core.Combat
         }
 
         // 3-1. 제자 공격: 대기가 끝났고 범위 안에 적이 있으면, 범위 안의 모든 적에게 같은 피해를 준다.
-        private void AttackByDisciple(List<Enemy> enemies)
+        // 알림 안에서 Reset 이 불려 칸을 그만둬야 하면 false.
+        private bool AttackByDisciple(List<Enemy> enemies, int generation)
         {
             if (DiscipleAttackCooldown > Epsilon)
             {
-                return;
+                return true;
             }
 
             var hits = new List<Enemy>();
@@ -259,7 +283,7 @@ namespace PlumSword.Core.Combat
 
             if (hits.Count == 0)
             {
-                return;
+                return true;
             }
 
             // 공격력은 피해를 줄 때마다 읽는다 (따로 저장해 두지 않는다).
@@ -272,14 +296,20 @@ namespace PlumSword.Core.Combat
             foreach (Enemy enemy in hits)
             {
                 EnemyDamaged?.Invoke(enemy);
+                if (generation != _resetGeneration)
+                {
+                    return false;
+                }
             }
 
             // 공격 속도는 공격한 직후 다음 대기를 정할 때만 읽는다.
             DiscipleAttackCooldown = _upgrades.AttackInterval;
+            return true;
         }
 
         // 3-2. 적 공격: 추가된 순서대로. 이번 칸에 체력이 0이 된 적도 공격한다.
-        private void AttackByEnemies(List<Enemy> enemies)
+        // 알림 안에서 Reset 이 불려 칸을 그만둬야 하면 false.
+        private bool AttackByEnemies(List<Enemy> enemies, int generation)
         {
             foreach (Enemy enemy in enemies)
             {
@@ -296,12 +326,20 @@ namespace PlumSword.Core.Combat
 
                 DiscipleHealth = ReduceHealth(DiscipleHealth, enemy.Attack);
                 DiscipleDamaged?.Invoke();
+                if (generation != _resetGeneration)
+                {
+                    return false;
+                }
+
                 enemy.AttackCooldown = enemy.AttackInterval;
             }
+
+            return true;
         }
 
         // 4. 쓰러짐 판정: 값을 모두 바꾼 뒤 알림을 보낸다 (EnemyDefeated 를 추가된 순서대로, 그다음 DiscipleDefeated).
-        private void ResolveDefeats(List<Enemy> enemies)
+        // 알림 안에서 Reset 이 불리면 남은 알림을 보내지 않는다.
+        private void ResolveDefeats(List<Enemy> enemies, int generation)
         {
             var defeated = new List<Enemy>();
             foreach (Enemy enemy in enemies)
@@ -327,12 +365,36 @@ namespace PlumSword.Core.Combat
             foreach (Enemy enemy in defeated)
             {
                 EnemyDefeated?.Invoke(enemy);
+                if (generation != _resetGeneration)
+                {
+                    return;
+                }
             }
 
             if (discipleDefeatedNow)
             {
                 DiscipleDefeated?.Invoke();
             }
+        }
+
+        // 체력 강화: 늘어난 최대 체력만큼 현재 체력을 늘린다. 패배한 상태면 기억만 바꾼다. 멈춘 동안에도 반영하고 알림은 없다.
+        private void OnUpgraded(StatType stat)
+        {
+            if (stat != StatType.Health)
+            {
+                return;
+            }
+
+            long maxHealth = _upgrades.MaxHealth;
+            long increase = maxHealth - _lastMaxHealth;
+            _lastMaxHealth = maxHealth;
+
+            if (IsDiscipleDefeated)
+            {
+                return;
+            }
+
+            DiscipleHealth += increase;
         }
 
         // 체력을 피해만큼 줄인다. 0 아래로 내려가지 않는다.
