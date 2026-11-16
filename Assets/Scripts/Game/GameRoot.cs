@@ -48,6 +48,7 @@ namespace PlumSword.Game
             CreateCurrencyView();
             CreateStatUpgradeView();
             CreateCombatView();
+            CreateTempEncounter(); // 임시. 스테이지 기능을 구현할 때 지운다
         }
 
         private Canvas CreateUiCanvas()
@@ -107,6 +108,14 @@ namespace PlumSword.Game
             var viewObject = new GameObject("[CombatView]");
             viewObject.transform.SetParent(transform, false);
             viewObject.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(Battle, worldCamera);
+        }
+
+        // 임시. 스테이지 기능을 구현할 때 지운다 (이 메서드와 Awake 의 호출 줄).
+        private void CreateTempEncounter()
+        {
+            var encounterObject = new GameObject("[TempEncounter]");
+            encounterObject.transform.SetParent(transform, false);
+            encounterObject.AddComponent<PlumSword.Game.Combat.TempEncounter>().Initialize(Battle);
         }
     }
 }

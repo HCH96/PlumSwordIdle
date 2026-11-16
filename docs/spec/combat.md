@@ -238,6 +238,7 @@ namespace PlumSword.Game.Combat
     public sealed class TempEncounter : MonoBehaviour
     {
         // 바로 적을 한 번 배치한다. battle.EnemyDefeated, battle.DiscipleDefeated 를 구독하고 OnDestroy 에서 끊는다.
+        // battle 이 null 이면 ArgumentNullException. 두 번 부르면 InvalidOperationException.
         public void Initialize(PlumSword.Core.Combat.Battle battle);
     }
 }
