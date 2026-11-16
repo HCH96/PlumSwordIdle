@@ -220,7 +220,7 @@ namespace PlumSword.Game
     public sealed class GameRoot : MonoBehaviour   // 이미 있는 클래스에 아래 하나를 더한다
     {
         // Awake 에서 StatUpgrades 를 만든 뒤 new Battle(StatUpgrades) 로 하나 만든다.
-        public PlumSword.Core.Combat.Battle Battle { get; }
+        public PlumSword.Core.Combat.Battle Battle { get; }   // private set
     }
 }
 
@@ -230,6 +230,7 @@ namespace PlumSword.Game.Combat
     {
         // 제자·배경 오브젝트를 만들고 카메라를 설정한다. battle 의 알림을 구독하고 OnDestroy 에서 끊는다.
         // Update 에서 battle.Tick(Time.deltaTime) 을 부른 뒤 화면을 맞춘다.
+        // battle, camera 가 null 이면 ArgumentNullException. 두 번 부르면 InvalidOperationException.
         public void Initialize(PlumSword.Core.Combat.Battle battle, UnityEngine.Camera camera);
     }
 

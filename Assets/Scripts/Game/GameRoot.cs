@@ -23,20 +23,22 @@ namespace PlumSword.Game
         /// <summary>공용 UI 캔버스. 화면 기능은 이 캔버스 아래에 UI 를 만든다.</summary>
         public Canvas UiCanvas { get; private set; }
 
-        // 강화 전 시작 능력치. 임시값, 전투 기능이 생기면 그 값으로 바꾼다 (docs/spec/stat_upgrade.md "수치").
-        private const long BaseAttack = 10;
-        private const long BaseMaxHealth = 100;
-        private const double BaseAttackInterval = 1.0;
-
         /// <summary>게임에 하나뿐인 능력치 강화. 전투·스테이지 기능은 조립할 때 이것을 넘겨받는다.</summary>
         public PlumSword.Core.StatUpgrade.StatUpgrades StatUpgrades { get; private set; }
+
+        /// <summary>게임에 하나뿐인 전투. Tick 은 CombatView 만 부른다. 스테이지 기능은 이것으로 적을 놓는다.</summary>
+        public PlumSword.Core.Combat.Battle Battle { get; private set; }
 
         private void Awake()
         {
             // Core 객체 (게임에 하나뿐인 지갑. 1단계는 저장이 없어 0 에서 시작한다)
             Wallet = new Wallet();
             StatUpgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(
-                Wallet, BaseAttack, BaseMaxHealth, BaseAttackInterval);
+                Wallet,
+                PlumSword.Core.Combat.Battle.DiscipleBaseAttack,
+                PlumSword.Core.Combat.Battle.DiscipleBaseMaxHealth,
+                PlumSword.Core.Combat.Battle.DiscipleBaseAttackInterval);
+            Battle = new PlumSword.Core.Combat.Battle(StatUpgrades);
 
             // 공용 UI 뿌리
             UiCanvas = CreateUiCanvas();
@@ -45,6 +47,7 @@ namespace PlumSword.Game
             // 기능별 화면 (기능이 늘면 여기에 한 줄씩 추가한다)
             CreateCurrencyView();
             CreateStatUpgradeView();
+            CreateCombatView();
         }
 
         private Canvas CreateUiCanvas()
@@ -88,6 +91,22 @@ namespace PlumSword.Game
             viewObject.transform.SetParent(transform, false);
             viewObject.AddComponent<PlumSword.Game.StatUpgrade.StatUpgradeView>()
                 .Initialize(StatUpgrades, Wallet, UiCanvas);
+        }
+
+        private void CreateCombatView()
+        {
+            Camera worldCamera = Camera.main;
+            if (worldCamera == null)
+            {
+                var cameraObject = new GameObject("[Camera]");
+                cameraObject.transform.SetParent(transform, false);
+                cameraObject.tag = "MainCamera";
+                worldCamera = cameraObject.AddComponent<Camera>();
+            }
+
+            var viewObject = new GameObject("[CombatView]");
+            viewObject.transform.SetParent(transform, false);
+            viewObject.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(Battle, worldCamera);
         }
     }
 }
