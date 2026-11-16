@@ -29,6 +29,9 @@ namespace PlumSword.Game
         /// <summary>게임에 하나뿐인 전투. Tick 은 CombatView 만 부른다. 스테이지 기능은 이것으로 적을 놓는다.</summary>
         public PlumSword.Core.Combat.Battle Battle { get; private set; }
 
+        /// <summary>게임에 하나뿐인 스테이지 진행. Tick 은 StageView 만, Begin 은 GameRoot 만 부른다.</summary>
+        public PlumSword.Core.Stage.StageProgress StageProgress { get; private set; }
+
         private void Awake()
         {
             // Core 객체 (게임에 하나뿐인 지갑. 1단계는 저장이 없어 0 에서 시작한다)
@@ -48,7 +51,7 @@ namespace PlumSword.Game
             CreateCurrencyView();
             CreateStatUpgradeView();
             CreateCombatView();
-            CreateTempEncounter(); // 임시. 스테이지 기능을 구현할 때 지운다
+            CreateStage();
         }
 
         private Canvas CreateUiCanvas()
@@ -110,12 +113,18 @@ namespace PlumSword.Game
             viewObject.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(Battle, worldCamera);
         }
 
-        // 임시. 스테이지 기능을 구현할 때 지운다 (이 메서드와 Awake 의 호출 줄).
-        private void CreateTempEncounter()
+        // 스테이지 로직을 하나 만들고 화면을 붙인 뒤 시작한다 (docs/spec/stage.md "화면"의 "조립").
+        // Begin 은 화면들(CombatView, StageView)이 알림을 구독한 뒤여야 하므로 맨 마지막이다.
+        private void CreateStage()
         {
-            var encounterObject = new GameObject("[TempEncounter]");
-            encounterObject.transform.SetParent(transform, false);
-            encounterObject.AddComponent<PlumSword.Game.Combat.TempEncounter>().Initialize(Battle);
+            StageProgress = new PlumSword.Core.Stage.StageProgress(
+                Wallet, StatUpgrades, Battle, new System.Random());
+
+            var viewObject = new GameObject("[StageView]");
+            viewObject.transform.SetParent(transform, false);
+            viewObject.AddComponent<PlumSword.Game.Stage.StageView>().Initialize(StageProgress, UiCanvas);
+
+            StageProgress.Begin();
         }
     }
 }

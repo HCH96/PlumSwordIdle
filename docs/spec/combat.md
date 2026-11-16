@@ -244,6 +244,8 @@ namespace PlumSword.Game.Combat
 }
 ```
 
+- `TempEncounter`는 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
+
 - 누가 만들고 누가 들고 있는지: `GameRoot.Awake`가 `StatUpgrades`를 만든 뒤 `Battle`을 하나 만들어 `GameRoot.Battle`로 들고 있는다. 게임에 `Battle`은 하나뿐이다. `GameRoot`가 `StatUpgrades`를 만드는 줄의 숫자 `10, 100, 1.0`은 `Battle.DiscipleBaseAttack, Battle.DiscipleBaseMaxHealth, Battle.DiscipleBaseAttackInterval`로 바꾼다 (값은 같다).
 - `Tick`을 부르는 것은 `CombatView` 하나뿐이다. 다른 기능은 `Tick`과 `Step`을 부르지 않는다.
 - 스테이지 기능이 쓰는 방법:
@@ -267,6 +269,7 @@ namespace PlumSword.Game.Combat
 화면 위쪽의 자동 전투 영역이다. UI 캔버스가 아니라 월드 공간에 `SpriteRenderer`로 그린다. 좌표 단위는 유닛이다.
 
 - **조립**: `GameRoot.Awake`에서 `Battle`을 만든 다음 `[Game]`의 자식 `[CombatView]`를 만들어 `CombatView`를 붙이고 `Initialize(Battle, 카메라)`를 부른다. 카메라는 `Camera.main`을 쓰고, 없으면 `[Game]`의 자식 `[Camera]`를 만들어 `Camera`를 붙이고 `MainCamera` 태그를 단다. 그 뒤 `[Game]`의 자식 `[TempEncounter]`를 만들어 `TempEncounter`를 붙이고 `Initialize(Battle)`를 부른다.
+  - `[TempEncounter]`는 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
 - **대체 표시 만드는 법**: 스프라이트 리소스는 쓰지 않는다. 1×1 흰색 `Texture2D`로 스프라이트를 하나 만들어(픽셀당 유닛 1) 모든 사각형이 함께 쓰고, 크기는 `localScale`, 색은 `SpriteRenderer.color`로 정한다. 캐릭터의 좌표는 발 아래 가운데가 기준이다 (사각형의 아래 가운데가 그 좌표에 오게 둔다).
 - **카메라**: Orthographic, 크기 5.625 (`docs/dev/art.md`), 배경색 RGB (0.55, 0.75, 0.90) (임시), 단색으로 지움. 위치는 매 프레임 `(DisciplePosition + 4.0, 0, −10)` (임시). 제자는 화면 가운데보다 왼쪽에 고정되어 보인다. `Reset`으로 제자가 좌표 0으로 돌아가면 카메라도 바로 따라간다.
 - **땅 높이**: y = 0 (임시). 캐릭터는 모두 y = 0에 선다.
@@ -283,6 +286,7 @@ namespace PlumSword.Game.Combat
 - **바뀌는 때**: 위치·체력 바·카메라·배경은 매 프레임 `Update`에서 `Tick`을 부른 뒤 맞춘다.
 - **누르는 것**: 없다. 전투 화면은 입력을 받지 않는다.
 - **임시 적 배치 (`TempEncounter`)**: `Initialize`에서 바로, 그리고 다시 놓을 때마다 `Reset()`을 부른 뒤 `AddEnemy(Normal, 1, 6.0)`, `AddEnemy(Normal, 1, 9.0)`, `AddEnemy(Normal, 1, 9.3)`, `AddEnemy(Boss, 1, 15.0)`을 순서대로 부른다 (임시). `DiscipleDefeated`를 받았거나, `EnemyDefeated`를 받았을 때 `battle.Enemies.Count`가 0이면 1.0초(임시, `Time.deltaTime`으로 센다) 기다린 뒤 다시 놓는다. 금화는 주지 않는다.
+  - 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
 - 겹침 어긋남과 체력 바 비율의 판단은 Core의 `CombatLayout`에 있고 에딧 모드 테스트로 판정한다. `CombatView`, `TempEncounter`, `GameRoot`의 조립은 자동 테스트 대상이 아니며 사람이 실행해 확인한다.
 
 ## 저장
