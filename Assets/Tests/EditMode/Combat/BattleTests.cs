@@ -239,16 +239,18 @@ namespace PlumSword.Core.Tests.Combat
         }
 
         [Test]
-        public void Step_WithEnemies_HealthDoesNotChange()
+        public void Step_WithEnemies_TradeHitsUntilEnemyDefeated()
         {
+            // 009_battle_attack 이 공격을 채우면서 "체력이 바뀌지 않는다" 를 실제 전투 결과로 바꿨다.
+            // 제자: 1, 51, 101 칸에 10씩 -> 101 칸에 처치. 몬스터: 1, 101 칸에 5씩 -> 제자 체력 90.
             Enemy enemy = _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
 
             Steps(200);
-            Assert.AreEqual(100L, _battle.DiscipleHealth);
-            Assert.AreEqual(30L, enemy.Health);
-            Assert.IsFalse(enemy.IsDead);
+            Assert.AreEqual(90L, _battle.DiscipleHealth);
+            Assert.AreEqual(0L, enemy.Health);
+            Assert.IsTrue(enemy.IsDead);
             Assert.IsFalse(_battle.IsDiscipleDefeated);
-            Assert.AreEqual(0, _enemyDefeatedCount);
+            Assert.AreEqual(1, _enemyDefeatedCount);
         }
 
         // ---- 초기화 ----

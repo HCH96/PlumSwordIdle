@@ -123,11 +123,15 @@ namespace PlumSword.Core.Combat
                 return;
             }
 
-            ReduceCooldowns();
-            MoveDisciple();
-            MoveEnemies();
-            // 공격 (009_battle_attack)
-            // 쓰러짐 판정 (009_battle_attack)
+            // 한 칸 동안 적 목록은 칸을 시작할 때 떠 둔 복사본을 돈다 (알림 안에서 목록이 바뀌어도 안전하게).
+            var snapshot = new List<Enemy>(_enemies);
+
+            ReduceCooldowns(snapshot);
+            MoveDisciple(snapshot);
+            MoveEnemies(snapshot);
+            AttackByDisciple(snapshot);
+            AttackByEnemies(snapshot);
+            ResolveDefeats(snapshot);
         }
 
         /// <summary>
@@ -180,29 +184,29 @@ namespace PlumSword.Core.Combat
         }
 
         // 1. 대기 감소: 제자와 모든 적의 공격 대기를 한 칸만큼 줄인다. 0 아래로 내려가지 않는다.
-        private void ReduceCooldowns()
+        private void ReduceCooldowns(List<Enemy> enemies)
         {
             DiscipleAttackCooldown = Math.Max(0.0, DiscipleAttackCooldown - StepSeconds);
 
-            foreach (Enemy enemy in _enemies)
+            foreach (Enemy enemy in enemies)
             {
                 enemy.AttackCooldown = Math.Max(0.0, enemy.AttackCooldown - StepSeconds);
             }
         }
 
         // 2-1. 제자 이동: 가장 가까운 적의 사거리에 딱 맞춰 멈춘다. 적이 없으면 계속 전진한다.
-        private void MoveDisciple()
+        private void MoveDisciple(List<Enemy> enemies)
         {
             double maxMove = DiscipleMoveSpeed * StepSeconds;
 
-            if (_enemies.Count == 0)
+            if (enemies.Count == 0)
             {
                 DisciplePosition += maxMove;
                 return;
             }
 
             double nearest = double.PositiveInfinity;
-            foreach (Enemy enemy in _enemies)
+            foreach (Enemy enemy in enemies)
             {
                 nearest = Math.Min(nearest, enemy.Position - DisciplePosition);
             }
@@ -216,12 +220,12 @@ namespace PlumSword.Core.Combat
         }
 
         // 2-2. 적 이동: 일반 몬스터만, 추가된 순서대로, 제자가 움직인 뒤의 좌표로 계산한다. 보스는 움직이지 않는다.
-        private void MoveEnemies()
+        private void MoveEnemies(List<Enemy> enemies)
         {
             double normalRange = EnemyStats.AttackRange(EnemyKind.Normal);
             double maxMove = EnemyStats.NormalMoveSpeed * StepSeconds;
 
-            foreach (Enemy enemy in _enemies)
+            foreach (Enemy enemy in enemies)
             {
                 if (enemy.Kind != EnemyKind.Normal)
                 {
@@ -234,6 +238,107 @@ namespace PlumSword.Core.Combat
                     enemy.Position -= Math.Min(maxMove, distance - normalRange);
                 }
             }
+        }
+
+        // 3-1. 제자 공격: 대기가 끝났고 범위 안에 적이 있으면, 범위 안의 모든 적에게 같은 피해를 준다.
+        private void AttackByDisciple(List<Enemy> enemies)
+        {
+            if (DiscipleAttackCooldown > Epsilon)
+            {
+                return;
+            }
+
+            var hits = new List<Enemy>();
+            foreach (Enemy enemy in enemies)
+            {
+                if (enemy.Position - DisciplePosition <= DiscipleAttackRange + Epsilon)
+                {
+                    hits.Add(enemy);
+                }
+            }
+
+            if (hits.Count == 0)
+            {
+                return;
+            }
+
+            // 공격력은 피해를 줄 때마다 읽는다 (따로 저장해 두지 않는다).
+            long damage = _upgrades.Attack;
+            foreach (Enemy enemy in hits)
+            {
+                enemy.Health = ReduceHealth(enemy.Health, damage);
+            }
+
+            foreach (Enemy enemy in hits)
+            {
+                EnemyDamaged?.Invoke(enemy);
+            }
+
+            // 공격 속도는 공격한 직후 다음 대기를 정할 때만 읽는다.
+            DiscipleAttackCooldown = _upgrades.AttackInterval;
+        }
+
+        // 3-2. 적 공격: 추가된 순서대로. 이번 칸에 체력이 0이 된 적도 공격한다.
+        private void AttackByEnemies(List<Enemy> enemies)
+        {
+            foreach (Enemy enemy in enemies)
+            {
+                if (enemy.AttackCooldown > Epsilon)
+                {
+                    continue;
+                }
+
+                double distance = enemy.Position - DisciplePosition;
+                if (distance > EnemyStats.AttackRange(enemy.Kind) + Epsilon)
+                {
+                    continue;
+                }
+
+                DiscipleHealth = ReduceHealth(DiscipleHealth, enemy.Attack);
+                DiscipleDamaged?.Invoke();
+                enemy.AttackCooldown = enemy.AttackInterval;
+            }
+        }
+
+        // 4. 쓰러짐 판정: 값을 모두 바꾼 뒤 알림을 보낸다 (EnemyDefeated 를 추가된 순서대로, 그다음 DiscipleDefeated).
+        private void ResolveDefeats(List<Enemy> enemies)
+        {
+            var defeated = new List<Enemy>();
+            foreach (Enemy enemy in enemies)
+            {
+                if (enemy.Health <= 0)
+                {
+                    defeated.Add(enemy);
+                }
+            }
+
+            foreach (Enemy enemy in defeated)
+            {
+                _enemies.Remove(enemy);
+                enemy.IsDead = true;
+            }
+
+            bool discipleDefeatedNow = DiscipleHealth <= 0;
+            if (discipleDefeatedNow)
+            {
+                IsDiscipleDefeated = true;
+            }
+
+            foreach (Enemy enemy in defeated)
+            {
+                EnemyDefeated?.Invoke(enemy);
+            }
+
+            if (discipleDefeatedNow)
+            {
+                DiscipleDefeated?.Invoke();
+            }
+        }
+
+        // 체력을 피해만큼 줄인다. 0 아래로 내려가지 않는다.
+        private static long ReduceHealth(long health, long damage)
+        {
+            return Math.Max(0L, health - damage);
         }
     }
 }
