@@ -13,7 +13,7 @@
   "usage_limit_patterns": {
     "claude": [
       "usage limit reached",
-      "hit your (usage )?limit",
+      "hit your .{0,30}limit",
       "out of extra usage",
       "rate_limit_error"
     ],
