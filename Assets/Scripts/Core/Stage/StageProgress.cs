@@ -19,6 +19,14 @@ namespace PlumSword.Core.Stage
         private readonly Battle _battle;
         private readonly Random _random;
 
+#pragma warning disable CS0414 // 018_stage_progress_fade 가 읽는다.
+        /// <summary>전환 시작 때 기억한 다음 스테이지 번호. 018_stage_progress_fade 가 교체에 쓴다.</summary>
+        private int _nextStageNumber;
+
+        /// <summary>현재 페이드 단계에서 흐른 시간 (초). 018_stage_progress_fade 가 센다.</summary>
+        private double _fadeElapsed;
+#pragma warning restore CS0414
+
         /// <summary>
         /// wallet: 처치 금화를 줄 지갑. upgrades: 페이드 동안 잠글 강화. battle: 적을 놓고 알림을 받을 전투.
         /// random: 무리 구성에 쓸 난수. 넷 중 하나라도 null 이면 ArgumentNullException.
@@ -47,13 +55,11 @@ namespace PlumSword.Core.Stage
         /// <summary>스테이지가 배치된 뒤에 그 번호를 담아 보낸다 (Begin, 그리고 가려진 순간의 교체).</summary>
         public event Action<int> StageStarted;
 
-#pragma warning disable CS0067 // 017_stage_progress_outcome 이 보낸다.
         /// <summary>보스를 처치해 성공했을 때 끝난 스테이지 번호를 담아 보낸다. 이때 Phase 는 이미 FadingOut.</summary>
         public event Action<int> StageCleared;
 
         /// <summary>제자가 쓰러져 실패했을 때 그 스테이지 번호를 담아 보낸다. 이때 Phase 는 이미 FadingOut.</summary>
         public event Action<int> StageFailed;
-#pragma warning restore CS0067
 
         /// <summary>화면이 다시 그려야 할 때 보낸다. 가는 때는 사양 "동작"의 목록이 전부다.</summary>
         public event Action Changed;
@@ -153,7 +159,41 @@ namespace PlumSword.Core.Stage
                 OnNormalDefeated();
             }
 
-            // 보스 처치는 017_stage_progress_outcome 이 채운다.
+            else if (enemy.Kind == EnemyKind.Boss)
+            {
+                OnBossDefeated();
+            }
+        }
+
+        /// <summary>
+        /// 보스: 제자와 함께 쓰러졌으면 아무것도 하지 않는다 (실패는 뒤따르는 DiscipleDefeated 가 처리).
+        /// 아니면 성공: 보스 금화 → 전환 시작(다음 번호 +1) → StageCleared → Changed.
+        /// </summary>
+        private void OnBossDefeated()
+        {
+            if (_battle.IsDiscipleDefeated)
+            {
+                return;
+            }
+
+            int cleared = StageNumber;
+            _wallet.Add(StageRewards.BossGold(cleared));
+            BeginTransition(cleared == int.MaxValue ? int.MaxValue : cleared + 1);
+            StageCleared?.Invoke(cleared);
+            Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// 전환 시작: 다음 번호를 기억하고 FadingOut, 페이드 시간 0, 전투 멈춤, 강화 잠금.
+        /// 018_stage_progress_fade 가 _nextStageNumber, _fadeElapsed 를 읽어 교체를 한다.
+        /// </summary>
+        private void BeginTransition(int nextStageNumber)
+        {
+            _nextStageNumber = nextStageNumber;
+            Phase = StagePhase.FadingOut;
+            _fadeElapsed = 0.0;
+            _battle.SetPaused(true);
+            _upgrades.SetLocked(true);
         }
 
         /// <summary>일반 몬스터 한 마리: 금화 → 처치 수 → (열 번째면) 보스 등장 → Changed.</summary>
@@ -177,9 +217,18 @@ namespace PlumSword.Core.Stage
             Changed?.Invoke();
         }
 
+        /// <summary>제자: 실패. 전환 시작(다음 번호 = 같은 번호) → StageFailed → Changed.</summary>
         private void OnDiscipleDefeated()
         {
-            // 017_stage_progress_outcome 이 채운다.
+            if (!IsListening)
+            {
+                return;
+            }
+
+            int failed = StageNumber;
+            BeginTransition(failed);
+            StageFailed?.Invoke(failed);
+            Changed?.Invoke();
         }
 
         private void OnEnemyDamaged(Enemy enemy)
