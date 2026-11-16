@@ -58,7 +58,7 @@
 | 패배한 상태에서 체력 강화 | 현재 체력을 늘리지 않는다 | 체력 0 그대로. 직전 최대 체력 기억만 바꾼다 |
 | `AddEnemy`의 `stage`가 1보다 작음 | `ArgumentOutOfRangeException` | 변화 없음, 알림 없음 |
 | `AddEnemy`의 `kind`가 정의되지 않은 값 (예: `(EnemyKind)99`) | `ArgumentOutOfRangeException` | 변화 없음, 알림 없음 |
-| `AddEnemy`의 `position`이 `NaN`, 무한대, 또는 `DisciplePosition`보다 작음 | `ArgumentOutOfRangeException` | 변화 없음, 알림 없음 |
+| `AddEnemy`의 `position`이 `NaN`, 무한대, 또는 `DisciplePosition`보다 작음 (`DisciplePosition − 1e-9` 미만) | `ArgumentOutOfRangeException` | 변화 없음, 알림 없음 |
 | `AddEnemy`의 `position`이 `DisciplePosition`과 같음 | 정상 추가 | |
 | 멈춘 동안 또는 패배한 뒤 `AddEnemy` | 정상 추가 | `EnemyAdded` 1번 |
 | `SetPaused`를 지금과 같은 값으로 부름 | 아무 일도 없다 | |
@@ -182,8 +182,9 @@ namespace PlumSword.Core.Combat
         public void Step();
 
         // 적을 추가하고 EnemyAdded 를 보낸 뒤 그 적을 돌려준다. 능력치는 EnemyStats 로 계산한다.
-        // stage < 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition 보다 작으면
+        // stage < 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
         // ArgumentOutOfRangeException (아무것도 바꾸지 않는다). 멈췄거나 패배한 상태에서도 추가된다.
+        // (Epsilon 허용: 칸마다 0.04 를 더한 좌표의 소수 오차 때문에 "제자와 같은 좌표" 가 거부되지 않게 한다.)
         public Enemy AddEnemy(EnemyKind kind, int stage, double position);
 
         // 제자를 좌표 0, 체력 가득, 공격 대기 0, 패배 아님으로 되돌리고 모든 적을 없앤 뒤
