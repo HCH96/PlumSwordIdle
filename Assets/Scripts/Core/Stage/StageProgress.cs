@@ -74,8 +74,10 @@ namespace PlumSword.Core.Stage
 
         public bool IsBossActive => Boss != null;
 
-        /// <summary>Boss 가 null 이면 처치 수 / 10.0. 보스 체력 비율은 016_stage_progress_kills 가 만든다.</summary>
-        public double BarRatio => DefeatedNormalCount / (double)StageLayout.NormalCount;
+        /// <summary>Boss 가 null 이면 처치 수 / 10.0, 아니면 보스 체력 비율.</summary>
+        public double BarRatio => Boss == null
+            ? DefeatedNormalCount / (double)StageLayout.NormalCount
+            : CombatLayout.HealthRatio(Boss.Health, Boss.MaxHealth);
 
         /// <summary>페이드 막의 진하기. Playing 이면 0. 페이드 중의 값은 018_stage_progress_fade 가 만든다.</summary>
         public double FadeAlpha => 0.0;
@@ -135,9 +137,44 @@ namespace PlumSword.Core.Stage
             Boss = null;
         }
 
+        /// <summary>Begin 전이거나 Playing 이 아니면 전투의 알림을 모두 무시한다.</summary>
+        private bool IsListening => HasBegun && Phase == StagePhase.Playing;
+
         private void OnEnemyDefeated(Enemy enemy)
         {
-            // 016_stage_progress_kills, 017_stage_progress_outcome 이 채운다.
+            if (!IsListening || enemy == null)
+            {
+                return;
+            }
+
+            // 적은 Kind 로만 가린다 (누가 추가했는지는 보지 않는다).
+            if (enemy.Kind == EnemyKind.Normal)
+            {
+                OnNormalDefeated();
+            }
+
+            // 보스 처치는 017_stage_progress_outcome 이 채운다.
+        }
+
+        /// <summary>일반 몬스터 한 마리: 금화 → 처치 수 → (열 번째면) 보스 등장 → Changed.</summary>
+        private void OnNormalDefeated()
+        {
+            _wallet.Add(StageRewards.NormalGold(StageNumber));
+
+            if (DefeatedNormalCount < StageLayout.NormalCount)
+            {
+                DefeatedNormalCount++;
+
+                if (DefeatedNormalCount == StageLayout.NormalCount && !_battle.IsDiscipleDefeated)
+                {
+                    Boss = _battle.AddEnemy(
+                        EnemyKind.Boss,
+                        StageNumber,
+                        _battle.DisciplePosition + StageLayout.BossDistance);
+                }
+            }
+
+            Changed?.Invoke();
         }
 
         private void OnDiscipleDefeated()
@@ -147,7 +184,15 @@ namespace PlumSword.Core.Stage
 
         private void OnEnemyDamaged(Enemy enemy)
         {
-            // 016_stage_progress_kills 가 채운다.
+            if (!IsListening)
+            {
+                return;
+            }
+
+            if (enemy != null && ReferenceEquals(enemy, Boss))
+            {
+                Changed?.Invoke();
+            }
         }
     }
 }
