@@ -19,13 +19,14 @@ namespace PlumSword.Core.Stage
         private readonly Battle _battle;
         private readonly Random _random;
 
-#pragma warning disable CS0414 // 018_stage_progress_fade 가 읽는다.
-        /// <summary>전환 시작 때 기억한 다음 스테이지 번호. 018_stage_progress_fade 가 교체에 쓴다.</summary>
+/// <summary>페이드 시간 비교의 허용 오차. 페이드 시간 ≥ FadeSeconds − FadeTolerance 이면 끝난 것으로 본다.</summary>
+        private const double FadeTolerance = 1e-9;
+
+        /// <summary>전환 시작 때 기억한 다음 스테이지 번호. 가려진 순간의 교체에 쓴다.</summary>
         private int _nextStageNumber;
 
-        /// <summary>현재 페이드 단계에서 흐른 시간 (초). 018_stage_progress_fade 가 센다.</summary>
+        /// <summary>현재 페이드 단계에서 흐른 시간 (초).</summary>
         private double _fadeElapsed;
-#pragma warning restore CS0414
 
         /// <summary>
         /// wallet: 처치 금화를 줄 지갑. upgrades: 페이드 동안 잠글 강화. battle: 적을 놓고 알림을 받을 전투.
@@ -85,8 +86,25 @@ namespace PlumSword.Core.Stage
             ? DefeatedNormalCount / (double)StageLayout.NormalCount
             : CombatLayout.HealthRatio(Boss.Health, Boss.MaxHealth);
 
-        /// <summary>페이드 막의 진하기. Playing 이면 0. 페이드 중의 값은 018_stage_progress_fade 가 만든다.</summary>
-        public double FadeAlpha => 0.0;
+        /// <summary>
+        /// 페이드 막의 진하기 (0.0 ~ 1.0). Playing 이면 0.
+        /// FadingOut 이면 min(1, 페이드 시간 / FadeSeconds), FadingIn 이면 max(0, 1 − 페이드 시간 / FadeSeconds).
+        /// </summary>
+        public double FadeAlpha
+        {
+            get
+            {
+                switch (Phase)
+                {
+                    case StagePhase.FadingOut:
+                        return Math.Min(1.0, _fadeElapsed / FadeSeconds);
+                    case StagePhase.FadingIn:
+                        return Math.Max(0.0, 1.0 - _fadeElapsed / FadeSeconds);
+                    default:
+                        return 0.0;
+                }
+            }
+        }
 
         /// <summary>
         /// 첫 스테이지를 배치한다 (battle.Reset 뒤 일반 몬스터 10 마리).
@@ -121,12 +139,33 @@ namespace PlumSword.Core.Stage
                 return;
             }
 
-            // 페이드 처리는 018_stage_progress_fade 가 만든다.
+            _fadeElapsed += deltaSeconds;
+
+            // 1. 가려진 순간의 교체. 남은 시간은 페이드인으로 넘긴다.
+            if (Phase == StagePhase.FadingOut && _fadeElapsed >= FadeSeconds - FadeTolerance)
+            {
+                StageNumber = _nextStageNumber;
+                PlaceStage();
+                _fadeElapsed = Math.Max(0.0, _fadeElapsed - FadeSeconds);
+                Phase = StagePhase.FadingIn;
+                StageStarted?.Invoke(StageNumber);
+                Changed?.Invoke();
+            }
+
+            // 2. 전환을 끝낸다. 같은 Tick 에서 1번 뒤에 이어질 수 있다.
+            if (Phase == StagePhase.FadingIn && _fadeElapsed >= FadeSeconds - FadeTolerance)
+            {
+                Phase = StagePhase.Playing;
+                _fadeElapsed = 0.0;
+                _battle.SetPaused(false);
+                _upgrades.SetLocked(false);
+                Changed?.Invoke();
+            }
         }
 
         /// <summary>
         /// 스테이지 배치: battle.Reset → 무리 구성 → 좌표마다 일반 몬스터 추가 → 처치 수·보스 초기화.
-        /// Begin 과 가려진 순간의 교체(018_stage_progress_fade)가 함께 쓴다.
+        /// Begin 과 가려진 순간의 교체(Tick)가 함께 쓴다.
         /// </summary>
         private void PlaceStage()
         {
@@ -185,7 +224,7 @@ namespace PlumSword.Core.Stage
 
         /// <summary>
         /// 전환 시작: 다음 번호를 기억하고 FadingOut, 페이드 시간 0, 전투 멈춤, 강화 잠금.
-        /// 018_stage_progress_fade 가 _nextStageNumber, _fadeElapsed 를 읽어 교체를 한다.
+        /// Tick 이 _nextStageNumber, _fadeElapsed 를 읽어 교체를 한다.
         /// </summary>
         private void BeginTransition(int nextStageNumber)
         {
