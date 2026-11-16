@@ -103,8 +103,8 @@ namespace PlumSword.Game
 {
     public sealed class GameRoot : MonoBehaviour   // 이미 있는 클래스에 아래 둘을 더한다
     {
-        public PlumSword.Core.Currency.Wallet Wallet { get; }   // Awake 에서 new Wallet() 으로 하나 만든다
-        public UnityEngine.Canvas UiCanvas { get; }             // Awake 에서 만든 공용 UI 캔버스
+        public PlumSword.Core.Currency.Wallet Wallet { get; private set; }   // Awake 에서 new Wallet() 으로 하나 만든다
+        public UnityEngine.Canvas UiCanvas { get; private set; }             // Awake 에서 만든 공용 UI 캔버스
     }
 }
 
