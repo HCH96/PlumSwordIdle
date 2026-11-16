@@ -1,18 +1,18 @@
 ---
 name: loop-status
-description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리한다. 맨 위에 "지금 사용자가 해야 할 일"(보류 답하기, 끝난 루프 합치기, 루프 실행, 없는 선행 작업 고치기, 다음 작업 만들기)을 먼저 적고, 그 아래에 tasks 다섯 폴더의 문서(wait 가 기다리는 것, 보류 사유와 종류, 중간에 멈춘 doing), .loop/state.json, 합쳐지지 않은 loop/* 와 남은 task/* 브랜치, worktree, 최근 실행 로그와 검사 훅 기록을 보여 준다. 루프가 실제로 돌고 있는지는 근거와 함께 "확실하지 않음"을 구분해 적는다. 사용자가 "루프 현황", "루프 상태 보여 줘", "지금 뭐 돌고 있어?", "왜 멈췄어?", "내가 할 일 뭐야?", "루프 안 도는 것 같아"라고 할 때 쓴다. 아무것도 바꾸지 않는다.
+description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리한다. 맨 위에 "지금 사용자가 해야 할 일"(보류 답하기, 통합 브랜치에 쌓인 루프를 확인하고 main 에 올리기, 루프 실행, 없는 선행 작업 고치기, 다음 작업 만들기)을 먼저 적고, 그 아래에 tasks 다섯 폴더의 문서(wait 가 기다리는 것, 보류 사유와 종류, 중간에 멈춘 doing), .loop/state.json, 통합 브랜치(integration)와 아직 main 에 올리지 않은 루프, 검증에서 떨어진 rejected/* 와 남은 loop/*·task/* 브랜치, worktree, 최근 실행 로그와 검사 훅 기록을 보여 준다. 루프가 실제로 돌고 있는지는 근거와 함께 "확실하지 않음"을 구분해 적는다. 사용자가 "루프 현황", "루프 상태 보여 줘", "지금 뭐 돌고 있어?", "왜 멈췄어?", "내가 할 일 뭐야?", "루프 안 도는 것 같아"라고 할 때 쓴다. 아무것도 바꾸지 않는다.
 ---
 
 # 루프 현황 (loop-status)
 
-자동 개발 루프는 `tasks/` 의 다섯 폴더(todo, wait, doing, blocked, done)를 상태판으로 쓴다. 문서가 어느 폴더에 있는지가 곧 작업 상태다. 루프는 옆 폴더의 worktree(`../PlumSwordIdle_loop`)에서 일하고, 진행 상황은 `.loop/state.json` 과 `.loop/logs/` 에 남는다. 이 스킬은 이것들을 **읽기만 해서** "지금 무엇이 돌고 있고, 무엇이 왜 멈춰 있고, 사용자가 할 일이 무엇인지"를 정리한다.
+자동 개발 루프는 `tasks/` 의 다섯 폴더(todo, wait, doing, blocked, done)를 상태판으로 쓴다. 문서가 어느 폴더에 있는지가 곧 작업 상태다. 루프는 옆 폴더의 worktree(`../PlumSwordIdle_loop`)에서 일하고, 진행 상황은 `.loop/state.json` 과 `.loop/logs/` 에 남는다. 묶음 하나가 끝나면 루프가 검증(테스트, 관문, 교차 리뷰)을 거쳐 **통합 브랜치(`integration`)에 스스로 합치고** 다음 묶음으로 넘어간다. main 에 올리는 것만 사람이 한다. 이 스킬은 이것들을 **읽기만 해서** "지금 무엇이 돌고 있고, 무엇이 왜 멈춰 있고, 사용자가 할 일이 무엇인지"를 정리한다.
 
 루프 동작의 기준 문서는 `docs/dev/loop.md` 다. 판단이 애매하면 그 문서를 따른다.
 
 ## 지킬 것
 
 - **아무것도 바꾸지 않는다.** 문서를 옮기거나 고치지 않는다. 상태 파일, 로그, 설정도 고치지 않는다.
-- 깃은 **조회 명령만** 쓴다 (`for-each-ref`, `merge-base --is-ancestor`, `cat-file -e`, `worktree list`, `status`, `rev-list`, `log`). 체크아웃, 커밋, 병합, 브랜치 삭제는 하지 않는다. 그런 일이 필요하면 명령을 알려 주고 사용자가 직접 하게 한다.
+- 깃은 **조회 명령만** 쓴다 (`for-each-ref`, `merge-base --is-ancestor`, `cat-file -e`, `worktree list`, `status`, `rev-list`, `rev-parse`, `log`). 체크아웃, 커밋, 병합, 브랜치 삭제는 하지 않는다. 그런 일이 필요하면 명령을 알려 주고 사용자가 직접 하게 한다.
 - `.env` 는 읽지 않는다.
 - `tasks/`, `.loop/` 는 항상 **프로젝트 폴더의 것**을 본다. worktree 안의 `tasks/` 는 보지 않는다.
 - **루프가 돌고 있는지 추측하지 않는다.** 스크립트가 낸 판단(돌고 있음 / 돌고 있지 않음 / 확실하지 않음)과 근거를 그대로 전한다. "확실하지 않음"을 "돌고 있음"이나 "멈춤"으로 바꿔 말하지 않는다.
@@ -33,15 +33,15 @@ description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리
 | --- | --- | --- |
 | 폴더별 작업 | `tasks/<폴더>/*.md` | 폴더마다 문서 수와 목록(번호, 이름, 묶음) |
 | wait | 문서의 `## 선행 작업` 칸 | 기다리는 선행 작업과 그 작업이 지금 있는 곳. 어디에도 없으면 굵게 "어디에도 없음" |
-| blocked | 마지막 `## 보류 사유` 절 | 사유 한 줄, 종류(질문, 재시도 한도 초과, 선행 작업 순환, done 인데 기록 없음), 그 뒤에 `## 답변` 이 적혔는지 |
+| blocked | 마지막 `## 보류 사유` 절 | 사유 한 줄, 종류(질문, 재시도 한도 초과, 리뷰가 사람의 결정을 요구, 리뷰를 통과하지 못함, 리뷰 실행 실패, 루프 검증 실패, 선행 작업 순환, done 인데 기록 없음), 그 뒤에 `## 답변` 이 적혔는지 |
 | doing | 폴더 + 실행 여부 | 루프가 안 돌고 있으면 "중간에 멈춘 것" |
 | todo | 선행 작업, 묶음 | 다음 실행 때 wait 로 갈 문서, 진행 중인 루프와 다른 묶음 |
-| 루프 상태 | `.loop/state.json` | 상태(active, finished), 루프 브랜치, 묶음, 처리한 작업, 처리 중인 작업, 마지막으로 멈춘 이유 |
-| 브랜치 | `git for-each-ref` | main 에 안 합쳐진 `loop/*`, 남은 `task/*` 와 그 문서 위치 |
+| 루프 상태 | `.loop/state.json` | 상태(active 진행 중, finished 끝남, rejected 검증에서 떨어짐), 루프 브랜치, 묶음, 처리한 작업과 구현·리뷰 에이전트, 합친 곳·태그·증거 경로, 처리 중인 작업, 마지막으로 멈춘 이유 |
+| 브랜치 | `git for-each-ref`, `git log` | 통합 브랜치가 main 보다 얼마나 앞섰는지와 **아직 main 에 올리지 않은 루프**(태그, 묶음, 증거 경로), 검증에서 떨어진 `rejected/*`, 통합 브랜치에 안 합쳐진 `loop/*`, 남은 `task/*` 와 그 문서 위치 |
 | worktree | `git worktree list`, `git status` | 있는지, 어느 브랜치인지, 커밋 안 된 변경 |
 | 최근 실행 | `.loop/logs/run_*.log`, `guard.log` | 가장 최근 로그의 마지막 줄들(알림 전송 줄은 뺌), 검사 훅이 막은 건수 |
 
-완료 판정은 루프와 같다: `tasks/done/<이름>.md` 가 있거나, main(진행 중인 루프가 있으면 루프 브랜치도)에 `docs/history/<이름>.md` 가 있으면 완료.
+완료 판정은 루프와 같다: 통합 브랜치(진행 중인 루프가 있으면 루프 브랜치도)에 `docs/history/<이름>.md` 가 있으면 완료. `tasks/done/` 에 있어도 그 기록이 합쳐지지 않았으면 끝난 것이 아니다 ("done 이지만 아직 합쳐지지 않음"으로 적는다). 통합 브랜치가 아직 없으면(새 방식으로 처음 실행하기 전) main 을 기준으로 본다.
 
 ### 루프가 돌고 있는지 판단하는 근거
 
@@ -57,13 +57,15 @@ description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리
 | 상황 | 해야 할 일 |
 | --- | --- |
 | worktree 에 자동 복구 대상이 아닌 변경, worktree 가 아닌 폴더, 상태 파일 이상 | 루프가 시작하지 않는다. worktree 나 `.loop/state.json` 을 직접 확인·정리 |
-| 끝난 루프 브랜치가 main 에 안 합쳐짐 | **새 루프가 시작되지 않는다.** `review-loop` 로 확인한 뒤 main 에서 `git merge loop/<날짜-시간>` |
-| 보류(blocked)가 있음 | `answer-blocked`. 진행 중인 루프의 묶음이면 답할 때까지 그 루프가 안 끝난다는 점도 알린다 |
+| 진행 중이 아닌 `loop/*` 브랜치가 통합 브랜치에 안 합쳐짐 | **새 루프가 시작되지 않는다.** 자동 합치기가 켜져 있으면 생기지 않는 것이 정상이다. 자동 합치기(`auto_merge`)가 꺼져 있거나, 합치는 도중에 끊겼거나, 루프 밖에서 만든 브랜치다. `review-loop` 로 내용을 확인한 뒤 합치거나 지운다 |
+| 보류(blocked)가 있음 | `answer-blocked`. 보류가 있어도 루프는 끝난 작업만 합치고 다음 묶음으로 넘어간다. 그 보류를 기다리는 wait 문서가 있으면 함께 알린다 |
+| 검증에서 떨어진 `rejected/*` 브랜치가 있음 | 그 루프의 작업은 보류로 가 있다. `answer-blocked` 로 원인을 확인하고, 다 본 뒤 `git branch -D` 로 지운다 (루프를 막지는 않는다) |
+| 통합 브랜치에 아직 main 에 올리지 않은 루프가 있음 | `review-loop` 로 증거와 함께 확인한 뒤 main 에서 `git merge --ff-only integration`. 루프가 돌고 있어도 올릴 수 있다. todo 가 다 비었으면 이것이 가장 중요한 할 일이다 |
 | 선행 작업이 어디에도 없는 wait 문서 | `make-tasks` 로 선행 작업 문서를 넣거나, 그 문서의 `## 선행 작업` 칸을 고친다 |
 | 보류 문서에 답변은 적혔는데 아직 blocked | `answer-blocked` 로 확인하고 todo 로 옮긴다 |
 | doing 에 문서가 있는데 루프가 안 돎, 또는 worktree 의 기능 브랜치에 변경이 남음 | 중간에 멈춘 것. 루프를 다시 실행하면 복구된다 |
 | todo 에 문서가 있는데 루프가 안 돎 | 루프 실행: `python tools/loop/run_loop.py` 또는 `python tools/loop/run_loop.py --watch` |
-| 상태 파일은 active 인데 이번 묶음에 남은 작업이 없음 | 루프를 한 번 실행하면 루프를 끝낸다 |
+| 상태 파일은 active 인데 이번 묶음의 todo 가 비어 있음 | 루프를 한 번 실행하면 검증하고 통합 브랜치에 합친다 |
 | 루프가 돌고 있음 | 기다리면 된다 |
 | 검사 훅이 최근 24시간에 막은 기록이 있음 | `.loop/logs/guard.log` 확인 (docs/dev/loop.md "클로드가 정상 작업 중에 막힐 때") |
 | 아무것도 없음 | `plan-feature` 로 기획하고 `make-tasks` 로 다음 작업을 만든다 |
@@ -75,13 +77,16 @@ description: 자동 개발 루프의 현황을 읽기만 해서 한눈에 정리
 스크립트가 안 될 때 같은 내용을 손으로 보는 방법 (모두 조회만 한다):
 
 ```
-git for-each-ref --format="%(refname:short)" refs/heads/loop/ refs/heads/task/
-git merge-base --is-ancestor <loop 브랜치> main   # 종료 코드 0 이면 합쳐짐
+git for-each-ref --format="%(refname:short)" refs/heads/loop/ refs/heads/task/ refs/heads/rejected/ refs/tags/loop-merged/
+git merge-base --is-ancestor <loop 브랜치> integration   # 종료 코드 0 이면 합쳐짐
+git log --first-parent --merges --oneline main..integration   # 아직 main 에 올리지 않은 루프
+git show integration:docs/evidence/index.md                   # 루프별 증거 색인
 git worktree list --porcelain
 git -C ../PlumSwordIdle_loop --no-optional-locks status --porcelain
 ```
 
 - 상태 파일: `.loop/state.json`
+- 통합 브랜치 이름과 자동 합치기 여부: `tools/loop/loop_config.json` 의 `integration_branch`, `auto_merge`
 - 실행 로그: `.loop/logs/run_<날짜-시간>.log` (이름 순으로 가장 마지막 것이 최근)
 - 검사 훅 기록: `.loop/logs/guard.log`
 

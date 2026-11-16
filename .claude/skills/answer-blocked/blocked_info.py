@@ -69,11 +69,11 @@ def last(secs, prefix: str) -> tuple[str, str] | None:
 
 def parse_block(body: str) -> dict[str, str]:
     """'- 사유: ...' 형식을 키별로 나눈다. 사유는 여러 줄일 수 있다."""
-    keys = ("사유", "질문", "추천안", "기능 브랜치", "작업 에이전트")
+    keys = ("사유", "질문", "추천안", "기능 브랜치", "작업 에이전트", "남은 브랜치")
     out: dict[str, str] = {}
     cur = None
     for line in body.splitlines():
-        m = re.match(r"^- (사유|질문|추천안|기능 브랜치|작업 에이전트): ?(.*)$", line)
+        m = re.match(r"^- (사유|질문|추천안|기능 브랜치|작업 에이전트|남은 브랜치): ?(.*)$", line)
         if m and m.group(1) in keys:
             cur = m.group(1)
             out[cur] = m.group(2)
@@ -89,6 +89,14 @@ def kind_of(reason: str) -> str:
         return "선행 작업 순환"
     if reason.startswith("done 폴더에 있지만 docs/history 에 기록이 없음"):
         return "done 인데 기록이 없음"
+    if reason.startswith("교차 리뷰를 실행하지 못함"):
+        return "리뷰 실행 실패"
+    if reason.startswith("교차 리뷰(") and "통과하지 못함" in reason.splitlines()[0]:
+        return "리뷰를 통과하지 못함"
+    if reason.startswith("교차 리뷰("):
+        return "리뷰가 사람의 결정을 요구"
+    if reason.startswith("이 작업이 들어 있던 루프("):
+        return "루프 검증 실패"
     return "에이전트의 질문"
 
 
@@ -141,6 +149,18 @@ def branch_ok(root: Path, name: str) -> bool:
 def safe_branch(stem: str) -> str:
     safe = re.sub(r"[^0-9A-Za-z가-힣_.-]+", "-", stem).strip("-.") or "task"
     return "task/" + safe
+
+
+def base_branch(root: Path) -> str:
+    """루프 밖에서 기능 브랜치를 비교할 기준: 통합 브랜치(있으면), 없으면 main."""
+    cfg: dict = {}
+    for name in ("loop_config.json", "loop_config.local.json"):
+        try:
+            cfg.update(json.loads((root / "tools" / "loop" / name).read_text(encoding="utf-8-sig")))
+        except (OSError, ValueError):
+            pass
+    integ = cfg.get("integration_branch") or ""
+    return integ if integ and branch_ok(root, integ) else cfg.get("base_branch", "main")
 
 
 def load_state(root: Path) -> dict:
@@ -241,7 +261,7 @@ def cmd_show(root: Path, name: str) -> int:
     lb = last(secs, "보류 사유")
     info = parse_block(lb[1]) if lb else {}
     print(f"\n## 마지막 {lb[0] if lb else '보류 사유'} [{kind_of(info.get('사유', '')) if lb else '없음'}]")
-    for k in ("사유", "질문", "추천안", "기능 브랜치", "작업 에이전트"):
+    for k in ("사유", "질문", "추천안", "기능 브랜치", "남은 브랜치", "작업 에이전트"):
         if k in info:
             print(f"- {k}: {info[k]}")
 
@@ -262,7 +282,7 @@ def cmd_show(root: Path, name: str) -> int:
     # 기능 브랜치
     tb = (info.get("기능 브랜치", "").split(" ")[0] or safe_branch(name)).strip()
     loop_b = state.get("loop_branch") if state.get("status") == "active" else None
-    base = loop_b if loop_b and branch_ok(root, loop_b) else "main"
+    base = loop_b if loop_b and branch_ok(root, loop_b) else base_branch(root)
     print(f"\n## 기능 브랜치 {tb} (기준 {base})")
     if not branch_ok(root, tb):
         print("브랜치 없음")

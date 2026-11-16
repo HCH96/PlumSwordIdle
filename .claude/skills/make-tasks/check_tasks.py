@@ -24,6 +24,10 @@ import sys
 from pathlib import Path
 
 HEADINGS = ["목표", "묶음", "선행 작업", "참고 문서", "요구사항", "완료 조건", "하지 말 것"]
+# 선택 칸. 있으면 "하지 말 것" 바로 앞에 둔다 (docs/dev/task_template.md "관문 예외")
+GATE_HEADING = "관문 예외"
+HEADINGS_WITH_GATE = HEADINGS[:-1] + [GATE_HEADING, HEADINGS[-1]]
+GATE_IDS = ("asmdef", "scene", "settings")
 TASK_FOLDERS = ["todo", "wait", "doing", "blocked", "done"]
 UNFINISHED = ["todo", "wait", "doing", "blocked"]
 FILE_RE = re.compile(r"^(\d{3,})_[a-z0-9]+(?:_[a-z0-9]+)*\.md$")
@@ -48,7 +52,7 @@ def load_loop(root: Path):
 
 
 def load_cfg(root: Path) -> dict:
-    cfg = {"base_branch": "main", "default_bundle": "기본"}
+    cfg = {"base_branch": "main", "integration_branch": "", "default_bundle": "기본"}
     for name in ("loop_config.json", "loop_config.local.json"):
         p = root / "tools" / "loop" / name
         if p.exists():
@@ -70,16 +74,17 @@ def git_lines(root: Path, *args: str) -> list[str] | None:
     return r.stdout.splitlines() if r.returncode == 0 else None
 
 
-def existing_docs(root: Path, base: str) -> dict[str, str]:
-    """이미 있는 작업 문서 이름 → 있는 곳"""
+def existing_docs(root: Path, base: str, integration: str = "") -> dict[str, str]:
+    """이미 있는 작업 문서 이름 → 있는 곳. 기록은 main 과 통합 브랜치(아직 main 에 안 올라간 루프)를 모두 본다."""
     found: dict[str, str] = {}
     hist = root / "docs" / "history"
     if hist.is_dir():
         for p in hist.glob("*.md"):
             found[p.stem] = "history"
-    for line in git_lines(root, "ls-tree", "-r", "--name-only", base, "--", "docs/history") or []:
-        if line.endswith(".md"):
-            found.setdefault(Path(line).stem, "history")
+    for ref in (base, integration):
+        for line in (git_lines(root, "ls-tree", "-r", "--name-only", ref, "--", "docs/history") or []) if ref else []:
+            if line.endswith(".md"):
+                found.setdefault(Path(line).stem, "history")
     for folder in TASK_FOLDERS:
         d = root / "tasks" / folder
         if d.is_dir():
@@ -126,7 +131,7 @@ def main() -> int:
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[3]
     cfg = load_cfg(root)
     base = cfg["base_branch"]
-    existing = existing_docs(root, base)
+    existing = existing_docs(root, base, cfg.get("integration_branch") or "")
     nxt = next_number(existing)
 
     if args.next_number:
@@ -180,9 +185,22 @@ def main() -> int:
         # 칸 제목
         secs = sections(text)
         titles = [t for t, _ in secs]
-        if titles != HEADINGS:
-            errors.append(f"{tag}: 칸 제목이 양식과 다르다. 있어야 할 것: {HEADINGS} / 실제: {titles}")
+        if titles not in (HEADINGS, HEADINGS_WITH_GATE):
+            errors.append(
+                f"{tag}: 칸 제목이 양식과 다르다. 있어야 할 것: {HEADINGS} "
+                f"(선택 칸 '{GATE_HEADING}' 는 '하지 말 것' 바로 앞) / 실제: {titles}"
+            )
         by_title = dict(secs)
+        if GATE_HEADING in by_title:
+            ids = [ln.lstrip("-*").strip().strip("`").strip() for ln in body_lines(by_title[GATE_HEADING])]
+            bad = [x for x in ids if x not in GATE_IDS]
+            if bad or not ids:
+                errors.append(f"{tag}: '## {GATE_HEADING}' 칸에는 한 줄에 하나씩 {', '.join(GATE_IDS)} 중에서만 적는다. 실제: {ids}")
+            else:
+                warns.append(
+                    f"{tag}: 관문 예외 {', '.join(ids)} 가 있다. 이 작업은 평소 금지된 변경(어셈블리 정의·씬·설정)을 해도 "
+                    "사람 확인 없이 합쳐진다. 요구사항에 그 변경이 꼭 필요한 이유가 적혀 있는지, 사용자가 알고 있는지 확인한다"
+                )
         for h in HEADINGS:
             if h in by_title and not body_lines(by_title[h]):
                 errors.append(f"{tag}: '## {h}' 칸이 비어 있다")
@@ -254,14 +272,14 @@ def main() -> int:
                 if docs[dep].bundle != doc.bundle:
                     warns.append(
                         f"{name}.md: 선행 작업 {dep} 이 다른 묶음({docs[dep].bundle})이다. "
-                        f"그 묶음이 {base} 에 합쳐진 뒤에야 이 작업이 시작된다. 의도한 것인지 확인한다"
+                        "그 묶음의 루프가 검증을 통과해 통합 브랜치에 합쳐진 뒤에야 이 작업이 시작된다. 의도한 것인지 확인한다"
                     )
             elif dep in existing:
                 where = existing[dep]
                 if where in UNFINISHED:
                     other = loop.Doc(root / "tasks" / where / f"{dep}.md", cfg["default_bundle"])
                     if other.bundle != doc.bundle:
-                        warns.append(f"{name}.md: 선행 작업 {dep}({where}) 이 다른 묶음({other.bundle})이다. 그 묶음이 {base} 에 합쳐진 뒤에야 시작된다")
+                        warns.append(f"{name}.md: 선행 작업 {dep}({where}) 이 다른 묶음({other.bundle})이다. 그 묶음의 루프가 통합 브랜치에 합쳐진 뒤에야 시작된다")
                     if where == "blocked":
                         warns.append(f"{name}.md: 선행 작업 {dep} 이 보류(blocked) 상태다. 풀릴 때까지 이 작업은 기다린다")
             else:

@@ -141,6 +141,10 @@ def load_config(root: Path) -> dict:
         for k, v in data.items():
             cfg[k] = {**cfg[k], **v} if isinstance(v, dict) and isinstance(cfg.get(k), dict) else v
     cfg.setdefault("base_branch", "main")
+    cfg.setdefault("integration_branch", "")
+    cfg.setdefault("auto_merge", True)
+    cfg.setdefault("merge_tag_prefix", "loop-merged/")
+    cfg.setdefault("rejected_branch_prefix", "rejected/")
     cfg.setdefault("loop_branch_prefix", "loop/")
     cfg.setdefault("task_branch_prefix", "task/")
     cfg.setdefault("worktree_path", "../PlumSwordIdle_loop")
@@ -248,6 +252,14 @@ class Doc:
             kind = "선행 작업 순환"
         elif reason.startswith("done 폴더에 있지만 docs/history 에 기록이 없음"):
             kind = "done 인데 기록 없음"
+        elif reason.startswith("교차 리뷰를 실행하지 못함"):
+            kind = "리뷰 실행 실패"
+        elif reason.startswith("교차 리뷰(") and "통과하지 못함" in reason:
+            kind = "리뷰를 통과하지 못함"
+        elif reason.startswith("교차 리뷰("):
+            kind = "리뷰가 사람의 결정을 요구"
+        elif reason.startswith("이 작업이 들어 있던 루프("):
+            kind = "루프 검증 실패"
         else:
             kind = "질문"
         answered = any(t.startswith("답변") for t, _ in self.secs[idx + 1 :])
@@ -431,7 +443,11 @@ class Report:
         self.root = root
         self.cfg = load_config(root)
         self.git = Git(root)
-        self.base = self.cfg["base_branch"]
+        self.main = self.cfg["base_branch"]  # 사람이 일하는 브랜치
+        integ = self.cfg["integration_branch"]
+        self.has_integ = bool(integ) and integ != self.main and self.git.exists(integ)
+        # 루프가 따고 합치는 기준. 통합 브랜치가 아직 없으면(첫 실행 전) main 과 같다
+        self.base = integ if self.has_integ else self.main
         self.state, self.state_note = load_state(root)
         self.docs = load_docs(root, self.cfg["default_bundle"])
         self.by_name = {d.name: d for docs in self.docs.values() for d in docs}
@@ -446,17 +462,18 @@ class Report:
 
     # ── 선행 작업 위치 ──
     def dep_where(self, dep: str) -> tuple[str, bool]:
-        """(설명, 완료 여부). run_loop.py 의 완료 판정: done 폴더 또는 기준 브랜치(루프 안에서는 루프 브랜치)의 docs/history."""
+        """(설명, 완료 여부). run_loop.py 의 완료 판정: 통합 브랜치(루프 안에서는 루프 브랜치)의 docs/history 기록.
+
+        tasks/done 에 있어도 기록이 합쳐지지 않았으면 끝난 것이 아니다.
+        """
         rel = f"docs/history/{dep}.md"
-        if (self.root / "tasks" / "done" / f"{dep}.md").exists():
-            return "완료(done)", True
         if self.git.has_file(self.base, rel):
             return f"완료({self.base} 기록)", True
         if self.active_ok and self.git.has_file(self.active_branch, rel):
             return "완료(루프 브랜치 기록)", True
         d = self.by_name.get(dep)
         if d:
-            return d.folder, False
+            return ("done 이지만 아직 합쳐지지 않음" if d.folder == "done" else d.folder), False
         return "어디에도 없음", False
 
     # ── worktree ──
@@ -499,7 +516,7 @@ class Report:
         if self.state_note.startswith("읽을 수 없음"):
             self.add(0, f"`.loop/state.json` 을 {self.state_note}. 루프가 다음 실행에서 멈춘다. 파일 내용을 직접 확인한다.")
         if self.active_branch and not self.active_ok:
-            self.add(0, f"상태 파일의 진행 중인 루프 브랜치 `{self.active_branch}` 가 없다. 루프가 시작 전 점검에서 멈춘다. 브랜치를 지웠다면 `.loop/state.json` 을 정리한다 (docs/dev/loop.md \"루프가 끝난 뒤 main에 합치기\").")
+            self.add(0, f"상태 파일의 진행 중인 루프 브랜치 `{self.active_branch}` 가 없다. 루프가 시작 전 점검에서 멈춘다. 브랜치를 지웠다면 `.loop/state.json` 을 정리한다 (docs/dev/loop.md \"진행 중인 루프와 끝난 루프\").")
 
         # 2. worktree 의 정리 안 된 변경 (자동 복구 대상이 아니면 루프가 시작하지 않음)
         wt = self.wt
@@ -522,10 +539,27 @@ class Report:
             ls = self.state["last_stop"]
             rerun.append(f"마지막으로 멈춘 이유 ({ls.get('at', '?')}): {one_line(ls.get('reason', ''), 120)}")
 
-        # 4. 합쳐지지 않은 완료 루프
+        # 4. 합쳐지지 않은 루프 브랜치 (자동 합치기가 켜져 있으면 생기지 않는 것이 정상이다)
         if unmerged:
             lst = ", ".join(f"`{b}`" for b in unmerged)
-            self.add(1, f"끝났지만 {self.base} 에 합쳐지지 않은 루프 브랜치가 있다: {lst}. **이것이 남아 있으면 새 루프가 시작되지 않는다.** `review-loop` 스킬로 확인한 뒤 프로젝트 폴더(main)에서 `git merge <브랜치>` 로 합친다 (버리려면 docs/dev/loop.md \"루프가 끝난 뒤 main에 합치기\").")
+            why = ("자동 합치기(`auto_merge`)가 꺼져 있어 사람이 합치길 기다리는 루프다." if not self.cfg["auto_merge"]
+                   else "자동 합치기가 켜져 있는데 남아 있으니, 루프 스크립트 밖에서 만들어졌거나 합치는 도중에 끊긴 브랜치다.")
+            self.add(1, f"진행 중이 아닌데 {self.base} 에 합쳐지지 않은 루프 브랜치가 있다: {lst}. **이것이 남아 있으면 새 루프가 시작되지 않는다.** {why} `review-loop --branch <브랜치>` 로 내용을 확인한 뒤 합치거나 지운다 (docs/dev/loop.md \"진행 중인 루프와 끝난 루프\").")
+
+        # 4-1. 검증에서 떨어져 남은 루프 브랜치 (루프를 막지는 않는다)
+        self.rejected = self.git.branches(self.cfg["rejected_branch_prefix"])
+        if self.rejected:
+            lst = ", ".join(f"`{b}`" for b in self.rejected)
+            self.add(2, f"합치기 전 검증에서 떨어진 루프 브랜치가 남아 있다: {lst}. 그 루프의 작업은 보류(blocked)로 가 있다. `answer-blocked` 로 원인을 확인하고, 다 본 뒤에는 `git branch -D <브랜치>` 로 지운다 (루프를 막지는 않는다).")
+
+        # 4-2. 통합 브랜치에 쌓였지만 아직 main 에 올리지 않은 루프
+        self.pending = self.pending_loops()
+        if self.pending:
+            n = self.git.ahead(self.main, self.base)
+            names = ", ".join(f"{x['id']}({x['bundle']})" for x in self.pending[:8]) + (" …" if len(self.pending) > 8 else "")
+            self.add(3 if running == "running" else 2,
+                     f"통합 브랜치 `{self.base}` 에 아직 {self.main} 에 올리지 않은 루프가 {len(self.pending)}개 있다 (커밋 {n}개): {names}. "
+                     f"`review-loop` 스킬로 증거(`git show {self.base}:docs/evidence/index.md`)와 함께 확인한 뒤, {self.main} 에서 `git merge --ff-only {self.base}` 로 올린다. 루프가 돌고 있어도 올릴 수 있다.")
 
         # 5. 보류
         blocked = d["blocked"]
@@ -538,9 +572,10 @@ class Report:
                     k = x.block_info()["kind"]
                     kinds[k] = kinds.get(k, 0) + 1
                 kind_txt = ", ".join(f"{k} {n}건" for k, n in kinds.items())
-                same = [x for x in unanswered if self.bundle and x.bundle == self.bundle]
-                extra = f" 이 중 {len(same)}건은 진행 중인 루프의 묶음({self.bundle})이라, 답하기 전까지 이 루프는 끝나지 않고 다른 묶음도 시작되지 않는다." if same else ""
-                self.add(1, f"보류 {len(unanswered)}건 ({kind_txt}): `answer-blocked` 스킬로 답하고 todo 로 되돌린다.{extra}")
+                names = {x.name for x in unanswered}
+                held = [x for x in d["wait"] if any(dep in names for dep in x.deps)]
+                extra = f" 이 보류를 기다리는 wait 문서가 {len(held)}건 있다 ({', '.join(x.name for x in held)})." if held else ""
+                self.add(1, f"보류 {len(unanswered)}건 ({kind_txt}): `answer-blocked` 스킬로 답하고 todo 로 되돌린다. 보류가 있어도 루프는 끝난 작업만 합치고 다음 묶음으로 넘어간다.{extra}")
             if answered:
                 names = ", ".join(x.path.name for x in answered)
                 self.add(2, f"보류 문서 {names} 에 답변이 적혀 있지만 아직 blocked 에 있다. `answer-blocked` 스킬로 확인하고 todo 로 옮긴다.")
@@ -570,19 +605,19 @@ class Report:
             self.add(3, "루프가 돌고 있다. 기다리면 된다. (진행 상황은 아래 \"루프 상태\"와 \"최근 실행\")")
         elif unmerged and (todo or wait_ready or rerun):
             what = f"todo {len(todo)}건" + (", 중간에 멈춘 작업" if rerun else "")
-            self.add(3, f"{what}이 기다리고 있지만, 합쳐지지 않은 루프 브랜치를 먼저 합쳐야 루프가 시작된다. 합친 뒤 {run_cmd}." + sub_items(rerun))
+            self.add(3, f"{what}이 기다리고 있지만, 합쳐지지 않은 루프 브랜치를 먼저 정리해야 루프가 시작된다. 정리한 뒤 {run_cmd}." + sub_items(rerun))
         elif todo or wait_ready or rerun:
             what = ", ".join(([f"todo {len(todo)}건"] if todo else []) + ([f"선행 작업이 끝나 올라갈 wait {len(wait_ready)}건"] if wait_ready else []) + (["중간에 멈춘 작업"] if rerun else []))
             note = ""
             other = [x for x in todo if self.bundle and x.bundle != self.bundle]
             if other and len(other) == len(todo) and not wait_ready and not rerun:
-                note = f" 단, todo 는 모두 다른 묶음이라 진행 중인 루프(묶음 {self.bundle})가 끝나고 main 에 합친 뒤에 처리된다."
+                note = f" todo 는 모두 다른 묶음이라, 진행 중인 루프(묶음 {self.bundle})를 닫은 뒤 이어서 처리된다 (같은 실행 안에서)."
             elif other:
-                note = f" 이번 루프(묶음 {self.bundle})는 그 묶음 문서만 처리하고, 다른 묶음 {len(other)}건({', '.join(x.name for x in other)})은 이 루프를 main 에 합친 뒤 처리된다."
+                note = f" 이번 루프(묶음 {self.bundle})가 그 묶음 문서를 먼저 처리하고, 다른 묶음 {len(other)}건({', '.join(x.name for x in other)})은 이 루프가 통합 브랜치에 합쳐진 뒤 이어서 처리된다."
             prefix = "루프가 돌고 있지 않다." if running == "stopped" else "루프가 돌고 있는지 확실하지 않다. 돌고 있지 않다면"
             self.add(2 if rerun else 3, f"{prefix} {what}이 기다리고 있으니 루프를 실행한다: {run_cmd}.{note}" + sub_items(rerun))
-        elif self.active_branch and self.active_ok and not d["doing"] and not any(x.bundle == self.bundle for x in blocked) and running != "running":
-            self.add(3, f"상태 파일은 진행 중(active)인데 이번 묶음({self.bundle})에 남은 작업이 없다. 루프를 한 번 실행하면 루프를 끝내고 \"루프 종료\" 알림을 보낸다: `python tools/loop/run_loop.py`")
+        elif self.active_branch and self.active_ok and not d["doing"] and running != "running":
+            self.add(3, f"상태 파일은 진행 중(active)인데 이번 묶음({self.bundle})의 todo 가 비어 있다. 루프를 한 번 실행하면 검증하고 통합 브랜치에 합친 뒤 \"루프 합침\" 알림을 보낸다: `python tools/loop/run_loop.py`")
 
         # 9. 할 일이 없음
         if not self.todo_items:
@@ -594,6 +629,20 @@ class Report:
         g = self.guard_info()
         if g and g["recent"]:
             self.add(4, f"(참고) 검사 훅이 최근 24시간에 호출 {g['recent']}건을 막았다. 정상 작업이 막힌 것인지 `.loop/logs/guard.log` 를 확인한다 (docs/dev/loop.md \"클로드가 정상 작업 중에 막힐 때\").")
+
+    def pending_loops(self) -> list[dict]:
+        """통합 브랜치에 합쳐졌지만 아직 main 에 없는 루프 (병합 커밋의 제목 '루프 합침: loop/<ID> (묶음 X)' 로 찾는다)."""
+        if not self.has_integ:
+            return []
+        out = []
+        for line in self.git.out("log", "--first-parent", "--merges", "--reverse", "--format=%h%x09%s", f"{self.main}..{self.base}").splitlines():
+            sha, _, subject = line.partition("\t")
+            m = re.match(r"루프 합침: \S*?([0-9]{8}-[0-9]{6})\s*(?:\(묶음 (.+)\))?", subject)
+            if m:
+                tag = self.cfg["merge_tag_prefix"] + m.group(1)
+                out.append({"id": m.group(1), "bundle": m.group(2) or "-", "sha": sha,
+                            "tag": tag if self.git.ok("rev-parse", "--verify", "--quiet", f"refs/tags/{tag}") else ""})
+        return out
 
     def task_branch(self, doc_name: str) -> str:
         stem = Path(doc_name).stem
@@ -670,7 +719,7 @@ class Report:
                     if pend:
                         notes.append("선행 작업 미완료 → 다음 실행 때 wait 로 감: " + ", ".join(pend))
                     if self.bundle and x.bundle != self.bundle:
-                        notes.append(f"진행 중인 루프의 묶음({self.bundle})이 아님 → 그 루프를 합친 뒤 처리")
+                        notes.append(f"진행 중인 루프의 묶음({self.bundle})이 아님 → 그 루프가 닫힌 뒤 이어서 처리")
                     o.append(f"| {x.number} | {x.name} | {x.bundle} | {'; '.join(notes) or '-'} |")
             else:
                 o.append("| 번호 | 이름 | 묶음 |\n| --- | --- | --- |")
@@ -681,11 +730,20 @@ class Report:
         if not s:
             o.append(f"- 상태 파일: {self.state_note} (아직 루프를 시작한 적이 없거나 정리됨)")
         else:
-            o.append(f"- 상태: **{s.get('status', '?')}** ({'진행 중' if s.get('status') == 'active' else '완료' if s.get('status') == 'finished' else '알 수 없음'})")
+            st_label = {"active": "진행 중", "finished": "끝남", "rejected": "검증에서 떨어져 합치지 않음"}.get(s.get("status"), "알 수 없음")
+            o.append(f"- 상태: **{s.get('status', '?')}** ({st_label})")
+            if s.get("status") == "finished":
+                if s.get("merged_into"):
+                    o.append(f"- 합친 곳: `{s['merged_into']}`, 병합 커밋 태그 `{s.get('tag', '-')}`, 증거 `{s.get('evidence', '-')}`")
+                elif "merged_into" in s:
+                    o.append("- 합친 곳: 없음 (완료된 작업이 없어 합칠 것이 없었다)")
+            if s.get("status") == "rejected":
+                o.append(f"- 떨어진 이유: {s.get('reject_reason', '-')}, 남긴 브랜치 `{s.get('rejected_branch', '-')}`")
             lb = s.get("loop_branch", "-")
             exists = self.git.exists(lb) if lb != "-" else False
             if not exists:
-                where = " (브랜치 없음)"
+                where = {"finished": " (브랜치 없음. 닫힌 루프의 브랜치는 스크립트가 지운다)",
+                         "rejected": f" (이름을 바꿔 남김: `{s.get('rejected_branch', '-')}`)"}.get(s.get("status"), " (브랜치 없음)")
             elif self.git.ahead(self.base, lb) == 0:
                 where = f" ({self.base} 에 합쳐짐)" if self.git.ahead(lb, self.base) else f" ({self.base} 와 같은 위치, 새 커밋 없음)"
             else:
@@ -694,7 +752,12 @@ class Report:
             o.append(f"- 묶음: {s.get('bundle', '-')}")
             o.append(f"- 시작: {s.get('started_at', '-')}" + (f", 끝남: {s['finished_at']}" if s.get("finished_at") else ""))
             processed = s.get("processed") or []
-            o.append(f"- 처리한 작업 {len(processed)}건" + (": " + ", ".join(f"{p.get('doc')} ({p.get('agents') or '-'})" for p in processed) if processed else ""))
+            def _who(p: dict) -> str:
+                r = p.get("review") or {}
+                rv = "" if not r or r.get("skipped") else f", 리뷰 {r.get('reviewer', '?')}{'' if r.get('cross', True) else '(같은 에이전트)'}"
+                return f"{p.get('doc')} ({p.get('agents') or '-'}{rv})"
+
+            o.append(f"- 처리한 작업 {len(processed)}건" + (": " + ", ".join(_who(p) for p in processed) if processed else ""))
             cur = s.get("current")
             o.append(f"- 처리 중인 작업: {cur.get('doc')} (`{cur.get('branch')}`)" if cur else "- 처리 중인 작업: 없음")
             ls = s.get("last_stop")
@@ -703,6 +766,18 @@ class Report:
         o.append("\n## 브랜치\n")
         loops = self.git.branches(self.cfg["loop_branch_prefix"])
         tasks = self.git.branches(self.cfg["task_branch_prefix"])
+        if self.has_integ:
+            n = self.git.ahead(self.main, self.base)
+            behind = self.git.ahead(self.base, self.main)
+            o.append(f"- 통합 브랜치 `{self.base}`: {self.main} 보다 커밋 {n}개 앞섬"
+                     + (f", {self.main} 에 통합 브랜치에 없는 커밋 {behind}개 (다음 루프를 시작할 때 합친다)" if behind else "")
+                     + (f". 아직 {self.main} 에 올리지 않은 루프 {len(self.pending)}개:" if self.pending else ""))
+            for x in self.pending:
+                o.append(f"  - `{x['tag'] or x['sha']}` 묶음 {x['bundle']}, 증거 `docs/evidence/{x['id']}/report.md`")
+        elif self.cfg["integration_branch"]:
+            o.append(f"- 통합 브랜치 `{self.cfg['integration_branch']}`: 아직 없음 (루프가 처음 실행될 때 {self.main} 에서 만든다)")
+        for b in getattr(self, "rejected", []):
+            o.append(f"- `{b}`: 검증에서 떨어져 합쳐지지 않은 루프 (확인한 뒤 `git branch -D {b}`)")
         if not loops and not tasks:
             o.append("- `loop/*`, `task/*` 브랜치 없음")
         for b in loops:
@@ -710,7 +785,7 @@ class Report:
             if b == self.active_branch:
                 st = f"진행 중인 루프 ({self.base} 보다 커밋 {new}개 앞섬)"
             elif self.git.merged(b, self.base):
-                st = f"{self.base} 에 합쳐짐 (지워도 됨: `git branch -d {b}`)"
+                st = f"{self.base} 에 합쳐짐 (지워도 됨: `git branch -D {b}`)"
             else:
                 st = f"**{self.base} 에 합쳐지지 않음 (커밋 {new}개) → 이게 남아 있으면 새 루프가 시작되지 않음**"
             o.append(f"- `{b}`: {st}")
@@ -724,9 +799,9 @@ class Report:
             elif live:
                 st = "아직 새 커밋 없음 (작업이 끝나지 않았으니 지우지 말 것)"
             elif self.git.merged(b, self.base):
-                st = f"{self.base} 에 합쳐짐 (지워도 됨: `git branch -d {b}`)"
+                st = f"{self.base} 에 합쳐짐 (지워도 됨: `git branch -D {b}`)"
             else:
-                st = f"`{self.compare_ref()}` 에 합쳐짐 (루프를 {self.base} 에 합친 뒤 지우면 됨)"
+                st = f"`{self.compare_ref()}` 에 합쳐짐 (루프가 {self.base} 에 합쳐질 때 스크립트가 지운다)"
             o.append(f"- `{b}`: {where}, {st}")
 
         o.append("\n## worktree\n")
