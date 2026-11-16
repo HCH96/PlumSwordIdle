@@ -708,15 +708,17 @@ def review_feedback(review: dict) -> str:
 리뷰어는 그 설명을 읽고 다시 판단한다."""
 
 
-def review_prompt(doc_name: str, loop_branch: str, snapshot: str, gate_warnings: list[str], implementer: str) -> str:
+def review_prompt(doc_name: str, loop_branch: str, snapshot: str, gate_warnings: list[str], implementer: str,
+                  expected_conditions: list[tuple[str, str]]) -> str:
     warnings = "\n".join("- " + w for w in gate_warnings) or "- 없음"
-    return f"""너는 자동 개발 루프의 리뷰어다. 다른 에이전트({implementer})가 작업 문서 하나를 구현했고, 테스트와 기계 검사(관문)는 통과했다.
+    expected = json.dumps([{"id": i, "mark": k, "condition": c} for i, (k, c) in enumerate(expected_conditions, 1)], ensure_ascii=False)
+    return f"""너는 자동 개발 루프의 리뷰어다. 구현 에이전트({implementer})가 작업 문서 하나를 구현했고, 테스트와 기계 검사(관문)는 통과했다.
 네 판정이 "pass" 면 사람의 확인 없이 통합 브랜치에 합쳐진다. 사람은 자리에 없다. 구현한 에이전트의 보고서를 믿지 말고 코드를 직접 읽어라.
 
 작업 폴더: 루프 전용 git worktree (현재 폴더). **아무것도 고치지 않는다. 읽기만 한다.**
 작업 문서: tasks/doing/{doc_name} (끝의 "## 보고서"는 구현한 에이전트가 쓴 것이다)
 이 작업의 변경: `git diff {loop_branch} {snapshot}` (파일 목록은 `--stat`). 파일 전체는 작업 폴더에서 그대로 읽으면 된다.
-규칙: CLAUDE.md, docs/dev/architecture.md, 작업 문서의 "참고 문서"에 적힌 사양(docs/spec/). docs/design/, docs/project/, docs/archive/ 는 읽지 않는다.
+규칙: AGENTS.md (CLAUDE.md 와 같은 내용), docs/dev/architecture.md, 작업 문서의 "참고 문서"에 적힌 사양(docs/spec/). docs/design/, docs/project/, docs/archive/ 는 읽지 않는다.
 
 기계 검사가 "사람이 볼 것"으로 남긴 항목:
 {warnings}
@@ -738,47 +740,126 @@ def review_prompt(doc_name: str, loop_branch: str, snapshot: str, gate_warnings:
 - "human": 사람의 결정이 필요하다 (사양과 어긋나는 가정, 다른 기능의 연결 지점을 바꿈, 사양이 서로 모순됨, 작업 문서대로 하면 규칙을 어기게 됨).
 확신이 없으면 pass 로 하지 않는다. 다만 취향 차이나 작업 범위 밖의 개선을 이유로 fix 를 주지 않는다. 구현한 에이전트가 보고서에 지적이 틀린 이유를 적었으면 그 근거를 확인하고 다시 판단한다.
 
+완료 조건 목록: {expected}
+criteria 에 위 목록의 id와 condition을 그대로 쓰고, 모든 조건을 정확히 한 번씩 포함한다.
+[컴파일]은 루프가 판정, [사람 확인]은 사람 확인으로 적는다. "루프가 판정"은 [컴파일] 조건과 "기존 테스트/전체 테스트 … 통과" 조건에만 쓴다. 그 밖의 조건은 있음/약함/빠짐 중 하나로 적는다. test에는 근거가 되는 테스트 이름이나 판정 방법을 쓴다.
+fix/human 지적 또는 약함/빠짐 조건이 있으면 pass 로 하지 않는다.
+
 마지막 메시지는 아래 JSON 하나만 쓴다 (설명이나 코드 블록 표시 없이). 글은 한국어로 쓴다.
 {{"verdict": "pass" | "fix" | "human",
   "summary": "한두 문장",
-  "criteria": [{{"condition": "완료 조건을 짧게", "test": "테스트 클래스.메서드 (없으면 -)", "verdict": "있음" | "약함" | "빠짐" | "루프가 판정" | "사람 확인"}}],
+  "criteria": [{{"id": 1, "condition": "목록의 condition 원문", "test": "테스트 클래스.메서드 (없으면 -)", "verdict": "있음" | "약함" | "빠짐" | "루프가 판정" | "사람 확인"}}],
   "findings": [{{"severity": "fix" | "human" | "note", "text": "무엇이 문제인지와 위치 (파일:줄)"}}],
   "question": "verdict 가 human 일 때 사람에게 할 질문 (아니면 빈 문자열)",
   "recommendation": "verdict 가 human 일 때 추천안 (아니면 빈 문자열)"}}
 """
 
 
-def parse_review(text: str) -> dict | None:
-    """리뷰어의 마지막 메시지에서 판정 JSON 을 찾는다. 형식이 맞지 않으면 None."""
-    text = text or ""
-    decoder = json.JSONDecoder()
-    found = None
-    for m in re.finditer(r"\{", text):
-        try:
-            obj, _ = decoder.raw_decode(text[m.start() :])
-        except json.JSONDecodeError:
-            continue
-        if isinstance(obj, dict) and obj.get("verdict") in ("pass", "fix", "human"):
-            found = obj
-            break
-    if found is None:
+def _review_object(text: str) -> dict | None:
+    """마지막 메시지에서 판정 JSON 객체 하나를 꺼낸다.
+
+    코드 블록 표시나 앞뒤 설명 한두 줄은 너그럽게 넘기지만, 최상위 판정 객체가 둘 이상이면
+    어느 것이 판정인지 알 수 없으므로 받지 않는다.
+    """
+    if not isinstance(text, str):
         return None
-    clean = {
-        "verdict": found["verdict"],
-        "summary": str(found.get("summary", ""))[:1500],
-        "question": str(found.get("question", ""))[:1500],
-        "recommendation": str(found.get("recommendation", ""))[:1500],
-        "criteria": [],
-        "findings": [],
-    }
-    for c in found.get("criteria") or []:
-        if isinstance(c, dict):
-            clean["criteria"].append({k: str(c.get(k, ""))[:400] for k in ("condition", "test", "verdict")})
-    for f in found.get("findings") or []:
-        if isinstance(f, dict) and f.get("text"):
-            sev = f.get("severity") if f.get("severity") in ("fix", "human", "note") else "note"
-            clean["findings"].append({"severity": sev, "text": str(f["text"])[:1200]})
-    return clean
+    body = text.strip()
+    fenced = re.fullmatch(r"```[A-Za-z]*\s*\n?(.*?)\n?\s*```", body, re.DOTALL)
+    if fenced:
+        body = fenced.group(1).strip()
+    try:
+        whole = json.loads(body)
+        return whole if isinstance(whole, dict) else None
+    except ValueError:
+        pass
+    decoder = json.JSONDecoder()
+    found: list[dict] = []
+    i = body.find("{")
+    while i != -1:
+        try:
+            obj, end = decoder.raw_decode(body, i)
+        except ValueError:
+            i = body.find("{", i + 1)
+            continue
+        if isinstance(obj, dict) and "verdict" in obj:
+            found.append(obj)
+        i = body.find("{", end)  # 꺼낸 객체 안쪽(criteria 등)은 다시 보지 않는다
+    return found[0] if len(found) == 1 else None
+
+
+def _same_condition(a: str, b: str) -> bool:
+    """완료 조건 원문 비교. 리뷰어가 옮겨 적으며 바꾸기 쉬운 표시(백틱·따옴표·공백·끝 문장부호)는 무시한다."""
+    def norm(s: str) -> str:
+        s = re.sub(r"[`\"'“”‘’*]", "", s)
+        s = re.sub(r"\s+", " ", s).strip()
+        return s.rstrip(" .。")
+    return norm(a) == norm(b)
+
+
+def _loop_judged(mark: str, condition: str) -> bool:
+    """리뷰어가 "루프가 판정"으로 적을 수 있는 조건: [컴파일], 또는 기존/전체 테스트 통과 조건."""
+    return mark == "컴파일" or (("기존 테스트" in condition or "전체 테스트" in condition) and "통과" in condition)
+
+
+def parse_review(text: str, expected_conditions: list[tuple[str, str]] | None = None) -> dict | None:
+    """완결된 판정 하나만 받는다. 빠진 근거·모순된 판정은 재시도 대상으로 돌린다."""
+    found = _review_object(text)
+    if not isinstance(found, dict) or found.get("verdict") not in ("pass", "fix", "human"):
+        return None
+    if any(not isinstance(found.get(k), str) for k in ("summary", "question", "recommendation")):
+        return None
+    if not found["summary"].strip():
+        return None
+    criteria, findings = found.get("criteria"), found.get("findings")
+    if not isinstance(criteria, list) or not criteria or not isinstance(findings, list):
+        return None
+    seen = set()
+    weak = False
+    for c in criteria:
+        if not isinstance(c, dict) or type(c.get("id")) is not int or c["id"] < 1 or c["id"] in seen:
+            return None
+        seen.add(c["id"])
+        if any(not isinstance(c.get(k), str) or not c[k].strip() for k in ("condition", "test", "verdict")):
+            return None
+        if c["verdict"] not in ("있음", "약함", "빠짐", "루프가 판정", "사람 확인"):
+            return None
+        if c["verdict"] == "있음" and c["test"].strip() in ("-", "없음"):
+            return None
+        if expected_conditions is not None:
+            if c["id"] > len(expected_conditions):
+                return None
+            mark, condition = expected_conditions[c["id"] - 1]
+            if not _same_condition(c["condition"], condition):
+                return None
+            c["condition"] = condition  # 증거에는 작업 문서의 원문을 싣는다
+            if mark == "사람 확인" and c["verdict"] != "사람 확인":
+                return None
+            if mark != "사람 확인" and c["verdict"] == "사람 확인":
+                return None
+            if c["verdict"] == "루프가 판정" and not _loop_judged(mark, condition):
+                return None
+            if mark == "컴파일" and c["verdict"] != "루프가 판정":
+                return None
+        weak |= c["verdict"] in ("약함", "빠짐")
+    if expected_conditions is not None and seen != set(range(1, len(expected_conditions) + 1)):
+        return None
+    severities = set()
+    for f in findings:
+        if not isinstance(f, dict) or f.get("severity") not in ("fix", "human", "note"):
+            return None
+        if not isinstance(f.get("text"), str) or not f["text"].strip():
+            return None
+        severities.add(f["severity"])
+    verdict = found["verdict"]
+    if verdict == "pass" and (weak or severities & {"fix", "human"}):
+        return None
+    if "human" in severities and verdict != "human":
+        return None
+    if verdict == "fix" and not (weak or "fix" in severities):
+        return None
+    if verdict == "human" and not (found["question"].strip() and found["recommendation"].strip()):
+        return None
+    return {k: found[k] for k in ("verdict", "summary", "criteria", "findings", "question", "recommendation")}
 
 
 def handoff_note(prev_agent: str) -> str:
@@ -1663,7 +1744,8 @@ class Loop:
         if not self.cfg.get("review_enabled", True):
             return {"verdict": "pass", "skipped": True, "summary": "", "criteria": [], "findings": []}
         implementer = next((a for a, n in reversed(entries) if n is not None), "")
-        prompt = review_prompt(doc.name, self.loop_branch, snap, gate["warnings"], implementer or "?")
+        expected_conditions = loop_gate.conditions(doc.read_text(encoding="utf-8-sig"))
+        prompt = review_prompt(doc.name, self.loop_branch, snap, gate["warnings"], implementer or "?", expected_conditions)
         failures, last_error = 0, ""
         while failures < 2:
             self.current_agent()  # 감시 모드에서 한도 대기 시간이 지난 에이전트를 다시 쓸 수 있게 한다
@@ -1705,10 +1787,10 @@ class Loop:
                 last_error = f"{reviewer} {error.detail}"
                 log(f"리뷰 실패 ({failures}/2): {last_error.splitlines()[0]}")
                 continue
-            parsed = parse_review(str(data.get("result", "")))
+            parsed = parse_review(str(data.get("result", "")), expected_conditions)
             if parsed is None:
                 failures += 1
-                last_error = f"{reviewer} 의 마지막 메시지가 판정 JSON 형식이 아님"
+                last_error = f"{reviewer} 의 판정 JSON 이 불완전하거나 완료 조건 근거·판정이 모순됨"
                 log(f"리뷰 실패 ({failures}/2): {last_error}")
                 continue
             parsed["reviewer"] = reviewer
@@ -1903,7 +1985,7 @@ class Loop:
             "DONE",
             f"루프 합침: 묶음 {self.bundle}",
             f"**처리한 작업 {len(processed)}건**\n{lines}\n\n**통합 브랜치**: `{self.base}` (병합 커밋 태그 `{tag}`)\n"
-            f"**증거**: `{report_rel}`\n관문·전체 테스트·교차 리뷰를 통과해 합쳤습니다. {self.main} 에는 올리지 않았습니다.{extra}",
+            f"**증거**: `{report_rel}`\n관문·전체 테스트를 통과하고 설정된 리뷰 절차를 마쳐 합쳤습니다. {self.main} 에는 올리지 않았습니다.{extra}",
         )
         return True
 

@@ -9,6 +9,8 @@ description: 자동 개발 루프가 막혀서 tasks/blocked/ 에 넣은 보류 
 
 다시 `todo` 로 간 문서는 루프가 다시 꺼내 처리한다 (그 묶음의 새 루프가 열린다). 이때 루프는 같은 기능 브랜치(`task/<문서이름>`)를 이어 쓰고, 에이전트에게 "작업 중 커밋이 있으니 확인하고 이어서 하라"고 알린다. 루프 검증 실패(3-F)만 예외로, 기능 브랜치가 지워져 있어 처음부터 다시 처리한다. 구현 에이전트도, 그 뒤의 리뷰 에이전트도 **이 문서만 읽고** 일한다. 이 대화에서 오간 말은 모른다. 그래서 답은 문서에 적힌 것만으로 이해되게 쓴다.
 
+공통 실행 기준은 `docs/dev/workflow.md`를 먼저 읽는다. 이 본문과 템플릿이 Claude/Codex의 공통 원본이다. 아래 도구 이름(Read, AskUserQuestion 등)은 현재 환경의 파일 읽기·질문 도구로 대응하고, 질문 도구가 없으면 일반 대화로 묻는다. 기존 답변과 명시적 승인은 이어서 적용한다.
+
 ## 지킬 것
 
 - **옮길 수 있는 것은 `tasks/blocked/` 의 문서뿐이다.** `todo`, `wait`, `doing`, `done` 의 문서는 옮기지 않는다. 고치는 것도 blocked 문서뿐이다. 예외는 "선행 작업 순환"에서 사용자가 고르고 승인한 문서의 `## 선행 작업` 칸 하나다 (아래 3-C).
@@ -25,11 +27,11 @@ description: 자동 개발 루프가 막혀서 tasks/blocked/ 에 넣은 보류 
 
 | 명령 | 하는 일 |
 | --- | --- |
-| `python .claude/skills/answer-blocked/blocked_info.py list` | 루프 상태와 보류 문서 목록(번호 순, 보류 종류, 묶음) |
-| `python .claude/skills/answer-blocked/blocked_info.py show <문서이름>` | 목표, 마지막 보류 사유, 이전 보류·답변, 보고서, 기능 브랜치의 커밋과 바뀐 파일, 관련 로그, 이 문서를 기다리는 문서 |
-| `python .claude/skills/answer-blocked/blocked_info.py stamp` | 답변 절 제목에 쓸 지금 시각 (`2026-11-13 21:05` 꼴) |
-| `python .claude/skills/answer-blocked/blocked_info.py move <문서이름> todo` | blocked → todo. 다른 폴더에 같은 이름이 있으면 옮기지 않는다 |
-| `python .claude/skills/answer-blocked/blocked_info.py move <문서이름> <폴더>` | blocked → tasks/ 밖 폴더 (버릴 때). tasks/ 안이면 거부한다 |
+| `python tools/skills/blocked_info.py list` | 루프 상태와 보류 문서 목록(번호 순, 보류 종류, 묶음) |
+| `python tools/skills/blocked_info.py show <문서이름>` | 목표, 마지막 보류 사유, 이전 보류·답변, 보고서, 기능 브랜치의 커밋과 바뀐 파일, 관련 로그, 이 문서를 기다리는 문서 |
+| `python tools/skills/blocked_info.py stamp` | 답변 절 제목에 쓸 지금 시각 (`2026-11-13 21:05` 꼴) |
+| `python tools/skills/blocked_info.py move <문서이름> todo` | blocked → todo. 다른 폴더에 같은 이름이 있으면 옮기지 않는다 |
+| `python tools/skills/blocked_info.py move <문서이름> <폴더>` | blocked → tasks/ 밖 폴더 (버릴 때). tasks/ 안이면 거부한다 |
 
 `<문서이름>` 은 `.md` 없는 파일 이름이다 (예: `003_stat_upgrade`). 스크립트는 blocked 가 아닌 문서는 옮기지 않는다. 옮길 때는 이 스크립트만 쓴다.
 
@@ -75,7 +77,7 @@ description: 자동 개발 루프가 막혀서 tasks/blocked/ 에 넣은 보류 
 2. 선택지를 2~4개 낸다. **추천안을 첫 번째**에 두고 "(추천)"을 붙인다. 선택지마다 결과가 어떻게 달라지는지 한 줄씩 적는다. 필요하면 공용 문서(`docs/`)와 코드를 읽어 근거를 찾는다. AskUserQuestion 을 쓸 수 있으면 쓴다.
 3. 답이 정해지면 4단계로.
 
-질문이 "권한이 막혀서 못 한다"류이면 `docs/dev/loop.md` 의 "클로드가 정상 작업 중에 막힐 때 확인하는 곳"에 따라 `.loop/logs/guard.log` 와 해당 시도의 `.loop/logs/<문서이름>_attempt<n>_claude.out.txt` 의 `permission_denials` 를 보고 원인을 알린다. 설정(`loop_config.json` 등)은 이 스킬에서 고치지 않고, 무엇을 고치면 되는지만 알려 준다.
+질문이 "권한이 막혀서 못 한다"류이면 구현/리뷰 중 어느 실행인지와 에이전트 이름을 먼저 확인한다. Claude는 `docs/dev/loop.md`의 "클로드가 정상 작업 중에 막힐 때 확인하는 곳"에 따라 `guard.log`와 해당 시도의 `permission_denials`를 본다. Codex는 해당 시도의 `_codex` 실행 로그와 `.codex_last.txt`에서 sandbox·쓰기 경로·명령 실행 오류를 본다. 같은 에이전트라도 구현은 workspace-write, 리뷰는 read-only일 수 있다. 설정은 이 스킬에서 고치지 않고 원인과 필요한 수정만 안내한다.
 
 #### B. 재시도 한도 초과 (사유가 `재시도 한도(` 로 시작)
 

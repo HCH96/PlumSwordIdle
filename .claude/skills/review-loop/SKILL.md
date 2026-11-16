@@ -25,6 +25,8 @@ description: 자동 개발 루프가 통합 브랜치(integration)에 합쳐 둔
 
 루프 동작의 기준은 `docs/dev/loop.md`, 코드 규칙의 기준은 `docs/dev/architecture.md` 다.
 
+공통 실행 기준은 `docs/dev/workflow.md`를 먼저 읽는다. 이 본문과 템플릿이 Claude/Codex의 공통 원본이다. 아래 도구 이름(Read, AskUserQuestion 등)은 현재 환경의 파일 읽기·질문 도구로 대응하고, 질문 도구가 없으면 일반 대화로 묻는다. 기존 답변과 명시적 승인은 이어서 적용한다.
+
 ## 지킬 것
 
 - **코드를 고치지 않는다.** 문제를 찾으면 보고만 한다. 고칠 것은 후속 작업으로 넘긴다 (7단계).
@@ -42,14 +44,14 @@ description: 자동 개발 루프가 통합 브랜치(integration)에 합쳐 둔
 프로젝트 폴더에서 보조 스크립트를 실행한다. 읽기만 하는 스크립트다.
 
 ```
-python .claude/skills/review-loop/review_scan.py
+python tools/skills/review_scan.py
 ```
 
-스크립트는 main 과 통합 브랜치를 비교해 아직 main 에 올리지 않은 루프를 찾고, 아래 단계에 쓸 자료를 한 번에 출력한다. 출력의 "1. 확인할 대상"을 먼저 본다.
+스크립트는 main 과 통합 브랜치를 비교해 아직 main 에 올리지 않은 루프를 찾고, 아래 단계에 쓸 자료를 한 번에 출력한다. 출력의 "1. 확인할 대상"을 먼저 본다. **리뷰 기준 SHA·리뷰 대상 SHA·확인 시점 main SHA를 기록한다.** 이후 코드·이력·증거 조회는 이 SHA로만 한다. 브랜치나 태그 이름을 다시 해석해 대상을 바꾸지 않는다. `--loop`는 부분 리뷰이며, main 반영 전에 `--base <main SHA> --head <대상 SHA>`로 누적 범위를 리뷰해야 한다.
 
 | 상황 | 할 일 |
 | --- | --- |
-| main 에 올리지 않은 루프가 있다 | **그 전체(main..integration)를 한 번에 본다.** 스크립트가 기본으로 이렇게 고른다 |
+| main 에 올리지 않은 루프가 있다 | **그 전체(<기준 SHA>..<대상 SHA>)를 한 번에 본다.** 스크립트가 기본으로 이렇게 고른다 |
 | 루프가 여러 개라 너무 길다, 또는 하나만 다시 보고 싶다 | `--loop <날짜-시간>` 으로 루프 하나만 본다. 여러 개를 차례로 볼 때는 오래된 것부터 본다 (뒤 루프가 앞 루프 위에 쌓였다) |
 | 올릴 루프가 없다 | 리뷰할 것이 없다고 알리고 끝낸다. 루프가 진행 중이면 그 사실과 묶음을 알린다 |
 | 검증에서 떨어진 루프 브랜치(`rejected/<날짜-시간>`)가 있다 | 올릴 대상이 아니다. 사용자가 원하면 `--branch rejected/<날짜-시간>` 으로 무엇이 왜 떨어졌는지 본다. 그 작업들은 보류로 가 있으니 `answer-blocked` 로 안내한다 |
@@ -63,8 +65,8 @@ python .claude/skills/review-loop/review_scan.py
 스크립트 출력의 "2. 묶음 요약"에 이 범위의 루프와 증거 위치가 있다. **루프마다 증거 보고서를 먼저 읽는다.**
 
 ```
-git show integration:docs/evidence/index.md
-git show integration:docs/evidence/<루프>/report.md
+git show <대상 SHA>:docs/evidence/index.md
+git show <대상 SHA>:docs/evidence/<루프>/report.md
 ```
 
 보고서에는 사람이 볼 것, 가정 전부, 화면 갈무리, 작업별 구현·리뷰 에이전트와 시도, 리뷰어가 만든 완료 조건별 테스트 표, 관문의 "확인 필요" 항목이 있다. 이것은 **주장**이고, 3단계에서 코드와 맞는지 확인한다.
@@ -72,13 +74,13 @@ git show integration:docs/evidence/<루프>/report.md
 화면 갈무리는 직접 본다. 작업 폴더를 바꾸지 않도록 임시 폴더로 꺼내서 읽는다.
 
 ```
-git show integration:docs/evidence/<루프>/screenshots/game_030s.png > <임시 폴더>/game_030s.png
+python tools/skills/export_evidence.py --revision <대상 SHA> --path docs/evidence/<루프>/screenshots/game_030s.png --output <저장소 밖 임시 폴더>/game_030s.png
 ```
 
 요약에서 눈여겨볼 것:
 
 - **시도 횟수가 많은 작업(3회 이상).** 테스트 실패, 관문 위반, 리뷰의 "고쳐라"가 모두 시도로 세어진다. 테스트를 통과시키려고 테스트나 요구사항을 비튼 경우가 여기서 나온다.
-- **"같은 에이전트"가 리뷰한 작업.** 다른 쪽 에이전트가 사용량 한도에 걸려 교차 리뷰가 되지 못한 것이다. 더 꼼꼼히 본다.
+- **"같은 에이전트"가 리뷰한 작업.** 단독 운영 설정이거나 다른 쪽의 사용량 한도로 같은 모델의 새 세션이 리뷰한 것이다. 더 꼼꼼히 본다.
 - **리뷰가 "고침 n회" 뒤에 통과한 작업.** 리뷰어가 무엇을 지적했고 어떻게 고쳐졌는지(또는 구현 에이전트가 지적이 틀렸다고 설명하고 넘어갔는지) 작업 문서의 보고서에서 확인한다.
 - **증거가 없는 루프, 화면 갈무리가 0장인 루프.** 증거는 합칠 때 스크립트가 쓴다. 없으면 정상 경로로 합쳐진 것이 아니다.
 - **"루프 스크립트가 만든 것으로 보이지 않는 커밋"** 경고. 누가 통합 브랜치를 직접 건드렸다는 뜻일 수 있다. 그 커밋을 `git show` 로 본다.
@@ -90,8 +92,8 @@ git show integration:docs/evidence/<루프>/screenshots/game_030s.png > <임시 
 
 ```
 git diff <이전 커밋> <완료 커밋>                    # 스크립트가 작업마다 적어 준다
-git show integration:docs/history/<문서이름>.md      # 작업 문서 원본
-git show integration:<경로>                         # 파일 전체
+git show <대상 SHA>:docs/history/<문서이름>.md      # 작업 문서 원본
+git show <대상 SHA>:<경로>                         # 파일 전체
 ```
 
 작업이 많으면 전부 같은 깊이로 볼 수 없다. **깊게 볼 작업을 고른다**: 시도가 많은 것, 같은 에이전트가 리뷰한 것, 리뷰가 고침을 요구했던 것, 화면 코드나 다른 기능의 파일을 건드린 것, 가정이 많은 것. 나머지는 리뷰어의 표에서 조건 두세 개를 뽑아 실제 테스트와 맞는지 확인한다 (표본 확인). 어느 작업을 깊게 봤고 어느 작업을 표본으로 봤는지 결과에 적는다.
@@ -121,10 +123,10 @@ git show integration:<경로>                         # 파일 전체
 
 합쳐진 루프는 관문을 통과했다. 그래도 스크립트 출력의 "4. 규칙 점검"이 같은 종류의 검사를 **범위 전체**에 다시 돌린다. 여기서 `[위반]` 이 나오면 셋 중 하나다: 작업 문서의 관문 예외로 허용된 것, 관문이 놓친 것, 루프 밖에서 들어온 변경. 어느 것인지 가려 적는다. `[위반]` 과 `[확인 필요]` 항목은 **가리키는 줄을 직접 열어 보고** 진짜인지 확인한 뒤 보고한다. 주석이나 문자열 안의 낱말처럼 잘못 잡힌 것은 빼고, 뺀 이유를 한 줄 적는다.
 
-관문만 따로 다시 돌려 볼 수도 있다 (읽기만 한다).
+같은 고정 범위의 자료와 공통 관문 검사를 다시 볼 수 있다 (읽기만 한다).
 
 ```
-python tools/loop/loop_gate.py --base main --head integration
+python tools/skills/review_scan.py --base <기준 SHA> --head <대상 SHA>
 ```
 
 | 점검 | 기준 | 스크립트가 못 잡는 것 (직접 본다) |
@@ -133,7 +135,7 @@ python tools/loop/loop_gate.py --base main --head integration
 | 어셈블리 정의 변경 | `.asmdef` 는 바꾸지 않는다. 바꿨다면 작업 문서에 관문 예외(`asmdef`)와 근거가 있고 `docs/dev/architecture.md` 도 함께 고쳐야 한다 | `noEngineReferences` 를 끄거나 참조를 늘린 것은 특히 무겁게 본다 |
 | 씬·프리팹·설정 변경 | `.unity`, `.prefab`, `.asset`, `ProjectSettings/`, `Packages/` 는 고치지 않는다 (관문 예외 `scene`, `settings`). 화면은 코드로 조립한다 | 예외로 허용됐더라도 합치기 전에 사람이 알아야 한다 |
 | `.meta` 짝 | `Assets/` 아래 모든 파일·폴더에 `.meta` 가 있다 | — |
-| 루프 자체를 바꾸는 변경 | `tools/loop/`, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.gitignore`, `docs/dev/loop.md`, 지난 `docs/history/` 기록, `docs/evidence/` 를 스크립트 아닌 쪽이 고친 것 | 관문이 예외 없이 막는 것이다. 여기서 보이면 사람이 main 에서 직접 고친 것이거나(정상), 루프 밖에서 들어온 것이다. 어느 쪽인지 커밋을 보고 가린다. 루프가 자기 검사 장치를 고친 것이면 가장 무거운 위반이다 |
+| 루프 자체를 바꾸는 변경 | `tools/loop/`, `tools/skills/`, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.github/`, `.gitignore`, `docs/dev/loop.md`, `docs/dev/workflow.md`, 지난 `docs/history/` 기록, `docs/evidence/` 를 스크립트 아닌 쪽이 고친 것 | 관문이 예외 없이 막는 것이다. 여기서 보이면 사람이 main 에서 직접 고친 것이거나(정상), 루프 밖에서 들어온 것이다. 어느 쪽인지 커밋을 보고 가린다. 루프가 자기 검사 장치를 고친 것이면 가장 무거운 위반이다 |
 | 테스트를 지우거나 약하게 만든 변경 | 있던 테스트 삭제, `[Ignore]`, 검사(Assert) 삭제·완화, 검사 없는 테스트. 작업 단계마다 비교하므로 **앞 작업이 쓴 테스트를 뒤 작업이 약하게 만든 것**도 잡는다 | 기대값을 구현에 맞춰 바꾼 것, 조건을 느슨하게 한 것 (`EqualTo` → `LessThanOrEqualTo` 등). 관문은 검사 **수**가 줄어든 것만 막고, 뜻이 약해진 것은 "확인 필요"로 넘긴다. 스크립트가 지워진 검사와 새 검사를 나란히 보여 주니 뜻이 약해졌는지 읽고 판단한다 |
 | 줄 끝만 바뀐 파일 | 내용은 같고 CRLF/LF 만 바뀐 파일. 규칙 위반은 아니지만 올리면 main 의 파일이 통째로 바뀐 것으로 남는다 | 스크립트는 이런 파일을 다른 목록과 통계에서 뺀다. 수가 많으면 에이전트의 편집 도구나 깃 설정(`core.autocrlf`) 문제이니 따로 알린다 |
 
@@ -165,7 +167,7 @@ python tools/loop/loop_gate.py --base main --head integration
 | **올리지 않음 (어디까지 올릴지 정함)** | main 에 들어가면 안 되는 것이 있다: 루프가 자기 자신을 바꾼 변경, 구조 규칙을 무너뜨린 변경(Core 의 유니티 의존, `noEngineReferences` 해제), 테스트를 지우거나 무력화한 변경, 다시 돌린 테스트의 실패, "하지 말 것" 침범으로 다른 기능이 망가진 것 |
 
 - **루프 단위로 판정한다.** 루프 하나(묶음 하나)는 병합 커밋 하나라 통째로 올라가거나 통째로 빠진다. 작업 하나만 골라 올릴 수 없으므로, 가장 나쁜 작업이 그 루프의 결론을 정한다.
-- 범위에 루프가 여러 개면 **어디까지 올릴 수 있는지**를 적는다. 문제가 있는 루프 앞까지만 올릴 수 있다 (`git merge --ff-only loop-merged/<그 앞 루프>`). 문제가 있는 루프 뒤의 루프는 그 위에 쌓여 있어, 문제 루프를 빼고는 올릴 수 없다. 그럴 때의 선택지(그대로 올리고 후속 작업으로 고친다 / 문제 루프부터 뒤를 버리고 다시 처리한다)를 결과와 함께 보여 주고 사용자가 고르게 한다.
+- 범위에 루프가 여러 개면 **어디까지 올릴 수 있는지**를 적는다. 문제가 있는 루프 앞까지만 올릴 수 있다 (그 루프의 SHA까지 누적 리뷰하고 `git merge --ff-only <승인 SHA>`). 문제가 있는 루프 뒤의 루프는 그 위에 쌓여 있어, 문제 루프를 빼고는 올릴 수 없다. 그럴 때의 선택지(그대로 올리고 후속 작업으로 고친다 / 문제 루프부터 뒤를 버리고 다시 처리한다)를 결과와 함께 보여 주고 사용자가 고르게 한다.
 - 근거는 **중요한 순서로** 적는다. 위반 → 빠지거나 약한 테스트(리뷰어의 표와 다른 것) → 사람이 판단할 가정 → 가벼운 지적.
 - **사람이 직접 봐야 하는 것**을 따로 적는다. 스크립트 출력의 "5. 사람이 직접 볼 후보"에 세 가지가 모여 있다: 완료 조건의 `[사람 확인]`, 보고서의 "사람이 확인할 것", 바뀐 화면 코드·리소스. 앞의 둘은 빼지 말고 전부 다루되, **화면 갈무리로 확인한 것은 확인했다고 적고 갈무리 파일을 댄다.** 갈무리는 실행 후 1초·10초·30초의 멈춘 화면이라, 누르는 동작, 움직임, 속도감, 수치 균형은 알 수 없다. 그런 것은 에디터에서 무엇을 열고 무엇을 눌러 무엇을 보면 되는지 구체적으로 적는다. 볼 것이 없으면 없다고 적는다.
 - 확인하지 못한 것은 못 했다고 적는다 (예: 테스트 다시 돌리지 않음, 에디터에서 실행해 보지 않음, 작업 n개는 표본만 확인함).
@@ -174,12 +176,17 @@ python tools/loop/loop_gate.py --base main --head integration
 
 ### 7. 올리는 명령을 보여 주고, 시키면 올린다
 
-스크립트 출력의 "6. 명령"을 그대로 보여 준다 (`docs/dev/loop.md` "사람이 확인하고 main 에 올리기" 기준). 프로젝트 폴더의 main 에서 실행한다. 루프가 돌고 있어도 올릴 수 있다.
+스크립트가 출력한 고정 대상 SHA의 명령을 보여 준다. main부터 그 SHA까지 누적 범위 전체를 리뷰한 경우에만 반영 대상으로 제안한다. 루프가 계속 돌아도 새 커밋은 이번 승인 범위에 포함되지 않는다.
 
 ```
-git merge --ff-only integration             # 전부 올린다
-git merge --ff-only loop-merged/<루프>       # 이 루프까지만 올린다
-git revert -m 1 loop-merged/<루프>           # (올린 뒤, 푸시 전) 이 루프만 되돌린다
+git merge --ff-only <리뷰하고 승인한 대상 SHA>
+```
+
+되돌리는 명령도 함께 보여 준다 (실행하지 않는다. 자세한 경우는 `docs/dev/loop.md` "되돌릴 때"):
+
+```
+git revert -m 1 loop-merged/<루프>                                 # (main 에 올린 뒤, 푸시 전) 이 루프만 되돌린다
+git branch -f integration loop-merged/<마지막으로 남길 루프>         # (루프를 멈춘 뒤, main 에 올리기 전) 그 뒤 루프를 통합 브랜치에서 버린다
 ```
 
 - 올린 뒤 에디터에서 플레이해 "사람이 직접 봐야 하는 것"을 확인하고, 그다음에 푸시하라고 알린다.
@@ -189,18 +196,18 @@ git revert -m 1 loop-merged/<루프>           # (올린 뒤, 푸시 전) 이 �
 
 **사용자가 분명히 "올려 줘"라고 하면** 아래 순서로 한다. 하나라도 걸리면 멈추고 알린다.
 
-1. 프로젝트 폴더가 main 브랜치에 있는지 확인한다 (`git status`). 아니면 브랜치를 바꾸지 말고 알린다.
-2. 결론이 "올리지 않음"이었으면 그 이유를 다시 말하고 정말 올릴지 한 번 더 확인한다. 일부만 올리기로 했으면 어느 태그까지인지 확인한다.
-3. `git merge --ff-only integration` (또는 정한 태그)을 실행한다. fast-forward 가 안 되면(main 에 통합 브랜치에 없는 커밋이 있음) 다른 방식으로 합치지 말고 알린다. 루프가 다음에 시작할 때 main 을 통합 브랜치에 합치므로, 루프를 한 번 실행한 뒤 다시 올리면 된다.
-4. 올라갔으면 결과(`git log --oneline -5`)를 보여 준다.
-5. 푸시는 하지 않는다 ("지킬 것" 참고).
+1. 원본 프로젝트가 main이고 작업 트리에 미커밋 변경이 없는지 확인한다. 브랜치를 바꾸거나 변경을 버리지 않는다.
+2. 리뷰 결론·사람이 확인할 항목·반영할 정확한 대상 SHA에 대한 사용자 승인을 확인한다. 결론이 "올리지 않음"이면 이유를 알리고 명시적 재승인 없이 반영하지 않는다.
+3. `git rev-parse HEAD`가 리뷰 때 기록한 main SHA와 같은지 확인한다. 다르면 새 main을 기준으로 다시 리뷰한다. `git merge-base --is-ancestor <대상 SHA> integration`으로 대상이 여전히 통합 브랜치에 포함되는지도 확인한다. 제외됐다면 반영하지 않는다.
+4. `git merge --ff-only <승인한 대상 SHA>`만 실행한다. 실패하면 다른 병합 방식으로 바꾸지 않는다. integration이나 태그를 다시 해석한 값으로 바꾸지 않는다.
+5. HEAD가 승인한 SHA인지 확인하고 결과를 보여 준다. 푸시는 하지 않는다. 에디터 확인과 푸시는 사람이 한다.
 
 ## 결과 모양
 
 아래 틀로 보여 준다. 결론을 맨 위에 둔다. 내용이 없는 절은 "없음"이라고 적고 절 자체는 남긴다 (봤는데 없다는 것과 안 본 것을 구분하기 위해서다).
 
 ```markdown
-# 루프 리뷰: main..integration (루프 n개, 작업 m건)
+# 루프 리뷰: <기준 SHA>..<대상 SHA> (루프 n개, 작업 m건)
 
 ## 결론: 올려도 됨 / 올리고 후속 작업으로 고침 / 올리지 않음
 한두 문장으로 이유. 루프가 여러 개면 어디까지 올릴 수 있는지.
@@ -247,18 +254,18 @@ git revert -m 1 loop-merged/<루프>           # (올린 뒤, 푸시 전) 이 �
 
 ## 스크립트가 안 될 때
 
-같은 내용을 손으로 본다 (모두 조회만 한다).
+같은 내용을 손으로 본다 (모두 조회만 한다). 먼저 `git rev-parse main`과 `git rev-parse integration`으로 기준·대상 SHA를 고정한다. 부분 루프 태그도 SHA로 풀어 기록한 뒤 사용한다.
 
 ```
-git log --first-parent --merges --oneline main..integration      # 올리지 않은 루프 (병합 커밋)
+git log --first-parent --merges --oneline <기준 SHA>..<대상 SHA>      # 올리지 않은 루프 (병합 커밋)
 git for-each-ref --format="%(refname:short)" refs/tags/loop-merged/ refs/heads/rejected/ refs/heads/loop/
-git show integration:docs/evidence/index.md
-git diff --stat main...integration
-git diff --name-status main...integration
-git diff --name-status --diff-filter=A main...integration -- docs/history   # 이 범위에서 끝난 작업
+git show <대상 SHA>:docs/evidence/index.md
+git diff --stat <기준 SHA>..<대상 SHA>
+git diff --name-status <기준 SHA>..<대상 SHA>
+git diff --name-status --diff-filter=A <기준 SHA>..<대상 SHA> -- docs/history   # 이 범위에서 끝난 작업
 git diff loop-merged/<루프>^1 loop-merged/<루프>                   # 루프 하나의 변경
-git ls-tree -r --name-only integration -- Assets                  # .meta 짝 확인
-python tools/loop/loop_gate.py --base main --head integration     # 관문
+git ls-tree -r --name-only <대상 SHA> -- Assets                  # .meta 짝 확인
+python tools/skills/review_scan.py --base <기준 SHA> --head <대상 SHA>     # 관문
 ```
 
 - 상태 파일: `.loop/state.json` (`status`: active / finished / rejected, `loop_branch`, `bundle`, `processed`, `merged_into`, `tag`, `evidence`)

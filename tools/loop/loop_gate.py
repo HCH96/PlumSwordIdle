@@ -44,7 +44,7 @@ CORE_BANNED = [
 SCENE_EXTS = (".unity", ".prefab", ".asset")
 # 루프 자체와 그 검사 장치. 작업 문서로도 예외를 줄 수 없다 (사람이 직접 고친다)
 LOOP_SELF = ("tools/loop/", "tools/skills/", ".claude/", ".codex/", ".agents/", ".github/", "CLAUDE.md", "AGENTS.md", ".gitignore", ".env")
-LOOP_DOCS = ("docs/dev/loop.md", "docs/dev/task_template.md")
+LOOP_DOCS = ("docs/dev/loop.md", "docs/dev/task_template.md", "docs/dev/workflow.md")
 HUMAN_DOCS = ("docs/design/", "docs/project/", "docs/archive/")
 TEST_DIR = "Assets/Tests/"
 TEST_ATTR_RE = re.compile(r"\[\s*(Test|TestCase|TestCaseSource|UnityTest|Theory)\b[^\]]*\]")
