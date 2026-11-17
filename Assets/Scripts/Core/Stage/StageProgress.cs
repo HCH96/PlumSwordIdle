@@ -14,6 +14,7 @@ namespace PlumSword.Core.Stage
         /// <summary>페이드아웃·페이드인 각각의 길이 (초, 임시).</summary>
         public const double FadeSeconds = 0.5;
 
+        /// <summary>스테이지 소개를 보여 주는 길이 (초, 임시).</summary>
         public const double IntroSeconds = 3.0;
 
         private readonly Wallet _wallet;
@@ -30,6 +31,7 @@ namespace PlumSword.Core.Stage
         /// <summary>현재 페이드 단계에서 흐른 시간 (초).</summary>
         private double _fadeElapsed;
 
+        /// <summary>소개 단계에서 흐른 시간 (초).</summary>
         private double _introElapsed;
 
         /// <summary>
@@ -81,8 +83,10 @@ namespace PlumSword.Core.Stage
 
         public StagePhase Phase { get; private set; }
 
+        /// <summary>1회차에서 소개를 본 마지막 화면상 스테이지 번호 (0~5). 저장 값.</summary>
         public int SeenIntroStage { get; private set; }
 
+        /// <summary>Phase == StagePhase.Intro.</summary>
         public bool IsIntroShowing => Phase == StagePhase.Intro;
 
         /// <summary>Begin 이 불린 뒤 true.</summary>
@@ -185,8 +189,8 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// 스테이지 배치: battle.Reset → 무리 구성 → 좌표마다 일반 몬스터 추가 → 처치 수·보스 초기화.
-        /// Begin 과 가려진 순간의 교체(Tick)가 함께 쓴다.
+        /// 소개 판단: 1회차이고 화면상 스테이지 번호가 SeenIntroStage 보다 크면 소개를 보여 주기로 하고
+        /// SeenIntroStage 를 그 번호로 올린다. 아니면 false 이고 SeenIntroStage 는 그대로다.
         /// </summary>
         private bool ShouldShowIntro()
         {
@@ -196,8 +200,8 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// ???? ??: battle.Reset ? ?? ?? ? ???? ?? ??? ?? ? ?? ???? ???.
-        /// Begin ? ??? ??? ??(Tick)? ?? ??.
+        /// 스테이지 배치: battle.Reset → 무리 구성 → 좌표마다 일반 몬스터 추가 → 처치 수·보스 초기화.
+        /// Begin 과 가려진 순간의 교체(Tick)가 함께 쓴다.
         /// </summary>
         private void PlaceStage()
         {

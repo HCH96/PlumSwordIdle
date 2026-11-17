@@ -96,7 +96,31 @@
 - Core 에서 `UnityEngine` 을 쓰지 않는다.
 - 씬·프리팹·에셋 파일과 어셈블리 정의를 고치지 않는다.
 
+## 보고서
 
+> 사후 복원 (2026-11-17, 루프 리뷰): 구현 에이전트가 쓴 보고서가 줄바꿈이 `\n` 글자로 들어가 "하지 말 것" 줄에 붙는 바람에, 루프가 양식 칸 변경으로 보고 되돌리면서 함께 지워졌다. 아래는 `.loop/logs/023_stage_intro_begin_attempt1_codex.out.txt` 에 남은 원문을 그대로 옮긴 것이다. 이 작업이 남긴 Core 주석의 한글 깨짐은 main 의 후속 커밋에서 고쳤다.
+
+### 한 일
+- 첫 회차의 미확인 스테이지에서 Begin 시 소개 상태로 들어가고 전투를 멈추며 본 소개 번호를 갱신한다.
+- 소개 문구와 공개 상태를 추가하고 생성자 범위 보정, 이벤트 순서, 전투·강화 동작을 테스트했다. 소개 시간 진행과 전환 중 소개 판단은 024의 범위로 남겼다.
+
+### 바뀐 파일
+- Assets/Scripts/Core/Stage/StagePhase.cs
+- Assets/Scripts/Core/Stage/StageProgress.cs
+- Assets/Scripts/Core/Stage/StageText.cs
+- Assets/Tests/EditMode/Stage/StageProgressIntroTests.cs 및 .meta
+- Assets/Tests/EditMode/Stage/StageTextTests.cs
+- tasks/doing/023_stage_intro_begin.md, .loop/result.json
+
+### 가정
+없음. 공개 연결 지점은 사양과 일치한다.
+
+### 사람이 확인할 것
+없음.
+
+### 테스트 결과
+- python tools/loop/run_unity_tests.py: 통과 (EditMode 323/323, PlayMode 2/2).
+- git diff --check: 통과.
 
 ## 루프 기록 (2026-11-17 12:03)
 
