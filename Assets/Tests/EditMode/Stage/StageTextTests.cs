@@ -106,6 +106,23 @@ namespace PlumSword.Core.Tests.Stage
             Assert.Throws<ArgumentOutOfRangeException>(() => StageText.ThemedBossName(stage));
         }
 
+        [TestCase(1, "A Mount Hua disciple faces a first sparring match at Jongnam.")]
+        [TestCase(2, "Pass the Beggar Clan's trial and hear of the Demon Cult's movements.")]
+        [TestCase(3, "Cross swords with Namgung to prepare for the battle to come.")]
+        [TestCase(4, "The battle to hold back the Demon Cult's army begins.")]
+        [TestCase(5, "At the end of the war, the Heavenly Demon awaits.")]
+        public void IntroLine_ValidStage_ReturnsExactLine(int stage, string expected)
+        {
+            Assert.That(StageText.IntroLine(stage), Is.EqualTo(expected));
+        }
+
+        [TestCase(0)]
+        [TestCase(6)]
+        public void IntroLine_InvalidStage_Throws(int stage)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => StageText.IntroLine(stage));
+        }
+
         [TestCase(1, 0)]
         [TestCase(1, 6)]
         [TestCase(0, 1)]

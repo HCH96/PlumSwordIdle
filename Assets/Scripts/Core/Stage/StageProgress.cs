@@ -14,6 +14,8 @@ namespace PlumSword.Core.Stage
         /// <summary>페이드아웃·페이드인 각각의 길이 (초, 임시).</summary>
         public const double FadeSeconds = 0.5;
 
+        public const double IntroSeconds = 3.0;
+
         private readonly Wallet _wallet;
         private readonly StatUpgrades _upgrades;
         private readonly Battle _battle;
@@ -28,13 +30,15 @@ namespace PlumSword.Core.Stage
         /// <summary>현재 페이드 단계에서 흐른 시간 (초).</summary>
         private double _fadeElapsed;
 
+        private double _introElapsed;
+
         /// <summary>
         /// wallet: 처치 금화를 줄 지갑. upgrades: 페이드 동안 잠글 강화. battle: 적을 놓고 알림을 받을 전투.
         /// random: 무리 구성에 쓸 난수. 넷 중 하나라도 null 이면 ArgumentNullException.
         /// startStage: 1 보다 작으면 1 로 만든다 (예외 없음).
         /// 생성자는 전투·지갑·강화를 건드리지 않고 알림을 보내지 않는다.
         /// </summary>
-        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1)
+        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5)
         {
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
@@ -42,6 +46,7 @@ namespace PlumSword.Core.Stage
             _random = random ?? throw new ArgumentNullException(nameof(random));
 
             StageNumber = startStage < 1 ? 1 : startStage;
+            SeenIntroStage = Math.Max(0, Math.Min(5, seenIntroStage));
             Phase = StagePhase.Playing;
             HasBegun = false;
             DefeatedNormalCount = 0;
@@ -75,6 +80,10 @@ namespace PlumSword.Core.Stage
         public int RoundNumber => (StageNumber - 1) / 5 + 1;
 
         public StagePhase Phase { get; private set; }
+
+        public int SeenIntroStage { get; private set; }
+
+        public bool IsIntroShowing => Phase == StagePhase.Intro;
 
         /// <summary>Begin 이 불린 뒤 true.</summary>
         public bool HasBegun { get; private set; }
@@ -124,6 +133,12 @@ namespace PlumSword.Core.Stage
             }
 
             PlaceStage();
+            if (ShouldShowIntro())
+            {
+                Phase = StagePhase.Intro;
+                _introElapsed = 0.0;
+                _battle.SetPaused(true);
+            }
             HasBegun = true;
             StageStarted?.Invoke(StageNumber);
             Changed?.Invoke();
@@ -140,7 +155,7 @@ namespace PlumSword.Core.Stage
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "경과 시간은 0 이상의 유한한 값이어야 한다.");
             }
 
-            if (!HasBegun || Phase == StagePhase.Playing)
+            if (!HasBegun || Phase == StagePhase.Playing || Phase == StagePhase.Intro)
             {
                 return;
             }
@@ -172,6 +187,17 @@ namespace PlumSword.Core.Stage
         /// <summary>
         /// 스테이지 배치: battle.Reset → 무리 구성 → 좌표마다 일반 몬스터 추가 → 처치 수·보스 초기화.
         /// Begin 과 가려진 순간의 교체(Tick)가 함께 쓴다.
+        /// </summary>
+        private bool ShouldShowIntro()
+        {
+            if (RoundNumber != 1 || DisplayStageNumber <= SeenIntroStage) return false;
+            SeenIntroStage = DisplayStageNumber;
+            return true;
+        }
+
+        /// <summary>
+        /// ???? ??: battle.Reset ? ?? ?? ? ???? ?? ??? ?? ? ?? ???? ???.
+        /// Begin ? ??? ??? ??(Tick)? ?? ??.
         /// </summary>
         private void PlaceStage()
         {
