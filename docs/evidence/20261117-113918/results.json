@@ -1,0 +1,443 @@
+{
+  "loop": "loop/20261117-113918",
+  "bundle": "테마회차",
+  "merged_at": "2026-11-17 11:59",
+  "tag": "loop-merged/20261117-113918",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 304,
+      "passed": 304,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [],
+    "stats": {
+      "files_changed": 8,
+      "files": [
+        "Assets/Scripts/Core/Stage/StageProgress.cs",
+        "Assets/Scripts/Core/Stage/StageText.cs",
+        "Assets/Scripts/Game/Stage/StageView.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressRoundTests.cs",
+        "Assets/Tests/EditMode/Stage/StageTextTests.cs",
+        "docs/history/020_stage_round_number.md",
+        "docs/history/021_stage_theme_text.md",
+        "docs/history/022_stage_view_round_theme.md"
+      ],
+      "tests_before": 222,
+      "tests_after": 236,
+      "new_tests": [
+        "StageProgressRoundTests.BeforeBegin_StageNumbersReflectClampedStart",
+        "StageProgressRoundTests.FifthStageCleared_AdvancesToSecondRoundAtCoveredTransition",
+        "StageProgressRoundTests.MaxStageCleared_RoundNumbersRemainValidWithoutOverflow",
+        "StageProgressRoundTests.RestoredTotalStage_ReconstructsRoundAndEnemies",
+        "StageProgressRoundTests.SixthStageEnemies_UseTotalStageNumberForStats",
+        "StageProgressRoundTests.SixthStageFailed_RetriesSameRoundAndResetsBattle",
+        "StageProgressRoundTests.SixthStageRewards_UseTotalStageNumber",
+        "StageTextTests.RoundStageLabel_CurrentCultureIsGerman_UsesInvariantNumbers",
+        "StageTextTests.RoundStageLabel_InvalidInput_Throws",
+        "StageTextTests.RoundStageLabel_ValidInputs_FormatsRoundStageAndTheme",
+        "StageTextTests.ThemeName_InvalidStage_Throws",
+        "StageTextTests.ThemeName_ValidStage_ReturnsTheme",
+        "StageTextTests.ThemedBossName_InvalidStage_Throws",
+        "StageTextTests.ThemedBossName_ValidStage_ReturnsBoss"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": [
+        "Assets/Scripts/Game/Stage/StageView.cs"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "doc": "020_stage_round_number.md",
+      "branch": "task/020_stage_round_number",
+      "agents": "codex(시도 1)",
+      "summary": "전체 진행 번호에서 회차와 화면상 스테이지 번호를 계산하고 경계 및 전환 테스트를 추가했다. Unity 라이선스 초기화 실패로 테스트 실행 결과는 확인하지 못했다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "StageProgress에 사양 연결 지점대로 StageNumber에서 매번 계산하는 DisplayStageNumber·RoundNumber를 더했고, 새 테스트 파일이 완료 조건마다 상황과 숫자 기대값을 직접 검사한다. 하지 말 것 침범, 화면 코드 변경, 기존 테스트 수정은 없다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "따로 적지 않으면 `wallet = new Wallet(0)`, `upgrades = new StatUpgrades(wallet, 공격력, 최대 체력, 1.0)`(항목 앞의 `(공격력, 최대 체력)`), `battle = new Battle(upgrades)`, `stage = new StageProgress(wallet, upgrades, battle, new MinRandom(), startStage)` 로 만든 것이다. \"1칸 진행\"은 `battle.Step()` 을 한 번 부르는 것이다. 알림 횟수는 `StageProgress` 를 만든 직후 구독해 센 누적 횟수다.",
+            "test": "StageProgressRoundTests.Create (조건의 생성 방식과 생성 직후 구독을 그대로 따름)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "`Assets/Tests/EditMode/Stage/StageProgressRoundTests.cs` 에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "StageProgressRoundTests (파일과 클래스가 있고 아래 조건마다 테스트가 있음)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "(10, 100) 으로 `startStage` 1, 2, 3, 4, 5, 6 을 넣어 각각 새로 만들고 `Begin()` 전에 읽으면, `StageNumber` 는 1, 2, 3, 4, 5, 6, `RoundNumber` 는 1, 1, 1, 1, 1, 2, `DisplayStageNumber` 는 1, 2, 3, 4, 5, 1 이다.",
+            "test": "StageProgressRoundTests.BeforeBegin_StageNumbersReflectClampedStart (TestCase 1~6)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "(10, 100) 으로 `startStage` 0 과 -3 을 넣어 각각 만들면 `StageNumber`, `RoundNumber`, `DisplayStageNumber` 는 모두 1 이다.",
+            "test": "StageProgressRoundTests.BeforeBegin_StageNumbersReflectClampedStart (TestCase 0, -3)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "(1000, 100), `startStage: 5` 로 만들어 `Begin()` 을 부르고 `battle.AddEnemy(EnemyKind.Boss, 5, 1.0)` 뒤 1칸 진행하면, 금화는 90, `StageCleared` 가 5를 담아 1번 오고, `Phase` 는 `FadingOut`, `StageNumber` 는 5 다.",
+            "test": "StageProgressRoundTests.FifthStageCleared_AdvancesToSecondRoundAtCoveredTransition",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "위에 이어 `Tick(0.5)` 를 부르면 `StageNumber` 는 6, `RoundNumber` 는 2, `DisplayStageNumber` 는 1 이고, `StageStarted` 가 6을 담아 1번 더 오며, 금화는 90 이고 `upgrades.GetLevel(StatType.Attack)`, `GetLevel(StatType.Health)`, `GetLevel(StatType.AttackSpeed)` 는 모두 0 그대로다.",
+            "test": "StageProgressRoundTests.FifthStageCleared_AdvancesToSecondRoundAtCoveredTransition (started == [5, 6])",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "(10, 30), `startStage: 6` 으로 만들어 `Begin()` 을 부르면 `battle.Enemies` 의 일반 상대 10명의 `MaxHealth` 는 모두 80, `Attack` 은 모두 15 이다.",
+            "test": "StageProgressRoundTests.SixthStageEnemies_UseTotalStageNumberForStats",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "(10, 30), `startStage: 6` 으로 `Begin()` 뒤 `battle.AddEnemy(EnemyKind.Boss, 6, 1.0)` 이 돌려준 보스의 `MaxHealth` 는 250, `Attack` 은 30 이다.",
+            "test": "StageProgressRoundTests.SixthStageEnemies_UseTotalStageNumberForStats",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "`StageRewards.NormalGold(6)` 은 20, `StageRewards.BossGold(6)` 은 100 이다.",
+            "test": "StageProgressRoundTests.SixthStageRewards_UseTotalStageNumber",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "(10, 30), `startStage: 6` 으로 `Begin()` 뒤 `battle.AddEnemy(EnemyKind.Boss, 6, 1.0)` 을 부르고 1칸 진행하면 보스는 살아 있고(`Health` 240) `StageFailed` 가 6을 담아 1번 온다. 이어서 `Tick(0.5)` 를 부르면 `StageNumber` 6, `RoundNumber` 2, `DisplayStageNumber` 1, `battle.Enemies.Count` 10(모두 `EnemyKind.Normal`), `battle.DiscipleHealth` 30, `DefeatedNormalCount` 0, `Boss` 는 `null` 이다.",
+            "test": "StageProgressRoundTests.SixthStageFailed_RetriesSameRoundAndResetsBattle",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "(10, 100), `startStage: 6` 으로 만든 스테이지의 `StageNumber` 를 읽어(6) 새 지갑·강화 (10, 100)·전투·`MinRandom` 과 그 값으로 다른 스테이지를 만들어 `Begin()` 을 부르면, `StageNumber` 6, `RoundNumber` 2, `DisplayStageNumber` 1, `DefeatedNormalCount` 0, `Boss` 는 `null` 이고 일반 상대 10명의 `MaxHealth` 는 모두 80 이다.",
+            "test": "StageProgressRoundTests.RestoredTotalStage_ReconstructsRoundAndEnemies",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "`wallet = new Wallet(0)`, `upgrades = new StatUpgrades(wallet, 100000000000, 100000000000, 1.0)`, `startStage: int.MaxValue` 로 만들어 `Begin()` 뒤 `battle.AddEnemy(EnemyKind.Boss, int.MaxValue, 1.0)` 을 부르고 1칸 진행하면 금화는 21474836510 이고 `StageCleared` 가 `int.MaxValue` 를 담아 1번 온다. 이어서 `Tick(0.5)` 를 부르면 예외 없이 `StageNumber` 는 `int.MaxValue`, `RoundNumber` 는 429496730, `DisplayStageNumber` 는 2 다.",
+            "test": "StageProgressRoundTests.MaxStageCleared_RoundNumbersRemainValidWithoutOverflow",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "기존 테스트가 모두 통과한다. (위 \"기존 테스트\"의 두 테스트, `StageProgressTests`, `StageProgressKillTests`, `StageProgressOutcomeTests`, `StageProgressFadeTests`, `StageLayoutTests`, `StageRewardsTests`, `CoreAssemblyTests.Core_DoesNotReferenceUnity` 포함)",
+            "test": "루프의 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "보고서의 테스트 결과에는 구현 환경에 Unity 라이선스가 없어 테스트를 실행하지 못했다고 적혀 있다. 실제 통과 여부는 루프의 테스트 실행 결과로 판정해야 한다 (tasks/doing/020_stage_round_number.md 보고서)."
+          },
+          {
+            "severity": "note",
+            "text": "작업 문서 끝에 '## 보고서' 절이 두 번 붙어 있다 (중단 뒤 다시 시작한 흔적). 내용은 서로 맞는다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 283,
+          "passed": 283,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "StageProgressRoundTests.BeforeBegin_StageNumbersReflectClampedStart",
+        "StageProgressRoundTests.FifthStageCleared_AdvancesToSecondRoundAtCoveredTransition",
+        "StageProgressRoundTests.MaxStageCleared_RoundNumbersRemainValidWithoutOverflow",
+        "StageProgressRoundTests.RestoredTotalStage_ReconstructsRoundAndEnemies",
+        "StageProgressRoundTests.SixthStageEnemies_UseTotalStageNumberForStats",
+        "StageProgressRoundTests.SixthStageFailed_RetriesSameRoundAndResetsBattle",
+        "StageProgressRoundTests.SixthStageRewards_UseTotalStageNumber"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "없음. 공개 연결 지점과 계산식은 기존 사양과 같다."
+      ],
+      "human_report": [
+        "Unity 라이선스가 활성화된 환경에서 전체 테스트와 새 에딧 모드 테스트를 실행해 통과 여부를 확인한다."
+      ],
+      "exceptions": []
+    },
+    {
+      "doc": "021_stage_theme_text.md",
+      "branch": "task/021_stage_theme_text",
+      "agents": "codex(시도 1)",
+      "summary": "회차·스테이지·테마 표시와 테마별 보스 이름 및 경계값 테스트를 추가했다. Unity 라이선스 연결 실패로 테스트 실행 결과는 확인하지 못했다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "StageText에 RoundStageLabel·ThemeName·ThemedBossName이 사양의 연결 지점과 수치표대로 추가됐습니다(U+00B7 가운뎃점, InvariantCulture, 범위 밖 입력은 ArgumentOutOfRangeException). 완료 조건마다 기대값을 직접 검사하는 테스트가 있습니다. 기존 API와 기존 테스트는 바뀌지 않았고 하지 말 것도 침범하지 않았습니다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Stage/StageTextTests.cs` 에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "StageTextTests 의 새 테스트 7개(TestCase 포함). 조건 2~9마다 테스트가 하나 이상 있다",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "`StageText.RoundStageLabel(2, 1)` 은 `\"ROUND 2 · STAGE 1 · JONGNAM\"` 이다.",
+            "test": "StageTextTests.RoundStageLabel_ValidInputs_FormatsRoundStageAndTheme(2,1)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "`StageText.RoundStageLabel(1, 5)` 는 `\"ROUND 1 · STAGE 5 · HEAVENLY DEMON\"` 이다.",
+            "test": "StageTextTests.RoundStageLabel_ValidInputs_FormatsRoundStageAndTheme(1,5)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "`CultureInfo.CurrentCulture` 를 `de-DE` 로 바꾼 동안 `StageText.RoundStageLabel(1234, 3)` 은 `\"ROUND 1234 · STAGE 3 · NAMGUNG\"` 이다 (테스트 끝에 문화권을 되돌린다).",
+            "test": "StageTextTests.RoundStageLabel_CurrentCultureIsGerman_UsesInvariantNumbers (finally에서 문화권 복원)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "`StageText.ThemeName(1)`~`ThemeName(5)` 는 순서대로 `\"JONGNAM\"`, `\"BEGGAR CLAN\"`, `\"NAMGUNG\"`, `\"DEMON CULT\"`, `\"HEAVENLY DEMON\"` 이다.",
+            "test": "StageTextTests.ThemeName_ValidStage_ReturnsTheme (1~5)",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "`StageText.ThemedBossName(1)`~`ThemedBossName(5)` 는 순서대로 `\"JONGNAM MASTER\"`, `\"BEGGAR CLAN MASTER\"`, `\"NAMGUNG SWORDSMAN\"`, `\"DEMON CULT COMMANDER\"`, `\"HEAVENLY DEMON\"` 이다.",
+            "test": "StageTextTests.ThemedBossName_ValidStage_ReturnsBoss (1~5)",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "`ThemeName(0)`, `ThemeName(6)` 은 `ArgumentOutOfRangeException` 이다.",
+            "test": "StageTextTests.ThemeName_InvalidStage_Throws (0, 6)",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "`ThemedBossName(0)`, `ThemedBossName(6)` 은 `ArgumentOutOfRangeException` 이다.",
+            "test": "StageTextTests.ThemedBossName_InvalidStage_Throws (0, 6)",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "`RoundStageLabel(1, 0)`, `RoundStageLabel(1, 6)`, `RoundStageLabel(0, 1)`, `RoundStageLabel(-1, 1)` 은 `ArgumentOutOfRangeException` 이다.",
+            "test": "StageTextTests.RoundStageLabel_InvalidInput_Throws (1,0 / 1,6 / 0,1 / -1,1)",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "기존 테스트가 모두 통과한다. (위 \"기존 테스트\"의 네 테스트, `CoreAssemblyTests.Core_DoesNotReferenceUnity` 포함)",
+            "test": "루프의 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "보고서에 따르면 구현 에이전트는 Unity 라이선스 연결 문제로 테스트를 직접 실행하지 못했습니다. 통과 여부는 루프의 테스트 결과로 판단합니다."
+          },
+          {
+            "severity": "note",
+            "text": "Assets/Scripts/Core/Stage/StageText.cs:24-29 RoundStageLabel은 stage 범위를 ThemeName 호출로 검사합니다. 이 때문에 예외의 매개변수 이름은 stage가 됩니다. 조건에는 영향이 없습니다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 304,
+          "passed": 304,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "StageTextTests.RoundStageLabel_CurrentCultureIsGerman_UsesInvariantNumbers",
+        "StageTextTests.RoundStageLabel_InvalidInput_Throws",
+        "StageTextTests.RoundStageLabel_ValidInputs_FormatsRoundStageAndTheme",
+        "StageTextTests.ThemeName_InvalidStage_Throws",
+        "StageTextTests.ThemeName_ValidStage_ReturnsTheme",
+        "StageTextTests.ThemedBossName_InvalidStage_Throws",
+        "StageTextTests.ThemedBossName_ValidStage_ReturnsBoss"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "없음. 공개 연결 지점과 값은 기존 사양과 같다."
+      ],
+      "human_report": [
+        "Unity 라이선스 클라이언트 연결 문제를 해결한 환경에서 전체 테스트를 다시 실행해 통과를 확인한다."
+      ],
+      "exceptions": []
+    },
+    {
+      "doc": "022_stage_view_round_theme.md",
+      "branch": "task/022_stage_view_round_theme",
+      "agents": "codex(시도 1~2)",
+      "summary": "스테이지 화면에 회차와 테마별 보스 이름을 표시하고 작업 보고서를 추가했습니다. 이전 루프에서 테스트와 관문이 통과했으며 이번 수정에서 Unity 테스트는 다시 실행하지 않았습니다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "StageView.cs만 고쳤고, 요구사항대로 글자 영역 크기를 600×16·300×16으로 바꿨다. 스테이지 글자는 Core의 RoundStageLabel(RoundNumber, DisplayStageNumber), 보스 이름은 ThemedBossName(DisplayStageNumber)을 Redraw마다 넣는다. WarnOnce 처리와 IsBossActive일 때만 보이는 조건은 그대로 남아 있고, 화면 코드에서 계산하는 부분도 없다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "StageView.cs` 가 컴파일 오류 없이 컴파일되고, `StageView.cs` 에 `StageText.StageLabel(` 와 `StageText.BossName` 이라는 글자가 없으며, 기존 테스트가 모두 통과한다. (플레이 모드의 `GameBootTests`, 에딧 모드의 `StageTextTests`, `StageProgressRoundTests`, `CoreAssemblyTests.Core_DoesNotReferenceUnity` 포함)",
+            "test": "루프의 컴파일·전체 테스트 실행. grep으로 확인하니 StageView.cs에 StageText.StageLabel( / StageText.BossName이 없다",
+            "verdict": "루프가 판정"
+          },
+          {
+            "id": 2,
+            "condition": "실행하고 1초 뒤 화면 위쪽 가운데에 `ROUND 1 · STAGE 1 · JONGNAM` 이 한 줄로 잘리지 않고 보이고, 그 아래에 빈 노란 진행 바가 보인다.",
+            "test": "사람 확인",
+            "verdict": "사람 확인"
+          },
+          {
+            "id": 3,
+            "condition": "에디터에서 실행해 1스테이지의 10마리를 모두 처치하면 바가 가득 찬 빨간 바로 바뀌고 그 위에 `JONGNAM MASTER` 가 잘리지 않고 보인다.",
+            "test": "사람 확인",
+            "verdict": "사람 확인"
+          },
+          {
+            "id": 4,
+            "condition": "에디터에서 실행해 1스테이지 보스를 처치하면 금화가 50 늘고, 전투 화면이 가려졌다가 열리며 스테이지 글자가 `ROUND 1 · STAGE 2 · BEGGAR CLAN` 이 된다. 가려진 동안에도 보유 금화와 강화 버튼은 보이고, 버튼은 어둡고 눌리지 않는다. 열린 뒤 바는 빈 노란 바다.",
+            "test": "사람 확인",
+            "verdict": "사람 확인"
+          },
+          {
+            "id": 5,
+            "condition": "에디터에서 실행해 제자의 체력이 0이 되면 같은 방식으로 가려졌다가 같은 스테이지 글자로 처음부터 다시 시작한다. 금화와 강화 단계는 그대로다.",
+            "test": "사람 확인",
+            "verdict": "사람 확인"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "_bossName과 _bossNameObject가 같은 대상을 가리켜 _bossNameObject는 없어도 된다 (Assets/Scripts/Game/Stage/StageView.cs:38-39). 동작에는 영향이 없다."
+          },
+          {
+            "severity": "note",
+            "text": "보고서의 테스트 결과 절에 Unity 컴파일과 테스트를 직접 다시 돌리지 않았다고 적혀 있다. 컴파일·테스트 통과는 루프가 판정한다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 1
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 304,
+          "passed": 304,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [],
+      "screen_files": [
+        "Assets/Scripts/Game/Stage/StageView.cs"
+      ],
+      "human_conditions": [
+        "실행하고 1초 뒤 화면 위쪽 가운데에 `ROUND 1 · STAGE 1 · JONGNAM` 이 한 줄로 잘리지 않고 보이고, 그 아래에 빈 노란 진행 바가 보인다.",
+        "에디터에서 실행해 1스테이지의 10마리를 모두 처치하면 바가 가득 찬 빨간 바로 바뀌고 그 위에 `JONGNAM MASTER` 가 잘리지 않고 보인다.",
+        "에디터에서 실행해 1스테이지 보스를 처치하면 금화가 50 늘고, 전투 화면이 가려졌다가 열리며 스테이지 글자가 `ROUND 1 · STAGE 2 · BEGGAR CLAN` 이 된다. 가려진 동안에도 보유 금화와 강화 버튼은 보이고, 버튼은 어둡고 눌리지 않는다. 열린 뒤 바는 빈 노란 바다.",
+        "에디터에서 실행해 제자의 체력이 0이 되면 같은 방식으로 가려졌다가 같은 스테이지 글자로 처음부터 다시 시작한다. 금화와 강화 단계는 그대로다."
+      ],
+      "gate_warnings": [],
+      "assumptions": [
+        "추가 가정이나 임시 수치는 없다. 글자 크기 600×16과 300×16은 작업 문서의 임시값을 그대로 사용했다. 공개 연결 지점은 바꾸지 않았다."
+      ],
+      "human_report": [
+        "실행 1초 뒤 화면 위쪽 가운데에 `ROUND 1 · STAGE 1 · JONGNAM`이 한 줄로 잘리지 않고 보이고 그 아래 빈 노란 진행 바가 보이는지 확인한다.",
+        "1스테이지의 일반 몬스터 10마리 처치 후 바가 가득 찬 빨간 바로 바뀌고 그 위에 `JONGNAM MASTER`가 잘리지 않고 보이는지 확인한다.",
+        "1스테이지 보스 처치 후 금화가 50 늘고 전투 화면이 가려졌다 열리며 `ROUND 1 · STAGE 2 · BEGGAR CLAN`이 표시되는지 확인한다. 가려진 동안 금화와 강화 버튼은 보이고 버튼은 어둡고 눌리지 않으며, 열린 뒤 바는 빈 노란 바인지 확인한다.",
+        "제자의 체력이 0이 되면 같은 방식으로 가려졌다 열리고 같은 스테이지가 처음부터 다시 시작하며 금화와 강화 단계가 유지되는지 확인한다."
+      ],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}
