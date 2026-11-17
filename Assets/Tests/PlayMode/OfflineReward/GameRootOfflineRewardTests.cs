@@ -13,7 +13,6 @@ namespace PlumSword.Game.Tests.OfflineReward
         [UnitySetUp]
         public IEnumerator LoadGame()
         {
-            if (!Application.isBatchMode) Assert.Ignore("Batch mode only.");
             yield return SceneManager.LoadSceneAsync(0);
             for (var i = 0; i < 3; i++) yield return null;
             var game = GameObject.Find(GameBootstrap.RootName);

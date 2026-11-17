@@ -76,7 +76,7 @@
 | 배치 모드 | 복귀 감시를 만들지 않음 | |
 | `OfflineRewardText.FormatDuration`에 음수 | `ArgumentOutOfRangeException` | |
 
-`GameRoot.Restart()`, `OfflineResumeWatcher`, 창의 조립은 자동 테스트 대상이 아니다. 판단(`ShouldRestartOnResume`, `TryClaim`, 표시 글자)은 Core에 있고 에딧 모드 테스트로 판정한다.
+`GameRoot.Restart()`, `OfflineResumeWatcher`, 창의 실제 동작은 자동 테스트 대상이 아니다 (배치 모드 시작 상태만 플레이 모드 테스트로 확인한다). 판단(`ShouldRestartOnResume`, `TryClaim`, 표시 글자)은 Core에 있고 에딧 모드 테스트로 판정한다.
 
 ## 수치
 
@@ -315,7 +315,7 @@ namespace PlumSword.Game.OfflineReward
 18. `OfflineRewardText.FormatDuration`은 324000000000 → `"9:00:00"`, 6000000000 → `"0:10:00"`, 250000000 → `"0:00:25"`, 99999999 → `"0:00:09"`, 0 → `"0:00:00"`, 3600000000000 → `"100:00:00"`이다. -1은 `ArgumentOutOfRangeException`이다.
 19. `ElapsedLine(324000000000)`은 `"AWAY 9:00:00"`, `AppliedLine(288000000000)`은 `"REWARD FOR 8:00:00 (MAX)"`, `GoldLine(28800)`은 `"G 28,800"`이다. `Title`, `SaveFailedMessage`, `ClaimButton`, `RetryButton`은 `"OFFLINE REWARD"`, `"SAVE FAILED. TAP RETRY."`, `"CLAIM"`, `"RETRY"`이다.
 20. `ButtonLabel(Waiting)`은 `"CLAIM"`, `ButtonLabel(SaveFailed)`는 `"RETRY"`, `ButtonLabel(Done)`은 `"CLAIM"`, `ButtonLabel((OfflineRewardClaimState)99)`는 `"CLAIM"`이다.
-21. (플레이 모드) 배치 모드에서 게임이 켜지면 `GameRoot.OfflineReward`는 `null`, `GameRoot.OfflineRewardClaim`은 `null`, `GameRoot.IsResumeRestart`는 `false`, `GameRoot.AutoSave.Enabled`는 `true`, `GameRoot.StageProgress.HasBegun`은 `true`이다. `[Game]` 아래에 `[OfflineRewardView]`와 `[OfflineResumeWatcher]`가 없다. 배치 모드가 아니면 `Assert.Ignore`로 건너뛴다.
+21. (플레이 모드) 배치 모드에서 게임이 켜지면 `GameRoot.OfflineReward`는 `null`, `GameRoot.OfflineRewardClaim`은 `null`, `GameRoot.IsResumeRestart`는 `false`, `GameRoot.AutoSave.Enabled`는 `true`, `GameRoot.StageProgress.HasBegun`은 `true`이다. `[Game]` 아래에 `[OfflineRewardView]`와 `[OfflineResumeWatcher]`가 없다. 이 테스트는 루프와 명령줄의 배치 모드에서 판정하며, 건너뛰는 코드(`Assert.Ignore`, `Assume`, 조건부 조기 종료 등)는 넣지 않는다 (저장 사양의 플레이 모드 테스트와 같다).
 
 ## 결정 기록
 
