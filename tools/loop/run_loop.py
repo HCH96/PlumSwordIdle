@@ -648,6 +648,9 @@ def first_prompt(doc_name: str, branch: str) -> str:
    - 완료: {{"status": "done", "summary": "바뀐 내용 요약 (몇 줄)"}}
    - 스스로 판단할 수 없어 진행 불가: {{"status": "blocked", "reason": "막힌 이유", "question": "사람에게 할 질문", "recommendation": "추천안"}}
    애매한 점은 규칙의 "애매한 점 처리"대로 먼저 스스로 정하고, 정말 불가능할 때만 blocked 로 한다.
+6. 보고서와 result.json 은 파일을 직접 편집하는 도구로 UTF-8 그대로 쓰고, 줄바꿈은 실제 줄바꿈으로 쓴다.
+   윈도 PowerShell 에서 한글을 파이프(`@'...'@ | python -` 등)나 명령줄 인자로 넘기면 '?' 로 깨진다. 깨진 글은 스크립트가 받아들이지 않는다.
+   `\\n` 두 글자를 줄바꿈 대신 쓰면 제목이 인식되지 않아 보고서가 지워진다.
 
 하지 말 것:
 - git commit, push, checkout, switch, merge, rebase, reset, branch, stash, tag 등 깃 상태를 바꾸는 명령 (스크립트가 한다)
@@ -929,6 +932,9 @@ def _run_child(cmd: list[str], prompt: str, timeout_min: float, label: str) -> s
     env = os.environ.copy()
     for key in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT"):  # 다른 클로드 세션 안에서 실행할 때 대비
         env.pop(key, None)
+    # 에이전트가 부르는 파이썬이 파일·표준 입출력을 UTF-8 로 다루게 한다 (윈도 기본은 cp949)
+    env.setdefault("PYTHONUTF8", "1")
+    env.setdefault("PYTHONIOENCODING", "utf-8")
     try:
         code, out, err = _run_proc(cmd, prompt, timeout_min * 60, env=env)
     except FileNotFoundError:
@@ -1096,6 +1102,50 @@ def run_codex(cfg: dict, prompt: str, log_name: str, review: bool = False) -> di
         detail = tail(errors or proc.stderr or last_msg, 800)
         raise AgentFailure("codex", f"실행 실패 (코드 {proc.returncode}): {detail}", _is_transient(cfg, detail))
     return {"result": last_msg}
+
+
+_HANGUL_RE = re.compile(r"[가-힣]")
+
+
+def garbled_text(text: str) -> bool:
+    """한글이 '?' 나 대체 문자로 깨진 글인지 어림한다.
+    윈도 PowerShell 5.1 은 파이프로 넘기는 글을 ASCII 로 바꿔 한글을 '?' 로 만든다 (023·024 보류에서 실제로 일어났다).
+    대체 문자(U+FFFD)가 있거나, 한글이 하나도 없는데 '??' 가 이어 나오고 '?' 가 4개 이상이면 깨진 것으로 본다."""
+    if not text:
+        return False
+    if "�" in text:
+        return True
+    return not _HANGUL_RE.search(text) and "??" in text and text.count("?") >= 4
+
+
+def garbled_output(result: dict, doc: Path) -> list[str]:
+    """결과 파일의 글과 이번 시도에 에이전트가 덧붙인 절 중 한글이 깨진 곳의 이름.
+    마지막 보류 사유·답변 뒤의 절(루프 기록 제외)만 본다. 지난 기록이 깨져 있어도 이번 시도 탓이 아니다.
+    제목까지 깨진 절('## ???')도 여기에 들어간다."""
+    bad = [f".loop/result.json 의 {k}" for k, v in result.items() if isinstance(v, str) and garbled_text(v)]
+    text = doc.read_text(encoding="utf-8-sig")
+    tail_text = text[len(doc_head(text)) :]
+    recent: list[str] = []
+    for m in re.finditer(r"^## .*$(?:\n(?!## ).*)*", tail_text, re.M):
+        section = m.group(0)
+        title = section.splitlines()[0][3:].strip()
+        if title.startswith(("보류 사유", "답변")):
+            recent = []
+        elif not title.startswith("루프 기록"):
+            recent.append(section)
+    bad += [f"작업 문서의 '{s.splitlines()[0].strip()}' 절" for s in recent if garbled_text(s)]
+    return bad
+
+
+def garbled_feedback(places: list[str]) -> str:
+    listing = "\n".join(f"- {p}" for p in places)
+    return f"""아래에 쓴 한글이 '?' 로 깨졌다. 이 상태로는 사람이 읽을 수 없어 받아들이지 않는다.
+
+{listing}
+
+윈도 PowerShell 에서 한글을 파이프(`@'...'@ | python -` 등)나 명령줄 인자로 다른 프로그램에 넘기면 '?' 로 바뀐다.
+파일을 직접 편집하는 도구(apply_patch 등)로 UTF-8 그대로 다시 써라. 깨진 절은 지우고 새로 쓴다.
+줄바꿈은 실제 줄바꿈으로 쓴다 (`\\n` 두 글자를 쓰면 제목이 인식되지 않아 보고서가 지워진다)."""
 
 
 def read_result() -> dict | None:
@@ -1629,6 +1679,12 @@ class Loop:
             if result is None:
                 last_failure = ".loop/result.json 이 없거나 형식이 맞지 않음"
                 feedback = last_failure + ". 형식에 맞게 다시 써라."
+                continue
+            garbled = garbled_output(result, doc)
+            if garbled:
+                log(f"한글 깨짐 → 다시 시도: {name} ({', '.join(garbled)})")
+                last_failure = "한글이 깨짐: " + ", ".join(garbled)
+                feedback = garbled_feedback(garbled)
                 continue
             if result["status"] == "blocked":
                 self.block(doc, tb, result.get("reason", ""), result.get("question", ""), result.get("recommendation", ""), entries)
