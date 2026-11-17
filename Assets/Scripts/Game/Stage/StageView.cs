@@ -17,11 +17,11 @@ namespace PlumSword.Game.Stage
     {
         // 위치와 크기, 글자 크기, 색은 임시값 (docs/spec/stage.md "화면").
         private static readonly Vector2 StageLabelPosition = new Vector2(0f, -8f);
-        private static readonly Vector2 StageLabelSize = new Vector2(200f, 16f);
+        private static readonly Vector2 StageLabelSize = new Vector2(600f, 16f);
         private const float StageLabelFontSize = 16f;
 
         private static readonly Vector2 BossNamePosition = new Vector2(0f, -26f);
-        private static readonly Vector2 BossNameSize = new Vector2(200f, 16f);
+        private static readonly Vector2 BossNameSize = new Vector2(300f, 16f);
         private const float BossNameFontSize = 14f;
 
         private static readonly Vector2 BarPosition = new Vector2(0f, -44f);
@@ -35,6 +35,7 @@ namespace PlumSword.Game.Stage
         private StageProgress _stage;
         private Image _fade;
         private TextMeshProUGUI _stageLabel;
+        private TextMeshProUGUI _bossName;
         private GameObject _bossNameObject;
         private RectTransform _barFillRect;
         private Image _barFill;
@@ -93,18 +94,10 @@ namespace PlumSword.Game.Stage
 
         private void CreateBossName(Canvas canvas)
         {
-            TextMeshProUGUI label = CreateText(canvas, "BossName", BossNamePosition, BossNameSize, BossNameFontSize);
-            if (label == null) return;
+            _bossName = CreateText(canvas, "BossName", BossNamePosition, BossNameSize, BossNameFontSize);
+            if (_bossName == null) return;
 
-            _bossNameObject = label.gameObject;
-            try
-            {
-                label.text = StageText.BossName;
-            }
-            catch (Exception e)
-            {
-                WarnOnce(e);
-            }
+            _bossNameObject = _bossName.gameObject;
         }
 
         private TextMeshProUGUI CreateText(Canvas canvas, string name, Vector2 position, Vector2 size, float fontSize)
@@ -195,7 +188,19 @@ namespace PlumSword.Game.Stage
             {
                 try
                 {
-                    _stageLabel.text = StageText.StageLabel(_stage.StageNumber);
+                    _stageLabel.text = StageText.RoundStageLabel(_stage.RoundNumber, _stage.DisplayStageNumber);
+                }
+                catch (Exception e)
+                {
+                    WarnOnce(e);
+                }
+            }
+
+            if (_bossName != null)
+            {
+                try
+                {
+                    _bossName.text = StageText.ThemedBossName(_stage.DisplayStageNumber);
                 }
                 catch (Exception e)
                 {
