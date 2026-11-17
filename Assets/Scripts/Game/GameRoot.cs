@@ -1,6 +1,8 @@
 using PlumSword.Core.Currency;
 using PlumSword.Core.Save;
+using PlumSword.Core.OfflineReward;
 using PlumSword.Game.Currency;
+using PlumSword.Game.OfflineReward;
 using PlumSword.Game.Save;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -19,6 +21,12 @@ namespace PlumSword.Game
         // UI 기준 해상도 (docs/dev/art.md "기본 숫자").
         private static readonly Vector2 UiReferenceResolution = new Vector2(640f, 360f);
         private ISaveStore saveStore;
+        internal static bool NextIsResumeRestart;
+        private bool restarting;
+
+        public OfflineRewardResult OfflineReward { get; private set; }
+        public OfflineRewardClaim OfflineRewardClaim { get; private set; }
+        public bool IsResumeRestart { get; private set; }
 
         /// <summary>시작할 때 읽은 저장 결과. 이어하기 여부를 판단할 때 쓴다.</summary>
         public SaveLoadResult LoadResult { get; private set; }
@@ -78,8 +86,13 @@ namespace PlumSword.Game
             CreateCombatView();
             CreateStage(data != null ? data.StageNumber : 1, data != null ? data.SeenIntroStage : 0);
 
+            IsResumeRestart = NextIsResumeRestart;
+            NextIsResumeRestart = false;
+            if (LoadResult.Status == SaveLoadStatus.Loaded)
+                OfflineReward = OfflineRewardCalculator.Calculate(data.SavedAtUtcTicks, System.DateTime.UtcNow.Ticks, StageProgress.StageNumber);
+
             AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, StageProgress,
-                enabled: LoadResult.Status != SaveLoadStatus.Corrupt);
+                enabled: LoadResult.Status != SaveLoadStatus.Corrupt && !(OfflineReward != null && OfflineReward.HasReward));
             var saveViewObject = new GameObject("[SaveView]");
             saveViewObject.transform.SetParent(transform, false);
             saveViewObject.AddComponent<SaveView>().Initialize(AutoSave, UiCanvas);
@@ -91,10 +104,43 @@ namespace PlumSword.Game
                 errorViewObject.transform.SetParent(transform, false);
                 errorViewObject.AddComponent<SaveErrorView>().Initialize(UiCanvas, StartNewGame);
             }
+            else if (OfflineReward != null && OfflineReward.HasReward)
+            {
+                Battle.SetPaused(true);
+                OfflineRewardClaim = new OfflineRewardClaim(Wallet, AutoSave, OfflineReward);
+                var rewardViewObject = new GameObject("[OfflineRewardView]");
+                rewardViewObject.transform.SetParent(transform, false);
+                rewardViewObject.AddComponent<OfflineRewardView>().Initialize(OfflineRewardClaim, UiCanvas, StartAfterClaim);
+            }
             else
             {
                 StageProgress.Begin();
             }
+
+            if (!Application.isBatchMode)
+            {
+                var watcherObject = new GameObject("[OfflineResumeWatcher]");
+                watcherObject.transform.SetParent(transform, false);
+                watcherObject.AddComponent<OfflineResumeWatcher>().Initialize(this, AutoSave);
+            }
+        }
+
+        public void Restart()
+        {
+            if (restarting) return;
+            restarting = true;
+            NextIsResumeRestart = true;
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+            var restarter = new GameObject("[GameRestarter]");
+            DontDestroyOnLoad(restarter);
+            restarter.AddComponent<GameRestarter>();
+        }
+
+        private void StartAfterClaim()
+        {
+            Battle.SetPaused(false);
+            StageProgress.Begin();
         }
 
         private Canvas CreateUiCanvas()
