@@ -68,6 +68,12 @@ namespace PlumSword.Core.Stage
         /// <summary>1 이상.</summary>
         public int StageNumber { get; private set; }
 
+        /// <summary>전체 진행 번호에서 계산한 화면상 스테이지 번호 (1~5).</summary>
+        public int DisplayStageNumber => (StageNumber - 1) % 5 + 1;
+
+        /// <summary>전체 진행 번호에서 계산한 회차.</summary>
+        public int RoundNumber => (StageNumber - 1) / 5 + 1;
+
         public StagePhase Phase { get; private set; }
 
         /// <summary>Begin 이 불린 뒤 true.</summary>
