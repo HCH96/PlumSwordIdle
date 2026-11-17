@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 
 namespace PlumSword.Core.Stage
@@ -18,6 +19,40 @@ namespace PlumSword.Core.Stage
         public static string StageLabel(int stage)
         {
             return "STAGE " + stage.ToString(CultureInfo.InvariantCulture);
+        }
+
+        public static string RoundStageLabel(int round, int stage)
+        {
+            if (round < 1) throw new ArgumentOutOfRangeException(nameof(round));
+            return "ROUND " + round.ToString(CultureInfo.InvariantCulture)
+                + " · STAGE " + stage.ToString(CultureInfo.InvariantCulture)
+                + " · " + ThemeName(stage);
+        }
+
+        public static string ThemeName(int stage)
+        {
+            switch (stage)
+            {
+                case 1: return "JONGNAM";
+                case 2: return "BEGGAR CLAN";
+                case 3: return "NAMGUNG";
+                case 4: return "DEMON CULT";
+                case 5: return "HEAVENLY DEMON";
+                default: throw new ArgumentOutOfRangeException(nameof(stage));
+            }
+        }
+
+        public static string ThemedBossName(int stage)
+        {
+            switch (stage)
+            {
+                case 1: return "JONGNAM MASTER";
+                case 2: return "BEGGAR CLAN MASTER";
+                case 3: return "NAMGUNG SWORDSMAN";
+                case 4: return "DEMON CULT COMMANDER";
+                case 5: return "HEAVENLY DEMON";
+                default: throw new ArgumentOutOfRangeException(nameof(stage));
+            }
         }
     }
 }
