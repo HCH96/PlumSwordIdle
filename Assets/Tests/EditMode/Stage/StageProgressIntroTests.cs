@@ -82,7 +82,7 @@ namespace PlumSword.Core.Tests.Stage
             stage.Begin();
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             _battle.Step();
-            Assert.DoesNotThrow(() => stage.Tick(10.0));
+            Assert.DoesNotThrow(() => stage.Tick(2.9));
             Assert.That(_wallet.Balance, Is.Zero);
             Assert.That(stage.DefeatedNormalCount, Is.Zero);
             Assert.That(_battle.DisciplePosition, Is.Zero);

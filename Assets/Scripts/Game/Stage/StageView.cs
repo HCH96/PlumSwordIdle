@@ -7,8 +7,8 @@ using UnityEngine.UI;
 namespace PlumSword.Game.Stage
 {
     /// <summary>
-    /// 스테이지 화면: 전투 화면만 가리는 페이드 막, 스테이지 글자, 보스 이름, 진행 바 겸 보스 체력 바.
-    /// 글자·보스 이름·바는 Initialize 에서 한 번, 그 뒤로 stage.Changed 가 올 때마다 다시 그린다.
+    /// 스테이지 화면: 전투 화면만 가리는 페이드 막, 스테이지 글자, 보스 이름, 진행 바 겸 보스 체력 바, 소개 패널.
+    /// 글자·보스 이름·바·소개 패널은 Initialize 에서 한 번, 그 뒤로 stage.Changed 가 올 때마다 다시 그린다.
     /// 페이드 막의 진하기만 매 프레임 Update 에서 stage.Tick 을 부른 뒤 맞춘다.
     /// 계산은 하지 않고 StageProgress 의 상태를 읽어 그리기만 한다.
     /// 사양: docs/spec/stage.md "화면".
@@ -30,7 +30,13 @@ namespace PlumSword.Game.Stage
         private static readonly Color NormalFillColor = new Color(0.95f, 0.80f, 0.25f);
         private static readonly Color BossFillColor = new Color(0.85f, 0.20f, 0.20f);
 
+        private static readonly Vector2 IntroPanelSize = new Vector2(640f, 72f);
+        private static readonly Color IntroPanelColor = new Color(0f, 0f, 0f, 0.6f);
+        private const float IntroTitleFontSize = 22f;
+        private const float IntroLineFontSize = 14f;
+
         private static readonly Vector2 TopCenter = new Vector2(0.5f, 1f);
+        private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
 
         private StageProgress _stage;
         private Image _fade;
@@ -39,10 +45,13 @@ namespace PlumSword.Game.Stage
         private GameObject _bossNameObject;
         private RectTransform _barFillRect;
         private Image _barFill;
+        private GameObject _introPanelObject;
+        private TextMeshProUGUI _introTitle;
+        private TextMeshProUGUI _introLine;
         private bool _warned;
 
         /// <summary>
-        /// canvas 아래에 페이드 막, 스테이지 글자, 보스 이름, 진행 바를 만들고 지금 상태로 바로 표시한다.
+        /// canvas 아래에 페이드 막, 스테이지 글자, 보스 이름, 진행 바, 소개 패널을 만들고 지금 상태로 바로 표시한다.
         /// stage.Changed 를 구독하고 OnDestroy 에서 끊는다.
         /// </summary>
         public void Initialize(StageProgress stage, Canvas canvas)
@@ -57,6 +66,8 @@ namespace PlumSword.Game.Stage
             CreateStageLabel(canvas);
             CreateBossName(canvas);
             CreateBar(canvas);
+            // 스테이지 글자·보스 이름·진행 바보다 나중에 만들어 그 위에 그린다.
+            CreateIntroPanel(canvas);
 
             Redraw();
             ApplyFade();
@@ -153,6 +164,55 @@ namespace PlumSword.Game.Stage
             _barFill = fill;
         }
 
+        // 화면 가운데의 소개 패널: 반투명 검은 바탕, 위쪽 절반에 제목, 아래쪽 절반에 문구.
+        // 글자를 만들지 못해도 바탕은 남고, 보이기는 IsIntroShowing 을 따른다.
+        private void CreateIntroPanel(Canvas canvas)
+        {
+            var panelObject = new GameObject("StageIntroPanel", typeof(RectTransform));
+            var panelRect = (RectTransform)panelObject.transform;
+            panelRect.SetParent(canvas.transform, false);
+            panelRect.anchorMin = Center;
+            panelRect.anchorMax = Center;
+            panelRect.pivot = Center;
+            panelRect.anchoredPosition = Vector2.zero;
+            panelRect.sizeDelta = IntroPanelSize;
+
+            var background = panelObject.AddComponent<Image>();
+            background.color = IntroPanelColor;
+            background.raycastTarget = false;
+
+            _introPanelObject = panelObject;
+            _introTitle = CreatePanelText(panelRect, "Title", new Vector2(0f, 0.5f), Vector2.one, IntroTitleFontSize);
+            _introLine = CreatePanelText(panelRect, "Line", Vector2.zero, new Vector2(1f, 0.5f), IntroLineFontSize);
+        }
+
+        private TextMeshProUGUI CreatePanelText(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, float fontSize)
+        {
+            try
+            {
+                var textObject = new GameObject(name, typeof(RectTransform));
+                var rect = (RectTransform)textObject.transform;
+                rect.SetParent(parent, false);
+                rect.anchorMin = anchorMin;
+                rect.anchorMax = anchorMax;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+
+                var label = textObject.AddComponent<TextMeshProUGUI>();
+                label.fontSize = fontSize;
+                label.color = Color.white;
+                label.alignment = TextAlignmentOptions.Center;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.raycastTarget = false;
+                return label;
+            }
+            catch (Exception e)
+            {
+                WarnOnce(e);
+                return null;
+            }
+        }
+
         private void OnChanged()
         {
             Redraw();
@@ -201,6 +261,44 @@ namespace PlumSword.Game.Stage
                 try
                 {
                     _bossName.text = StageText.ThemedBossName(_stage.DisplayStageNumber);
+                }
+                catch (Exception e)
+                {
+                    WarnOnce(e);
+                }
+            }
+
+            RedrawIntro();
+        }
+
+        // 소개 패널: IsIntroShowing 일 때만 보이고, 제목과 문구는 지금 표시 번호의 것이다.
+        private void RedrawIntro()
+        {
+            if (_introPanelObject == null) return;
+
+            bool introShowing = _stage.IsIntroShowing;
+            if (_introPanelObject.activeSelf != introShowing)
+            {
+                _introPanelObject.SetActive(introShowing);
+            }
+
+            if (_introTitle != null)
+            {
+                try
+                {
+                    _introTitle.text = StageText.ThemeName(_stage.DisplayStageNumber);
+                }
+                catch (Exception e)
+                {
+                    WarnOnce(e);
+                }
+            }
+
+            if (_introLine != null)
+            {
+                try
+                {
+                    _introLine.text = StageText.IntroLine(_stage.DisplayStageNumber);
                 }
                 catch (Exception e)
                 {

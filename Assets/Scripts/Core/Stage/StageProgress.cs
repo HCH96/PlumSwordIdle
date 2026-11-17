@@ -34,6 +34,9 @@ namespace PlumSword.Core.Stage
         /// <summary>소개 단계에서 흐른 시간 (초).</summary>
         private double _introElapsed;
 
+        /// <summary>가려진 순간의 교체에서 한 소개 판단의 결과. 페이드인이 끝날 때 Intro 로 갈지 정한다.</summary>
+        private bool _showIntroAfterFade;
+
         /// <summary>
         /// wallet: 처치 금화를 줄 지갑. upgrades: 페이드 동안 잠글 강화. battle: 적을 놓고 알림을 받을 전투.
         /// random: 무리 구성에 쓸 난수. 넷 중 하나라도 null 이면 ArgumentNullException.
@@ -149,7 +152,8 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// 페이드 시간을 센다. Begin 전이거나 Playing 이면 아무것도 하지 않는다.
+        /// 페이드 시간(FadingOut·FadingIn)이나 소개 시간(Intro)을 센다. Begin 전이거나 Playing 이면 아무것도 하지 않는다.
+        /// 교체 → 페이드인 끝(소개로 가거나 Playing) → 소개 끝 순서로 본다. 페이드인·소개 뒤 남은 시간은 버린다.
         /// 음수·NaN·무한대: ArgumentOutOfRangeException (상태와 상관없이).
         /// </summary>
         public void Tick(double deltaSeconds)
@@ -159,18 +163,22 @@ namespace PlumSword.Core.Stage
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "경과 시간은 0 이상의 유한한 값이어야 한다.");
             }
 
-            if (!HasBegun || Phase == StagePhase.Playing || Phase == StagePhase.Intro)
+            if (!HasBegun || Phase == StagePhase.Playing)
             {
                 return;
             }
 
-            _fadeElapsed += deltaSeconds;
+            if (Phase == StagePhase.Intro)
+                _introElapsed += deltaSeconds;
+            else
+                _fadeElapsed += deltaSeconds;
 
             // 1. 가려진 순간의 교체. 남은 시간은 페이드인으로 넘긴다.
             if (Phase == StagePhase.FadingOut && _fadeElapsed >= FadeSeconds - FadeTolerance)
             {
                 StageNumber = _nextStageNumber;
                 PlaceStage();
+                _showIntroAfterFade = ShouldShowIntro();
                 _fadeElapsed = Math.Max(0.0, _fadeElapsed - FadeSeconds);
                 Phase = StagePhase.FadingIn;
                 StageStarted?.Invoke(StageNumber);
@@ -180,10 +188,27 @@ namespace PlumSword.Core.Stage
             // 2. 전환을 끝낸다. 같은 Tick 에서 1번 뒤에 이어질 수 있다.
             if (Phase == StagePhase.FadingIn && _fadeElapsed >= FadeSeconds - FadeTolerance)
             {
-                Phase = StagePhase.Playing;
                 _fadeElapsed = 0.0;
-                _battle.SetPaused(false);
                 _upgrades.SetLocked(false);
+                if (_showIntroAfterFade)
+                {
+                    Phase = StagePhase.Intro;
+                    _introElapsed = 0.0;
+                }
+                else
+                {
+                    Phase = StagePhase.Playing;
+                    _battle.SetPaused(false);
+                }
+                Changed?.Invoke();
+            }
+
+            // 3. 소개를 끝낸다. 2번에서 막 들어온 소개는 시간이 0 이라 같은 Tick 에서 끝나지 않는다.
+            if (Phase == StagePhase.Intro && _introElapsed >= IntroSeconds - FadeTolerance)
+            {
+                Phase = StagePhase.Playing;
+                _introElapsed = 0.0;
+                _battle.SetPaused(false);
                 Changed?.Invoke();
             }
         }
