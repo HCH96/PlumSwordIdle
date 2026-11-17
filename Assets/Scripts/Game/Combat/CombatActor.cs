@@ -13,6 +13,12 @@ namespace PlumSword.Game.Combat
         public SpriteRenderer Body;
         public Color BodyColor;
 
+        /// <summary>피격 번쩍임 동안의 몸 색. 단색 사각형은 흰색, 스프라이트는 곱하는 색이라 붉은 기운으로 둔다.</summary>
+        public Color FlashColor = Color.white;
+
+        /// <summary>체력 바 바탕. 체력 바가 없는 캐릭터(보스)는 null.</summary>
+        public Transform HealthBack;
+
         /// <summary>체력 바 채움. 체력 바가 없는 캐릭터(보스)는 null.</summary>
         public Transform HealthFill;
 

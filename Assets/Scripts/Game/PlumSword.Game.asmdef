@@ -5,7 +5,8 @@
         "PlumSword.Core",
         "UnityEngine.UI",
         "Unity.TextMeshPro",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.2D.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

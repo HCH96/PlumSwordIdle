@@ -24,10 +24,16 @@ namespace PlumSword.Core.Combat
         public const double DiscipleBaseAttackInterval = 1.0;
 
         /// <summary>제자 이동 속도 (초당 유닛, 임시).</summary>
-        public const double DiscipleMoveSpeed = 2.0;
+        public const double DiscipleMoveSpeed = 3.6;
 
         /// <summary>제자 공격 범위 (앞쪽 유닛, 임시).</summary>
         public const double DiscipleAttackRange = 1.0;
+
+        /// <summary>
+        /// 앞 동작 비율 (임시). 제자가 전진해 범위 안에 적이 없다가 생긴 칸(달려와 멈춘 칸)에는 바로 공격하지 않고,
+        /// 공격 대기를 적어도 공격 간격 × 이 값으로 올린다. 공격 애니메이션 17 프레임 중 타격 프레임이 7번이라 7/17 이다.
+        /// </summary>
+        public const double DiscipleAttackWindUpRatio = 7.0 / 17.0;
 
         private readonly StatUpgrades _upgrades;
         private readonly List<Enemy> _enemies = new List<Enemy>();
@@ -40,6 +46,9 @@ namespace PlumSword.Core.Combat
 
         // Reset 마다 1 씩 는다. 한 칸 진행 중 알림을 보낸 뒤 값이 바뀌었으면 알림 안에서 Reset 이 불린 것이므로 그 칸을 그만둔다.
         private int _resetGeneration;
+
+        // 직전 칸의 이동이 끝났을 때 제자의 공격 범위 안에 적이 있었는가. 앞 동작을 시작할 칸을 가린다.
+        private bool _wasEngaged;
 
         /// <summary>
         /// upgrades: 제자의 공격력·최대 체력·공격 간격을 읽을 곳. null 이면 ArgumentNullException.
@@ -76,6 +85,9 @@ namespace PlumSword.Core.Combat
 
         /// <summary>다음 공격까지 남은 시간(초).</summary>
         public double DiscipleAttackCooldown { get; private set; }
+
+        /// <summary>upgrades.AttackInterval 그대로. 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
+        public double DiscipleAttackInterval => _upgrades.AttackInterval;
 
         public bool IsDiscipleDefeated { get; private set; }
 
@@ -123,7 +135,7 @@ namespace PlumSword.Core.Combat
         }
 
         /// <summary>
-        /// 정확히 한 칸(0.02 초) 진행한다: 대기 감소 -> 이동 -> 공격 -> 쓰러짐 판정.
+        /// 정확히 한 칸(0.02 초) 진행한다: 대기 감소 -> 이동 -> 앞 동작 시작 -> 공격 -> 쓰러짐 판정.
         /// 멈췄거나 패배한 상태면 아무것도 하지 않는다.
         /// </summary>
         public void Step()
@@ -139,8 +151,10 @@ namespace PlumSword.Core.Combat
             int generation = _resetGeneration;
 
             ReduceCooldowns(snapshot);
+            double positionBeforeMove = DisciplePosition;
             MoveDisciple(snapshot);
             MoveEnemies(snapshot);
+            BeginWindUp(snapshot, DisciplePosition > positionBeforeMove);
 
             if (!AttackByDisciple(snapshot, generation))
             {
@@ -195,6 +209,7 @@ namespace PlumSword.Core.Combat
             _nextIndex = 0;
             _accumulatedSeconds = 0.0;
             _lastMaxHealth = _upgrades.MaxHealth;
+            _wasEngaged = false;
             _resetGeneration++;
 
             ResetCompleted?.Invoke();
@@ -261,6 +276,29 @@ namespace PlumSword.Core.Combat
                     enemy.Position -= Math.Min(maxMove, distance - normalRange);
                 }
             }
+        }
+
+        // 2-3. 앞 동작: 이번 칸에 제자가 전진했고, 직전 칸에는 범위 안에 적이 없다가 이번 칸에 생겼으면(달려와 멈춤)
+        // 공격 대기를 적어도 공격 간격 × 앞 동작 비율로 올린다. 그래서 피해는 멈추자마자가 아니라 앞 동작 시간 뒤에 들어간다.
+        // 제자가 서 있는 채로 범위 안에 적이 생기는 경우(예: 처음부터 범위 안에 놓인 적)는 지금처럼 바로 공격한다.
+        private void BeginWindUp(List<Enemy> enemies, bool discipleMoved)
+        {
+            bool engaged = false;
+            foreach (Enemy enemy in enemies)
+            {
+                if (enemy.Position - DisciplePosition <= DiscipleAttackRange + Epsilon)
+                {
+                    engaged = true;
+                    break;
+                }
+            }
+
+            if (engaged && !_wasEngaged && discipleMoved)
+            {
+                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, _upgrades.AttackInterval * DiscipleAttackWindUpRatio);
+            }
+
+            _wasEngaged = engaged;
         }
 
         // 3-1. 제자 공격: 대기가 끝났고 범위 안에 적이 있으면, 범위 안의 모든 적에게 같은 피해를 준다.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using PlumSword.Core.Combat;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace PlumSword.Game.Combat
 {
@@ -14,6 +15,8 @@ namespace PlumSword.Game.Combat
     {
         // 아래 숫자는 모두 임시값 (docs/spec/combat.md "화면").
         private const float CameraSize = 5.625f;                        // docs/dev/art.md "기본 숫자"
+        private const int ReferenceWidth = 640;                          // docs/dev/art.md "기본 숫자"
+        private const int ReferenceHeight = 360;
         private static readonly Color SkyColor = new Color(0.55f, 0.75f, 0.90f);
         private const float CameraOffsetX = 4.0f;
         private const float CameraZ = -10f;
@@ -38,7 +41,6 @@ namespace PlumSword.Game.Combat
         private const int HealthBarFillOrder = 6;
 
         private const float FlashSeconds = 0.1f;
-        private static readonly Color FlashColor = Color.white;
 
         private static readonly Vector2 GroundSize = new Vector2(40f, 6f);
         private static readonly Color GroundColor = new Color(0.35f, 0.30f, 0.25f);
@@ -61,6 +63,12 @@ namespace PlumSword.Game.Combat
         private Transform _ground;
         private Transform[] _trees;
 
+        // 제자 스프라이트. 불러오지 못하면 null 이고 단색 사각형을 쓴다.
+        private static readonly Color DiscipleSpriteFlashColor = new Color(1.0f, 0.45f, 0.45f);
+        private DiscipleSprites _discipleSprites;
+        private bool _discipleAttackedThisTick;
+        private readonly DiscipleAnimator _discipleAnimator = new DiscipleAnimator();
+
         /// <summary>
         /// 카메라를 설정하고 제자·배경 오브젝트를 만든다. 이미 battle.Enemies 에 있는 적의 오브젝트도 만든다.
         /// battle 의 알림을 구독하고 OnDestroy 에서 끊는다. 두 번 부르면 InvalidOperationException.
@@ -78,6 +86,7 @@ namespace PlumSword.Game.Combat
             _camera.orthographicSize = CameraSize;
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = SkyColor;
+            ApplyPixelPerfect(_camera);
 
             _texture = new Texture2D(1, 1, TextureFormat.RGBA32, false)
             {
@@ -92,6 +101,7 @@ namespace PlumSword.Game.Combat
 
             CreateBackground();
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
+            ApplyDiscipleSprites();
 
             foreach (var enemy in _battle.Enemies)
             {
@@ -112,7 +122,10 @@ namespace PlumSword.Game.Combat
             if (_battle == null) return;
 
             float deltaTime = Time.deltaTime;
+            double previousPosition = _battle.DisciplePosition;
+            _discipleAttackedThisTick = false;
             _battle.Tick(deltaTime);
+            AnimateDisciple(deltaTime, previousPosition);
             Refresh(deltaTime);
         }
 
@@ -131,6 +144,77 @@ namespace PlumSword.Game.Combat
             if (_texture != null) Destroy(_texture);
             _sprite = null;
             _texture = null;
+
+            _discipleSprites?.Dispose();
+            _discipleSprites = null;
+        }
+
+        // ---- 제자 스프라이트 (없으면 단색 사각형 대체 표시 그대로) ----
+
+        /// <summary>제자 몸을 스프라이트로 바꿨으면 true. 테스트와 사람 확인용.</summary>
+        internal bool UsesDiscipleSprites => _discipleSprites != null;
+
+        private void ApplyDiscipleSprites()
+        {
+            _discipleSprites = DiscipleSprites.TryLoad();
+            if (_discipleSprites == null) return;
+
+            // 스프라이트 피벗이 발 아래라 몸은 Root 자리에 크기 1 로 둔다.
+            var body = _disciple.Body;
+            body.sprite = _discipleSprites.Get(DiscipleMotion.Idle, 0);
+            body.transform.localScale = Vector3.one;
+            body.transform.localPosition = Vector3.zero;
+            _disciple.BodyColor = Color.white;
+            _disciple.FlashColor = DiscipleSpriteFlashColor;
+            body.color = Color.white;
+
+            // 체력 바는 동작마다 움직이지 않게 대기 그림의 머리 높이 기준으로 고정한다.
+            _disciple.HealthBarY = DiscipleSprites.HeadHeight + HealthBarGap;
+            _disciple.HealthBack.localPosition = new Vector3(0f, _disciple.HealthBarY, 0f);
+        }
+
+        private void AnimateDisciple(float deltaTime, double previousPosition)
+        {
+            if (_discipleSprites == null) return;
+
+            bool moved = _battle.DisciplePosition - previousPosition > DiscipleAnimator.MoveThreshold;
+            // EnemyDamaged 는 제자의 공격만 보낸다. (대기 시간이 늘어난 것으로는 가릴 수 없다: 달려와 멈춘 칸에도 앞 동작 대기로 늘어난다.)
+            bool attacked = _discipleAttackedThisTick;
+            bool engaged = !_battle.Paused && !_battle.IsDiscipleDefeated && HasEnemyInDiscipleRange();
+
+            _discipleAnimator.Update(deltaTime, moved, attacked, engaged,
+                _battle.DiscipleAttackCooldown, _battle.DiscipleAttackInterval);
+            _disciple.Body.sprite = _discipleSprites.Get(_discipleAnimator.Motion, _discipleAnimator.Frame);
+        }
+
+        private bool HasEnemyInDiscipleRange()
+        {
+            foreach (var enemy in _battle.Enemies)
+            {
+                if (enemy.Position - _battle.DisciplePosition <= Battle.DiscipleAttackRange + Battle.Epsilon)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// URP 2D 의 Pixel Perfect Camera 를 붙인다 (docs/dev/art.md "기본 숫자"): 기준 640×360, PPU 32.
+        /// 화면 높이에 맞는 정수배로만 확대하고(카메라 크기는 이 컴포넌트가 정한다), 카메라와 스프라이트를
+        /// 픽셀 격자에 맞춰 움직여 소수 좌표 때문에 픽셀이 떨려 보이지 않게 한다. 남는 폭·높이는 잘라내지 않고 더 보여 준다.
+        /// </summary>
+        private static void ApplyPixelPerfect(Camera camera)
+        {
+            var pixelPerfect = camera.GetComponent<PixelPerfectCamera>();
+            if (pixelPerfect == null) pixelPerfect = camera.gameObject.AddComponent<PixelPerfectCamera>();
+
+            pixelPerfect.assetsPPU = (int)DiscipleSprites.PixelsPerUnit;
+            pixelPerfect.refResolutionX = ReferenceWidth;
+            pixelPerfect.refResolutionY = ReferenceHeight;
+            pixelPerfect.gridSnapping = PixelPerfectCamera.GridSnapping.PixelSnapping;
+            pixelPerfect.cropFrame = PixelPerfectCamera.CropFrame.None;
         }
 
         // ---- 알림 ----
@@ -148,6 +232,7 @@ namespace PlumSword.Game.Combat
 
         private void OnEnemyDamaged(Enemy enemy)
         {
+            _discipleAttackedThisTick = true;
             if (enemy != null && _enemies.TryGetValue(enemy, out var actor))
             {
                 StartFlash(actor);
@@ -177,6 +262,12 @@ namespace PlumSword.Game.Combat
 
             _disciple.FlashRemaining = 0f;
             _disciple.Body.color = _disciple.BodyColor;
+
+            if (_discipleSprites != null)
+            {
+                _discipleAnimator.Reset();
+                _disciple.Body.sprite = _discipleSprites.Get(_discipleAnimator.Motion, _discipleAnimator.Frame);
+            }
         }
 
         // ---- 매 프레임 맞추기 ----
@@ -229,7 +320,7 @@ namespace PlumSword.Game.Combat
         private static void StartFlash(CombatActor actor)
         {
             actor.FlashRemaining = FlashSeconds;
-            actor.Body.color = FlashColor;
+            actor.Body.color = actor.FlashColor;
         }
 
         private static void UpdateFlash(CombatActor actor, float deltaTime)
@@ -281,6 +372,7 @@ namespace PlumSword.Game.Combat
                 var back = CreateRect("HealthBack", root.transform,
                     new Vector2(HealthBarWidth, HealthBarHeight), HealthBarBackColor, HealthBarBackOrder);
                 back.transform.localPosition = new Vector3(0f, actor.HealthBarY, 0f);
+                actor.HealthBack = back.transform;
 
                 var fill = CreateRect("HealthFill", root.transform,
                     new Vector2(HealthBarWidth, HealthBarHeight), healthColor.Value, HealthBarFillOrder);

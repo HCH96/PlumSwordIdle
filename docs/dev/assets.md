@@ -2,7 +2,7 @@
 
 게임에 들어가는(또는 들어갈) 그림 에셋의 목록이다. 경로, 용도, 크기, 프레임, 기준점, 상태를 적는다. 크기·가져오기 설정은 [art.md](art.md), 제자 기준 그림체와 제작 절차는 [art_style.md](art_style.md)를 따른다. 아래 표의 크기·프레임은 게임 적용 전 계획값이다.
 
-> **초안 (2026-11-17).** 지금 있는 사양(`docs/spec/`)의 대체 표시와, 사양이 2단계로 미뤄 둔 항목에서 뽑았다. 2단계 사양(테마 스테이지, 오프라인 보상 등)이 확정되면 그 사양을 쓰면서 이 표를 고친다. 상태가 `계획`인 줄은 아직 파일이 없다.
+> **초안 (2026-11-17).** 지금 있는 사양(`docs/spec/`)의 대체 표시와, 사양이 2단계로 미뤄 둔 항목에서 뽑았다. 제자 대기·달리기·공격은 실제 적용한 값으로 고쳤다. 2단계 사양(테마 스테이지, 오프라인 보상 등)이 확정되면 그 사양을 쓰면서 이 표를 고친다. 상태가 `계획`인 줄은 아직 파일이 없다.
 
 ## 쓰는 법
 
@@ -16,14 +16,18 @@
 
 | ID | 리소스 경로 | 용도 | 캔버스(px) | 프레임 | fps | 기준점 | 방향 | 상태 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| disciple_idle | `Art/Characters/disciple_idle` | 제자 서 있기 | 48×48 | 4 | 6 | 발 아래 가운데 | 오른쪽 | 계획 |
-| disciple_walk | `Art/Characters/disciple_walk` | 제자 전진 | 48×48 | 6 | 10 | 발 아래 가운데 | 오른쪽 | 계획 |
-| disciple_attack | `Art/Characters/disciple_attack` | 제자 검 휘두르기 (공격 1회 = 1번 재생) | 48×48 | 6 | 12 | 발 아래 가운데 | 오른쪽 | 계획 |
+| disciple_idle | `Art/Characters/disciple_idle` | 제자 서 있기 (적 앞에서 공격 대기 중 포함) | 76×76 | 24 | 10 | (38, 12)px = 발 아래 가운데 | 남동쪽(오른쪽 앞) | 임시 |
+| disciple_run | `Art/Characters/disciple_run` | 제자 전진 (달리기, 이동 속도 초당 3.6 유닛) | 76×80 | 24 | 20 | (38, 14)px = 발 아래 가운데 | 남동쪽(오른쪽 앞) | 임시 |
+| disciple_attack | `Art/Characters/disciple_attack` | 제자 검 휘두르기 (공격 1회 = 1번 재생, 7번 프레임 = 피해 시점) | 76×76 | 17 | 17 ÷ 공격 간격 | (38, 12)px = 발 아래 가운데 | 남동쪽(오른쪽 앞) | 임시 |
 | disciple_hit | `Art/Characters/disciple_hit` | 제자 피격 | 48×48 | 2 | 10 | 발 아래 가운데 | 오른쪽 | 계획 |
 | disciple_down | `Art/Characters/disciple_down` | 제자 쓰러짐 | 48×48 | 4 | 8 | 발 아래 가운데 | 오른쪽 | 계획 |
 
-- 지금 사양의 제자 대체 표시는 1.0×1.0 유닛(32px)이다. 스프라이트를 넣는 작업에서 48×48(1.5 유닛) 기준으로 체력 바 높이와 겹침 간격을 함께 고친다.
-- 별도로 보관한 제자 SD 일러스트, 기본 스프라이트와 선택한 대기·달리기·17프레임 공격 원본은 [제자 에셋 색인](../../art/source/disciple/index.md)을 본다. 아직 `Assets/Resources/`에 들어간 게임용 파일은 아니므로 위 상태는 `계획`으로 유지한다. 그림체와 시점은 [제자 기준 스타일](art_style.md)을 따르며, 위 표의 48×48과 프레임 수는 게임에 붙일 때 다시 정한다.
+- **제자 대기·달리기·공격은 2026-11-17에 적용했다 (상태 `임시`).** 원본은 [제자 에셋 색인](../../art/source/disciple/index.md)의 선택된 시트를 그대로(확대·축소 없이) `Assets/Resources/Art/Characters/`에 복사했다. 원본 이름: `idle_south-east_sheet.png` → `disciple_idle.png`, `run_south-east_sheet.png` → `disciple_run.png`, `attack_south-east_sheet.png` → `disciple_attack.png`.
+  - 계획의 48×48 대신 원본 칸 크기를 쓴다. 칸이 동작마다 달라(76×76, 76×80) 위 표의 기준점(칸 왼쪽 아래에서 잰 px)으로 발을 맞춘다. 몸 키는 약 53px(1.66 유닛)라 일반 몬스터 대체 표시(32px)보다 크다.
+  - 피벗과 프레임 자르기는 Unity 가져오기 설정이 아니라 화면 코드(`DiscipleSprites`)가 한다. 시트는 Single 스프라이트로 가져오고, 가져오기 설정은 `Assets/Editor/PixelArtTextureImporter.cs`가 `Art/` 아래 그림에 [art.md](art.md)의 값(Sprite, PPU 32, Point, 압축 없음, 밉맵 끔)으로 맞춘다.
+  - 원본 방향은 남동쪽(오른쪽 앞)이다. 반전하지 않고 오른쪽으로 진행하는 제자로 쓴다.
+  - 재생 속도와 공격 시점 맞추기는 [전투 사양](../spec/combat.md) "화면"의 "제자 애니메이션"을 본다. 시트를 바꾸면 칸 수·칸 크기가 같아야 하고, 다르면 `DiscipleSprites`의 값과 이 표를 함께 고친다. 크기가 맞지 않으면 게임은 대체 표시(파란 사각형)로 돌아간다.
+- `disciple_hit`, `disciple_down`은 아직 없다 (`계획`, 크기는 위 적용분에 맞춰 다시 정한다).
 
 ## 몬스터와 보스
 

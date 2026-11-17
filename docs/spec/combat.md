@@ -16,9 +16,10 @@
 - **한 칸(`Step`)의 순서**. 멈춤 상태(`Paused`)이거나 제자가 패배한 상태(`IsDiscipleDefeated`)면 아무것도 하지 않는다.
   1. **대기 감소**: 제자와 모든 적의 공격 대기 시간을 0.02 줄인다. 0보다 작아지지 않는다. 이동 중에도 줄어든다.
   2. **이동**:
-     - 제자: 가장 가까운 적까지의 거리 `d`(적 좌표 − 제자 좌표의 최솟값)를 본다. 적이 없으면 `2.0 × 0.02`만큼 전진한다. `d ≤ 1.0 + 1e-9`이면 멈춘다. 아니면 `min(2.0 × 0.02, d − 1.0)`만큼 전진한다.
+     - 제자: 가장 가까운 적까지의 거리 `d`(적 좌표 − 제자 좌표의 최솟값)를 본다. 적이 없으면 `3.6 × 0.02`만큼 전진한다. `d ≤ 1.0 + 1e-9`이면 멈춘다. 아니면 `min(3.6 × 0.02, d − 1.0)`만큼 전진한다.
      - 일반 몬스터(추가된 순서대로, 제자가 움직인 뒤의 좌표로 계산): 제자까지의 거리 `d`가 `d ≤ 3.0 + 1e-9`이고 `d > 0.8 + 1e-9`이면 `min(1.0 × 0.02, d − 0.8)`만큼 제자 쪽으로 다가온다. 그 밖에는 움직이지 않는다.
      - 보스는 움직이지 않는다.
+  2-1. **앞 동작 시작** (2026-11-17 추가): 이번 칸에 제자가 전진했고, 직전 칸이 끝났을 때는 제자의 공격 범위(`1.0 + 1e-9`) 안에 적이 없었는데 이동이 끝난 지금은 있으면(달려와 멈춘 칸), 제자의 공격 대기를 `max(지금 대기, StatUpgrades.AttackInterval × 7/17)`로 올린다 (`Battle.DiscipleAttackWindUpRatio`). 그래서 달려와 멈추자마자 피해를 주지 않고, 공격 애니메이션의 앞 동작(17프레임 중 0~6번)이 끝나는 순간 타격 프레임(7번)에 맞춰 피해를 준다. 제자가 전진하지 않은 채 범위 안에 적이 생긴 경우(처음부터 범위 안에 놓인 적, 적을 쓰러뜨린 뒤 다음 적이 이미 범위 안에 있는 경우)는 대기를 바꾸지 않는다. 범위 안 적 여부는 `Reset` 때 "없음"으로 되돌린다.
   3. **공격** (이동이 끝난 좌표로 판정한다):
      - 제자: 대기 시간이 `1e-9` 이하이고 거리 `1.0 + 1e-9` 이내의 적이 하나라도 있으면 공격한다. 이때 `StatUpgrades.Attack`을 한 번 읽어, 범위 안의 모든 적의 체력을 그만큼 줄인다 (0에서 멈춤). 적마다 `EnemyDamaged`를 추가된 순서대로 보낸다. 그 뒤 대기 시간을 그 순간의 `StatUpgrades.AttackInterval`로 정한다.
      - 적(추가된 순서대로): 대기 시간이 `1e-9` 이하이고 제자까지의 거리가 자기 공격 범위(일반 0.8, 보스 1.0)에 `1e-9`를 더한 값 이하이면 공격한다. 제자의 체력을 자기 공격력만큼 줄이고 (0에서 멈춤) `DiscipleDamaged`를 보낸 뒤, 대기 시간을 자기 공격 간격으로 정한다. **이번 칸에 제자의 공격으로 체력이 0이 된 적도 공격한다.**
@@ -50,7 +51,7 @@
 | `Tick(0.02보다 작은 값)` | 모아 둔다 | 예: `Tick(0.01)` 두 번 → 1칸 |
 | 멈춘 동안 `Step`, `Tick` | 아무 일도 없다 | 변화 없음. `Tick`의 시간은 버린다 |
 | 제자가 패배한 뒤 `Step`, `Tick` | 아무 일도 없다 | 변화 없음, 알림 없음 |
-| 적이 하나도 없음 | 제자가 계속 전진한다 | 칸마다 좌표 +0.04 |
+| 적이 하나도 없음 | 제자가 계속 전진한다 | 칸마다 좌표 +0.072 |
 | 피해가 남은 체력보다 큼 | 체력 0에서 멈춘다 | 음수가 되지 않는다 |
 | 같은 칸에 제자와 적이 함께 체력 0 | 둘 다 쓰러짐 처리 | `EnemyDefeated` 먼저, 그때 `IsDiscipleDefeated`는 `true`. 그 뒤 `DiscipleDefeated` 1번 |
 | 체력이 0이 된 제자를 같은 칸에 다른 적이 또 공격 | 체력 0 그대로 | `DiscipleDamaged`는 공격한 적 수만큼 간다. `DiscipleDefeated`는 1번 |
@@ -81,8 +82,9 @@
 | 한 칸의 길이 `Battle.StepSeconds` | 0.02초 (임시) | |
 | 한 번에 받는 시간의 상한 `Battle.MaxTickSeconds` | 0.25초 (임시) | |
 | 제자 시작 능력치 | 공격력 10, 최대 체력 100, 공격 간격 1.0초 (임시) | `Battle.DiscipleBaseAttack`, `DiscipleBaseMaxHealth`, `DiscipleBaseAttackInterval`. `GameRoot`가 `StatUpgrades`를 만들 때 넣는다 |
-| 제자 이동 속도 `Battle.DiscipleMoveSpeed` | 초당 2.0 유닛 (임시) | 한 칸에 0.04 |
+| 제자 이동 속도 `Battle.DiscipleMoveSpeed` | 초당 3.6 유닛 (임시) | 한 칸에 0.072. 2026-11-17에 2.0에서 1.8배로 올렸다 (달리기 애니메이션의 발이 미끄러져 보여서) |
 | 제자 공격 범위 `Battle.DiscipleAttackRange` | 앞쪽 1.0 유닛 (임시) | 범위 안 모든 적에게 같은 피해 |
+| 앞 동작 비율 `Battle.DiscipleAttackWindUpRatio` | 7/17 (임시) | 달려와 멈춘 칸에 대기를 `공격 간격 × 7/17` 이상으로 올린다. 간격 1.0초 → 0.4118초(21칸), 0.5초 → 0.2059초(11칸). 공격 애니메이션 17프레임 중 타격 프레임 7번에 맞춘 값이라 `DiscipleAnimator.AttackHitFrame / AttackFrameCount`와 같아야 한다 |
 | 제자 피해량 | `StatUpgrades.Attack` | |
 | 일반 몬스터 반응 거리 `EnemyStats.NormalReactRange` | 3.0 유닛 (임시) | |
 | 일반 몬스터 이동 속도 `EnemyStats.NormalMoveSpeed` | 초당 1.0 유닛 (임시) | 한 칸에 0.02 |
@@ -154,8 +156,9 @@ namespace PlumSword.Core.Combat
         public const long DiscipleBaseAttack = 10;
         public const long DiscipleBaseMaxHealth = 100;
         public const double DiscipleBaseAttackInterval = 1.0;
-        public const double DiscipleMoveSpeed = 2.0;
+        public const double DiscipleMoveSpeed = 3.6;
         public const double DiscipleAttackRange = 1.0;
+        public const double DiscipleAttackWindUpRatio = 7.0 / 17.0;   // 달려와 멈춘 칸의 앞 동작 대기 = 공격 간격 × 이 값
 
         // upgrades: 제자의 공격력·최대 체력·공격 간격을 읽을 곳. null 이면 ArgumentNullException.
         // upgrades.Upgraded 를 구독한다. 시작 상태: 제자 좌표 0, 체력 = upgrades.MaxHealth,
@@ -166,6 +169,7 @@ namespace PlumSword.Core.Combat
         public long DiscipleHealth { get; }             // 0 이상
         public long DiscipleMaxHealth { get; }          // upgrades.MaxHealth 그대로
         public double DiscipleAttackCooldown { get; }   // 다음 공격까지 남은 시간(초)
+        public double DiscipleAttackInterval { get; }   // upgrades.AttackInterval 그대로. 화면의 공격 애니메이션 속도에 쓴다
         public bool IsDiscipleDefeated { get; }
         public bool Paused { get; }
 
@@ -177,14 +181,14 @@ namespace PlumSword.Core.Combat
         // 멈췄거나 패배한 상태면 아무것도 하지 않고 시간도 모으지 않는다.
         public void Tick(double deltaSeconds);
 
-        // 정확히 한 칸(0.02 초) 진행한다: 대기 감소 -> 이동 -> 공격 -> 쓰러짐 판정.
+        // 정확히 한 칸(0.02 초) 진행한다: 대기 감소 -> 이동 -> 앞 동작 시작 -> 공격 -> 쓰러짐 판정.
         // 멈췄거나 패배한 상태면 아무것도 하지 않는다.
         public void Step();
 
         // 적을 추가하고 EnemyAdded 를 보낸 뒤 그 적을 돌려준다. 능력치는 EnemyStats 로 계산한다.
         // stage < 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
         // ArgumentOutOfRangeException (아무것도 바꾸지 않는다). 멈췄거나 패배한 상태에서도 추가된다.
-        // (Epsilon 허용: 칸마다 0.04 를 더한 좌표의 소수 오차 때문에 "제자와 같은 좌표" 가 거부되지 않게 한다.)
+        // (Epsilon 허용: 칸마다 0.072 를 더한 좌표의 소수 오차 때문에 "제자와 같은 좌표" 가 거부되지 않게 한다.)
         public Enemy AddEnemy(EnemyKind kind, int stage, double position);
 
         // 제자를 좌표 0, 체력 가득, 공격 대기 0, 패배 아님으로 되돌리고 모든 적을 없앤 뒤
@@ -221,6 +225,43 @@ namespace PlumSword.Game
     {
         // Awake 에서 StatUpgrades 를 만든 뒤 new Battle(StatUpgrades) 로 하나 만든다.
         public PlumSword.Core.Combat.Battle Battle { get; }   // private set
+    }
+}
+
+namespace PlumSword.Core.Combat
+{
+    // 제자 스프라이트가 재생하는 동작.
+    public enum DiscipleMotion
+    {
+        Idle = 0,
+        Run = 1,
+        Attack = 2,
+    }
+
+    // 제자 스프라이트의 동작과 프레임 번호를 고르는 표시 규칙. 거리·피해 계산에는 쓰지 않는다. 규칙은 "화면"의 "제자 애니메이션".
+    public sealed class DiscipleAnimator
+    {
+        public const int IdleFrameCount = 24;
+        public const int RunFrameCount = 24;
+        public const int AttackFrameCount = 17;
+        public const int AttackHitFrame = 7;          // 검기가 처음 보이는 프레임. 피해를 주는 순간과 겹친다
+        public const int AttackSlashFrameCount = 3;   // 검기가 보이는 프레임 수 (7~9)
+        public const double IdleFramesPerSecond = 10.0;
+        public const double RunFramesPerSecond = 20.0;
+        public const double MoveThreshold = 1e-6;     // 한 프레임에 이보다 많이 움직이면 "움직임"
+        public const double RunGraceSeconds = 0.1;    // 이만큼 움직이지 않아야 달리기를 멈춘다
+
+        public DiscipleMotion Motion { get; }   // 처음 Idle
+        public int Frame { get; }               // 처음 0. 0 이상 그 동작의 프레임 수 미만
+
+        // AttackFrameCount / attackInterval. 0 이하·NaN·무한대면 ArgumentOutOfRangeException.
+        public static double AttackFramesPerSecond(double attackInterval);
+
+        // 한 프레임 진행한다. deltaSeconds 가 음수·NaN 이면 0 으로 본다. attackInterval 이 잘못되면 위와 같은 예외.
+        public void Update(double deltaSeconds, bool moved, bool attacked, bool engaged, double cooldown, double attackInterval);
+
+        // Idle 0번 프레임으로 되돌린다.
+        public void Reset();
     }
 }
 
@@ -270,16 +311,30 @@ namespace PlumSword.Game.Combat
 
 - **조립**: `GameRoot.Awake`에서 `Battle`을 만든 다음 `[Game]`의 자식 `[CombatView]`를 만들어 `CombatView`를 붙이고 `Initialize(Battle, 카메라)`를 부른다. 카메라는 `Camera.main`을 쓰고, 없으면 `[Game]`의 자식 `[Camera]`를 만들어 `Camera`를 붙이고 `MainCamera` 태그를 단다. 그 뒤 `[Game]`의 자식 `[TempEncounter]`를 만들어 `TempEncounter`를 붙이고 `Initialize(Battle)`를 부른다.
   - `[TempEncounter]`는 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
-- **대체 표시 만드는 법**: 스프라이트 리소스는 쓰지 않는다. 1×1 흰색 `Texture2D`로 스프라이트를 하나 만들어(픽셀당 유닛 1) 모든 사각형이 함께 쓰고, 크기는 `localScale`, 색은 `SpriteRenderer.color`로 정한다. 캐릭터의 좌표는 발 아래 가운데가 기준이다 (사각형의 아래 가운데가 그 좌표에 오게 둔다).
-- **카메라**: Orthographic, 크기 5.625 (`docs/dev/art.md`), 배경색 RGB (0.55, 0.75, 0.90) (임시), 단색으로 지움. 위치는 매 프레임 `(DisciplePosition + 4.0, 0, −10)` (임시). 제자는 화면 가운데보다 왼쪽에 고정되어 보인다. `Reset`으로 제자가 좌표 0으로 돌아가면 카메라도 바로 따라간다.
+- **대체 표시 만드는 법**: 제자 외에는 스프라이트 리소스를 쓰지 않는다 (제자는 아래 "제자 스프라이트"). 1×1 흰색 `Texture2D`로 스프라이트를 하나 만들어(픽셀당 유닛 1) 모든 사각형이 함께 쓰고, 크기는 `localScale`, 색은 `SpriteRenderer.color`로 정한다. 캐릭터의 좌표는 발 아래 가운데가 기준이다 (사각형의 아래 가운데가 그 좌표에 오게 둔다).
+- **카메라**: Orthographic, 크기 5.625 (`docs/dev/art.md`). URP 2D의 Pixel Perfect Camera를 붙인다 (기준 해상도 640×360, PPU 32, Grid Snapping = Pixel Snapping, Crop Frame = None, 2026-11-17). 카메라 크기는 이 컴포넌트가 화면 높이의 정수배가 되게 정하고(1280×720·1920×1080에서는 5.625 그대로), 카메라와 스프라이트를 픽셀 격자에 맞춰 그려 소수 좌표 때문에 떨려 보이지 않게 한다. 남는 폭·높이는 잘라내지 않고 더 보여 준다. 배경색 RGB (0.55, 0.75, 0.90) (임시), 단색으로 지움. 위치는 매 프레임 `(DisciplePosition + 4.0, 0, −10)` (임시). 제자는 화면 가운데보다 왼쪽에 고정되어 보인다. `Reset`으로 제자가 좌표 0으로 돌아가면 카메라도 바로 따라간다.
 - **땅 높이**: y = 0 (임시). 캐릭터는 모두 y = 0에 선다.
-- **제자**: 1.0×1.0 사각형, RGB (0.25, 0.50, 0.90), 위치 `(DisciplePosition, 0)`, 그리는 순서(`sortingOrder`) 1 (모두 임시).
+- **제자**: 위치 `(DisciplePosition, 0)`, 그리는 순서(`sortingOrder`) 1. 아래 "제자 스프라이트"를 불러오면 스프라이트로, 하나라도 불러오지 못하면 1.0×1.0 사각형 RGB (0.25, 0.50, 0.90) 대체 표시로 그린다 (모두 임시).
+- **제자 스프라이트** (`PlumSword.Game.Combat.DiscipleSprites`, 2026-11-17 적용):
+  - `Resources.Load<Texture2D>`로 `Art/Characters/disciple_idle`, `disciple_run`, `disciple_attack` 세 시트를 읽고, 가로 한 줄 시트를 칸마다 `Sprite.Create`로 자른다 (PPU 32, 확대 없음). 칸 크기와 피벗(칸 왼쪽 아래에서 잰 px)은 대기 76×76·(38, 12), 달리기 76×80·(38, 14), 공격 76×76·(38, 12)이다. 원본이 64×64 기본 그림에 여백을 더한 칸이라 이 피벗이 모두 발 아래 가운데다. 그래서 동작이 바뀌어도 발 위치와 화면상 크기가 그대로다.
+  - 시트가 없거나 크기가 위와 다르면 경고 로그(`Debug.LogWarning`)를 남기고 세 동작 모두 대체 표시를 쓴다. 게임은 그대로 진행된다.
+  - 몸 스프라이트는 Root 자리에 크기 1로 둔다. 제자 체력 바의 세로 가운데는 발에서 `53/32 + 0.2` 유닛(대기 그림의 머리 끝 + 간격)에 고정한다. 동작마다 움직이지 않는다.
+  - 피격 번쩍임: 스프라이트는 색을 곱하므로 흰색 대신 RGB (1.0, 0.45, 0.45)로 0.1초 물들인다 (임시). 대체 표시는 지금처럼 흰색.
+- **제자 애니메이션** (`DiscipleAnimator`, Core): `CombatView.Update`가 `Tick` 앞뒤의 값을 비교해 매 프레임 부르고, `Motion`·`Frame`의 스프라이트를 보여 준다. `Battle.Reset`(`ResetCompleted`) 때 `Reset()`.
+  - 입력: `moved` = 이번 프레임에 `DisciplePosition`이 `MoveThreshold`보다 많이 커졌다. `attacked` = 이번 프레임의 `Tick` 안에서 `EnemyDamaged`를 받았다 (`EnemyDamaged`는 제자의 공격만 보낸다. 간격은 0.5초 이상이라 한 `Tick`에 공격은 많아야 한 번이다. 대기가 늘었는지로는 가리지 않는다: 달려와 멈춘 칸에도 앞 동작 대기로 는다). `engaged` = 멈춤이 아니고 패배가 아니고, 적 중 하나라도 `적 좌표 − 제자 좌표 ≤ 1.0 + 1e-9`.
+  - 우선순위: ① 공격 마무리 중이면 공격 ② `engaged`이고 움직이지 않았고 남은 대기가 타격 앞 동작 시간 이내면 공격 앞 동작 ③ 달리는 중이면 달리기 ④ 대기.
+  - 공격 재생 속도는 `17 / 공격 간격` fps (간격 1.0초 → 17 fps, 0.5초 → 34 fps). 계속 공격하면 마무리가 끝나는 순간 다음 앞 동작이 시작되어 끊김 없이 이어진다.
+  - 앞 동작: 남은 대기를 프레임으로 바꾼 값 `cooldown × fps`가 7 이하이면 `7 − ceil(cooldown × fps)` 프레임(0~6)을 보여 준다. 그래서 **대기가 0이 되어 피해가 들어가는 칸에 타격 프레임(7, 검기가 처음 보이는 프레임)이 보인다.**
+  - 공격한 프레임: `공격 간격 − 남은 대기`(공격 뒤 흐른 시간)부터 세어 7번에서 16번까지 재생한다. 마무리 중에 다시 움직이면(적을 쓰러뜨려 달리기 시작) 검기 프레임 7~9까지만 보여 주고 달리기로 바꾼다.
+  - **달려와 멈춘 칸**: `Battle`이 대기를 `공격 간격 × 7/17`로 올리므로("동작"의 2-1), 그 칸부터 앞 동작 0번이 시작되고 피해는 7번 프레임에 들어간다. 앞 동작은 `engaged`이면 그 칸에 움직였어도 보여 준다. 대기 없이 공격이 일어나는 경우(제자가 서 있는 채 범위 안에 적이 생겼을 때)에는 타격 프레임 7부터 재생한다.
+  - 달리기 20 fps, 대기 10 fps로 반복한다 (임시). 발이 미끄러져 보이지 않게 애니메이션 속도 대신 제자 이동 속도를 초당 3.6 유닛으로 올렸다 ("수치"). `Battle`은 0.02초 칸으로 움직여 화면 프레임(예: 60 fps)에 움직임이 없는 프레임이 끼므로, 움직임이 `RunGraceSeconds`(0.1초) 동안 없어야 달리기를 멈춘다. 다른 동작에서 달리기·대기로 들어가면 처음부터 센다.
+  - 패배·멈춤 상태는 `engaged`가 아니므로 대기 동작을 보여 준다 (진행 중이던 공격 마무리는 끝까지 재생한다).
 - **일반 몬스터**: 1.0×1.0 사각형, RGB (0.80, 0.45, 0.20), 위치 `(Position, CombatLayout.EnemyOffsetY(Index))`, 그리는 순서 0 (모두 임시).
 - **보스**: 2.0×3.0 사각형, RGB (0.55, 0.20, 0.60), 위치 `(Position, 0)`, 그리는 순서 0 (모두 임시).
 - **머리 위 체력 바**: 제자와 일반 몬스터에만 둔다. 보스에는 두지 않는다 (보스 체력은 스테이지 기능의 위쪽 바가 보여 준다). 캐릭터의 자식으로, 머리 위 0.2 유닛에 가로 1.0 × 세로 0.12의 바탕 사각형(RGB (0.15, 0.15, 0.15))과 그 위의 채움 사각형을 둔다. 채움의 가로 길이는 `1.0 × CombatLayout.HealthRatio(체력, 최대 체력)`이고 왼쪽 끝이 고정된다. 채움 색은 제자 초록 RGB (0.20, 0.80, 0.30), 일반 몬스터 빨강 RGB (0.85, 0.20, 0.20). 그리는 순서는 바탕 5, 채움 6 (모두 임시).
-- **피격 번쩍임**: `EnemyDamaged`를 받으면 그 적의 사각형을, `DiscipleDamaged`를 받으면 제자의 사각형을 0.1초(임시) 동안 흰색으로 바꿨다가 원래 색으로 되돌린다. 번쩍이는 중에 또 맞으면 0.1초를 다시 센다.
+- **피격 번쩍임**: `EnemyDamaged`를 받으면 그 적의 사각형을, `DiscipleDamaged`를 받으면 제자의 사각형을 0.1초(임시) 동안 흰색(제자 스프라이트는 위의 붉은 색)으로 바꿨다가 원래 색으로 되돌린다. 번쩍이는 중에 또 맞으면 0.1초를 다시 센다.
 - **적 오브젝트의 생성과 제거**: `EnemyAdded`에서 만들고, `EnemyDefeated`에서 바로 없앤다 (쓰러지는 연출 없음). `ResetCompleted`에서 남은 적 오브젝트를 모두 없앤다.
-- **제자가 패배했을 때**: 제자 사각형은 그대로 둔다 (체력 바가 비어 있다). 다음 `Reset`에서 원래대로 보인다.
+- **제자가 패배했을 때**: 제자 사각형(또는 스프라이트의 대기 동작)은 그대로 둔다 (체력 바가 비어 있다). 다음 `Reset`에서 원래대로 보인다.
 - **임시 배경**: 길이 이어지는 느낌을 주는 표시다.
   - 땅: 가로 40 × 세로 6 사각형, RGB (0.35, 0.30, 0.25), 윗변이 y = 0, 가로 가운데는 매 프레임 카메라의 x. 그리는 순서 −10.
   - 나무: 1.0×2.5 사각형 8개, RGB (0.20, 0.45, 0.25), y = 0에 서 있다. 월드 좌표 5 유닛(임시)마다 하나씩 있는 것처럼 보이게, 매 프레임 `i`번째(0~7) 나무를 x = `(floor(카메라 x ÷ 5) − 3 + i) × 5`에 둔다. 그리는 순서 −5.
@@ -287,7 +342,7 @@ namespace PlumSword.Game.Combat
 - **누르는 것**: 없다. 전투 화면은 입력을 받지 않는다.
 - **임시 적 배치 (`TempEncounter`)**: `Initialize`에서 바로, 그리고 다시 놓을 때마다 `Reset()`을 부른 뒤 `AddEnemy(Normal, 1, 6.0)`, `AddEnemy(Normal, 1, 9.0)`, `AddEnemy(Normal, 1, 9.3)`, `AddEnemy(Boss, 1, 15.0)`을 순서대로 부른다 (임시). `DiscipleDefeated`를 받았거나, `EnemyDefeated`를 받았을 때 `battle.Enemies.Count`가 0이면 1.0초(임시, `Time.deltaTime`으로 센다) 기다린 뒤 다시 놓는다. 금화는 주지 않는다.
   - 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
-- 겹침 어긋남과 체력 바 비율의 판단은 Core의 `CombatLayout`에 있고 에딧 모드 테스트로 판정한다. `CombatView`, `TempEncounter`, `GameRoot`의 조립은 자동 테스트 대상이 아니며 사람이 실행해 확인한다.
+- 겹침 어긋남과 체력 바 비율의 판단은 Core의 `CombatLayout`에, 제자 동작·프레임 선택은 `DiscipleAnimator`에 있고 에딧 모드 테스트로 판정한다. 제자 스프라이트가 실제로 불러와지는지는 플레이 모드 테스트 `DiscipleSpriteTests`가 본다. 그 밖의 `CombatView`, `GameRoot` 조립은 사람이 실행해 확인한다.
 
 ## 저장
 
@@ -310,8 +365,7 @@ namespace PlumSword.Game.Combat
 - 저장·불러오기, 오프라인 보상: 2단계에서 한다.
 - 경지 돌파 보너스, 자동 발동 스킬과 내공 강화, 공격 속도 강화 제거: 3단계에서 한다. 그때 이 사양을 고친다.
 - 원거리 몬스터, 움직이는 보스, 제한 시간: 없다.
-- 실제 스프라이트와 공격·피격·쓰러짐 애니메이션, 피해 숫자, 효과음, 실제 배경 이미지와 시차 스크롤: 하지 않는다. 에셋이 준비되면 4단계에서 다룬다.
-- Pixel Perfect Camera 설정(`docs/dev/art.md`): 이번에 하지 않는다. 스프라이트를 넣는 작업에서 한다.
+- 제자 외(몬스터·보스·배경·UI)의 실제 스프라이트, 제자의 피격·쓰러짐 애니메이션, 피해 숫자, 효과음, 실제 배경 이미지와 시차 스크롤: 하지 않는다. 에셋이 준비되면 하나씩 다룬다. 제자의 대기·달리기·공격 스프라이트는 2026-11-17에 적용했다 ("화면").
 - 체력·공격력이 `long` 범위를 넘칠 만큼 큰 경우: 다루지 않는다.
 
 ## 완료 조건 초안
@@ -329,21 +383,23 @@ namespace PlumSword.Game.Combat
 
 5. 새로 만들면 `DisciplePosition`은 0, `DiscipleHealth`는 100, `DiscipleMaxHealth`는 100, `DiscipleAttackCooldown`은 0, `IsDiscipleDefeated`는 `false`, `Paused`는 `false`, `Enemies.Count`는 0이다.
 6. `new Battle(null)`은 `ArgumentNullException`을 던진다.
-7. 적이 없을 때 50칸 뒤 `DisciplePosition`은 2.0이다.
+7. 적이 없을 때 50칸 뒤 `DisciplePosition`은 3.6이다.
 8. `AddEnemy(Normal, 2, 5.0)`이 돌려준 적은 `Kind`가 `Normal`, `Index` 0, `Position` 5.0, `MaxHealth`와 `Health` 40, `Attack` 7, `AttackInterval` 2.0, `AttackCooldown` 0, `IsDead` `false`이고, `EnemyAdded`가 그 적을 담아 1번 오며 `Enemies.Count`는 1이다. 이어서 `AddEnemy(Boss, 1, 8.0)`의 `Index`는 1이다.
 9. `AddEnemy(Normal, 0, 5.0)`, `AddEnemy((EnemyKind)99, 1, 5.0)`, `AddEnemy(Normal, 1, double.NaN)`, `AddEnemy(Normal, 1, double.PositiveInfinity)`, `AddEnemy(Normal, 1, -0.1)`은 각각 `ArgumentOutOfRangeException`을 던지고 `Enemies.Count`는 0, `EnemyAdded`는 0번 온다. `AddEnemy(Normal, 1, 0.0)`은 예외 없이 추가된다.
-10. `AddEnemy(Normal, 1, 10.0)` 뒤 1칸 뒤에 그 적의 `Position`은 10.0이고 `DisciplePosition`은 0.04다 (반응 거리 밖의 몬스터는 기다린다).
-11. `AddEnemy(Normal, 1, 5.0)` 뒤: 49칸 뒤 적의 `Position`은 5.0, 50칸 뒤 4.98이다 (제자가 3 유닛 안으로 오면 다가온다).
-12. 11번에 이어: 82칸 뒤 적의 `Health`는 30, 83칸 뒤 20이고 `DisciplePosition`은 3.32, 적의 `Position`은 4.32다 (제자는 거리 1.0에서 멈춰 바로 공격한다). 100칸 뒤에도 `DisciplePosition`은 3.32다.
-13. 12번에 이어: 92칸 뒤 `DiscipleHealth`는 100, 93칸 뒤 95이고 적의 `Position`은 4.12다 (몬스터는 거리 0.8에서 멈춰 바로 공격한다).
-14. 13번에 이어: 133칸 뒤 적의 `Health`는 10, 182칸 뒤 10, 183칸 뒤 0이고 `EnemyDefeated`가 그 적을 담아 1번 오며, 적의 `IsDead`는 `true`, `Enemies.Count`는 0, `DiscipleHealth`는 95다 (처치해도 체력은 회복하지 않는다). 184칸 뒤 `DisciplePosition`은 3.36이다.
+10. `AddEnemy(Normal, 1, 10.0)` 뒤 1칸 뒤에 그 적의 `Position`은 10.0이고 `DisciplePosition`은 0.072다 (반응 거리 밖의 몬스터는 기다린다).
+11. `AddEnemy(Normal, 1, 5.0)` 뒤: 27칸 뒤 적의 `Position`은 5.0, 28칸 뒤 4.98이다 (제자가 3 유닛 안으로 오면 다가온다).
+12. 11번에 이어: 50칸 뒤 적의 `Health`는 30이고 `DisciplePosition`은 3.56, 적의 `Position`은 4.54, `DiscipleAttackCooldown`은 7/17이다 (제자는 거리 1.0에서 멈추고 앞 동작 대기를 시작한다). 70칸 뒤 30, 71칸 뒤 20이고 적의 `Position`은 4.36이다. 66칸 뒤에도 `DisciplePosition`은 3.56이다.
+13. 12번에 이어: 58칸 뒤 `DiscipleHealth`는 100, 59칸 뒤 95이고 적의 `Position`은 4.36이다 (몬스터는 거리 0.8에서 멈춰 바로 공격한다).
+14. 13번에 이어: 121칸 뒤 적의 `Health`는 10, 170칸 뒤 10, 171칸 뒤 0이고 `EnemyDefeated`가 그 적을 담아 1번 오며, 적의 `IsDead`는 `true`, `Enemies.Count`는 0, `DiscipleHealth`는 90이다 (적은 59·159칸에 공격했다. 처치해도 체력은 회복하지 않는다). 172칸 뒤 `DisciplePosition`은 3.632다.
 15. `AddEnemy(Normal, 1, 0.8)`을 3번 부른 뒤 1칸 뒤: 세 적의 `Health`는 모두 20, `DiscipleHealth`는 85, `EnemyDamaged`는 3번(`Index` 0, 1, 2 순서), `DiscipleDamaged`는 3번 온다.
 16. 15번에 이어: 51칸 뒤 세 적의 `Health`는 모두 10이다. 101칸 뒤 `Enemies.Count`는 0, `EnemyDefeated`는 3번(`Index` 0, 1, 2 순서) 오고, `DiscipleHealth`는 70, `IsDiscipleDefeated`는 `false`다 (같은 칸에 쓰러진 몬스터도 그 칸의 공격을 한다).
 17. `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 1.5)` 뒤 1칸 뒤: 일반 몬스터의 `Health`는 20, 보스의 `Health`는 100이고 `EnemyDamaged`는 1번 온다 (범위 밖의 적은 맞지 않는다).
 18. `AddEnemy(Boss, 1, 1.0)` 뒤: 1칸 뒤 보스의 `Health`는 90, `DiscipleHealth`는 90이다. 450칸 뒤 보스의 `Health`는 10, 451칸 뒤 0이고 `EnemyDefeated`가 1번 오며 `DiscipleHealth`는 50이다.
-19. `AddEnemy(Boss, 1, 5.0)` 뒤: 99칸 뒤 보스의 `Health`는 100, 100칸 뒤 90이고 `DiscipleHealth`는 90, `DisciplePosition`은 4.0, 보스의 `Position`은 5.0이다 (보스는 움직이지 않는다).
+19. `AddEnemy(Boss, 1, 5.0)` 뒤: 55칸 뒤 `DiscipleHealth`는 100, 56칸 뒤 90이고 보스의 `Health`는 100, `DisciplePosition`은 4.0, 보스의 `Position`은 5.0이다 (보스는 움직이지 않고 도착하자마자 공격한다). 76칸 뒤 보스의 `Health`는 100, 77칸 뒤 90이다 (제자는 앞 동작 21칸 뒤).
 20. `new StatUpgrades(wallet, 30, 100, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 2.0)` 뒤: 1칸 뒤 `Enemies.Count`는 1, `DiscipleHealth`는 95다. 26칸 뒤 `DisciplePosition`은 1.0, 보스의 `Health`는 100, `DiscipleAttackCooldown`은 0.5, `DiscipleHealth`는 85다. 50칸 뒤 보스의 `Health`는 100, 51칸 뒤 70이다 (이동 중에도 대기가 흐르고, 남은 시간만큼 기다린다).
-21. `new StatUpgrades(wallet, 30, 100, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 4.0)` 뒤: 75칸 뒤 보스의 `Health`는 100, 76칸 뒤 70이다 (도착했을 때 대기가 끝나 있으면 바로 공격한다).
+21. `new StatUpgrades(wallet, 30, 100, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 4.0)` 뒤: 63칸 뒤 보스의 `Health`는 100, 64칸 뒤 70이다 (43칸째 도착했을 때 대기가 끝나 있어도 앞 동작 대기를 둔다).
+21-1. `new StatUpgrades(wallet, 10, 100, 0.5)`으로 `AddEnemy(Boss, 1, 5.0)` 뒤: 56칸 뒤 `DisciplePosition`은 4.0, `DiscipleAttackCooldown`은 `0.5 × 7/17`이다.
+21-2. `AddEnemy(Boss, 1, 1.0)` 뒤(제자가 전진하지 않고 처음부터 범위 안): 1칸 뒤 보스의 `Health`는 90이다 (앞 동작 대기 없음).
 22. `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.Attack)`을 부르면, 51칸 뒤 보스의 `Health`는 78이다 (90 − 12).
 23. `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.AttackSpeed)`를 부르면, 50칸 뒤 보스의 `Health`는 90, 51칸 뒤 80, 98칸 뒤 80, 99칸 뒤 70이다 (기다리는 중인 공격은 그대로이고 다음 대기부터 0.95초다).
 24. `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고(`DiscipleHealth` 90) `upgrades.TryUpgrade(StatType.Health)`를 부르면 `DiscipleHealth`는 110, `DiscipleMaxHealth`는 120이다. `TryUpgrade(StatType.Attack)`을 불러도 `DiscipleHealth`는 110 그대로다.
@@ -387,7 +443,9 @@ namespace PlumSword.Game.Combat
 | 스테이지 기능이 생기기 전에 적은 누가 놓나 | `TempEncounter`가 임시로 놓고 반복한다. 스테이지 구현 때 지운다 | 추천 수락 |
 | 공격이 일어난 것을 화면에서 어떻게 알리나 | 맞은 쪽이 0.1초 하얗게 번쩍인다 | 추천 수락 / 임시값 |
 | 몬스터 능력치 공식은 어느 기능이 가지나 | 전투 (`EnemyStats`). 스테이지는 종류·스테이지 번호·좌표만 넘긴다 | 직접 정함 |
-| 한 칸의 처리 순서와 알림 순서 | 대기 감소 → 이동 → 공격 → 쓰러짐 판정. `EnemyDefeated` 다음에 `DiscipleDefeated` | 직접 정함 |
+| 한 칸의 처리 순서와 알림 순서 | 대기 감소 → 이동 → (2026-11-17 추가) 앞 동작 시작 → 공격 → 쓰러짐 판정. `EnemyDefeated` 다음에 `DiscipleDefeated` | 직접 정함 |
+| 제자 이동 속도 (2026-11-17) | 초당 2.0 → 3.6 유닛 (1.8배). 달리기 애니메이션(20 fps)에 비해 몸이 느려 발이 미끄러져 보였다. 애니메이션 속도는 그대로 둔다 | 사람 결정 (제자 에셋 적용) |
+| 달려와 멈춘 칸의 첫 공격 (2026-11-17) | 바로 피해를 주지 않고 공격 간격 × 7/17 뒤에 준다. 공격 애니메이션을 0번부터 재생하고 휘두르는 7번 프레임에 피해를 맞추기 위해서다. 그만큼 처치가 늦어 적에게 맞는 횟수가 늘 수 있다 | 사람 결정 (제자 에셋 적용) |
 | 이동이 사거리를 넘는 경우 | 넘지 않게 딱 맞춰 멈춘다 (제자 1.0, 몬스터 0.8) | 직접 정함 |
 | 적이 하나도 없을 때 제자 | 계속 전진한다 | 직접 정함 |
 | 소수 계산 오차 | 거리·대기 비교에 1e-9 허용 | 직접 정함 |

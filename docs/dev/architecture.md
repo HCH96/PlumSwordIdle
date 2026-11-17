@@ -7,7 +7,8 @@
 | 폴더 | 어셈블리 (네임스페이스 같음) | 넣는 것 | 참조할 수 있는 것 |
 | --- | --- | --- | --- |
 | `Assets/Scripts/Core/` | `PlumSword.Core` | 게임 로직. 재화, 강화 수치, 스테이지 진행, 경지 돌파, 오프라인 보상, 저장 데이터 | 없음 (순수 C#) |
-| `Assets/Scripts/Game/` | `PlumSword.Game` | 화면 코드. `MonoBehaviour`, 화면 조립, 입력 전달, 표시 | `PlumSword.Core`, uGUI, TextMeshPro, Input System |
+| `Assets/Scripts/Game/` | `PlumSword.Game` | 화면 코드. `MonoBehaviour`, 화면 조립, 입력 전달, 표시 | `PlumSword.Core`, uGUI, TextMeshPro, Input System, URP 2D(`Unity.RenderPipelines.Universal.2D.Runtime`, Pixel Perfect Camera) |
+| `Assets/Editor/` | (어셈블리 정의 없음, 유니티 기본 에디터 어셈블리) | 에디터에서만 도는 코드. 지금은 `Art/` 그림의 가져오기 설정을 맞추는 `PixelArtTextureImporter` 하나 | 유니티 에디터 API |
 | `Assets/Tests/EditMode/` | `PlumSword.Core.Tests` | `PlumSword.Core`의 에딧 모드 테스트 | `PlumSword.Core`, NUnit |
 | `Assets/Tests/PlayMode/` | `PlumSword.Game.Tests` | 실제 실행이 필요한 플레이 모드 테스트. 게임이 켜지는지 보는 `GameBootTests`, 루프 증거용 화면 갈무리(`Capture/`) | `PlumSword.Core`, `PlumSword.Game`, uGUI, NUnit |
 
