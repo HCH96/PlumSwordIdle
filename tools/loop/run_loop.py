@@ -1634,6 +1634,12 @@ class Loop:
                     data = run_claude(self.cfg, prompt, session_id, f"{stem}_attempt{attempt}_claude")
                     session_id = data.get("session_id") or session_id
                 elif agent == "codex":
+                    prompt += """
+
+Codex 샌드박스에서는 Unity 테스트를 직접 실행하지 마라.
+완료 조건을 검증할 테스트 코드는 작성하되, Unity 실행과 결과 판정은
+done 보고 후 루프 스크립트가 수행한다. 실패하면 결과가 재시도 지시에 전달된다.
+보고서의 테스트 결과에는 직접 실행하지 않았고 루프 판정을 기다린다고 정확히 적어라."""
                     run_codex(self.cfg, prompt, f"{stem}_attempt{attempt}_codex")
                 else:
                     raise LoopError(f"알 수 없는 에이전트: {agent}")
