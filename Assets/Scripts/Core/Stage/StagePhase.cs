@@ -11,5 +11,8 @@ namespace PlumSword.Core.Stage
 
         /// <summary>새 배치를 마치고 화면을 여는 중.</summary>
         FadingIn = 2,
+
+        /// <summary>? ?? ?? ?.</summary>
+        Intro = 3,
     }
 }
