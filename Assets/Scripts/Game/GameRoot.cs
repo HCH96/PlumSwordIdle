@@ -1,5 +1,7 @@
 using PlumSword.Core.Currency;
+using PlumSword.Core.Save;
 using PlumSword.Game.Currency;
+using PlumSword.Game.Save;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -16,6 +18,13 @@ namespace PlumSword.Game
     {
         // UI 기준 해상도 (docs/dev/art.md "기본 숫자").
         private static readonly Vector2 UiReferenceResolution = new Vector2(640f, 360f);
+        private ISaveStore saveStore;
+
+        /// <summary>시작할 때 읽은 저장 결과. 이어하기 여부를 판단할 때 쓴다.</summary>
+        public SaveLoadResult LoadResult { get; private set; }
+
+        /// <summary>스테이지 시작 전에 연결하는 자동 저장.</summary>
+        public AutoSave AutoSave { get; private set; }
 
         /// <summary>게임에 하나뿐인 지갑. 금화를 주거나 쓰는 기능은 조립할 때 이것을 넘겨받는다.</summary>
         public Wallet Wallet { get; private set; }
@@ -34,13 +43,29 @@ namespace PlumSword.Game
 
         private void Awake()
         {
-            // Core 객체 (게임에 하나뿐인 지갑. 1단계는 저장이 없어 0 에서 시작한다)
-            Wallet = new Wallet();
+            if (Application.isBatchMode)
+            {
+                saveStore = new MemorySaveStore();
+                LoadResult = SaveCodec.Decode(null);
+            }
+            else
+            {
+                var fileStore = new FileSaveStore(Application.persistentDataPath);
+                saveStore = fileStore;
+                LoadResult = fileStore.Load();
+            }
+
+            // 저장된 값이 있으면 복원하고, 없으면 처음 값으로 Core 객체를 만든다.
+            var data = LoadResult.Data;
+            Wallet = new Wallet(data != null ? data.Gold : 0);
             StatUpgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(
                 Wallet,
                 PlumSword.Core.Combat.Battle.DiscipleBaseAttack,
                 PlumSword.Core.Combat.Battle.DiscipleBaseMaxHealth,
-                PlumSword.Core.Combat.Battle.DiscipleBaseAttackInterval);
+                PlumSword.Core.Combat.Battle.DiscipleBaseAttackInterval,
+                data != null ? data.AttackLevel : 0,
+                data != null ? data.HealthLevel : 0,
+                data != null ? data.AttackSpeedLevel : 0);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades);
 
             // 공용 UI 뿌리
@@ -51,7 +76,25 @@ namespace PlumSword.Game
             CreateCurrencyView();
             CreateStatUpgradeView();
             CreateCombatView();
-            CreateStage();
+            CreateStage(data != null ? data.StageNumber : 1, data != null ? data.SeenIntroStage : 0);
+
+            AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, StageProgress,
+                enabled: LoadResult.Status != SaveLoadStatus.Corrupt);
+            var saveViewObject = new GameObject("[SaveView]");
+            saveViewObject.transform.SetParent(transform, false);
+            saveViewObject.AddComponent<SaveView>().Initialize(AutoSave, UiCanvas);
+
+            if (LoadResult.Status == SaveLoadStatus.Corrupt)
+            {
+                Battle.SetPaused(true);
+                var errorViewObject = new GameObject("[SaveErrorView]");
+                errorViewObject.transform.SetParent(transform, false);
+                errorViewObject.AddComponent<SaveErrorView>().Initialize(UiCanvas, StartNewGame);
+            }
+            else
+            {
+                StageProgress.Begin();
+            }
         }
 
         private Canvas CreateUiCanvas()
@@ -113,17 +156,21 @@ namespace PlumSword.Game
             viewObject.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(Battle, worldCamera);
         }
 
-        // 스테이지 로직을 하나 만들고 화면을 붙인 뒤 시작한다 (docs/spec/stage.md "화면"의 "조립").
-        // Begin 은 화면들(CombatView, StageView)이 알림을 구독한 뒤여야 하므로 맨 마지막이다.
-        private void CreateStage()
+        // 스테이지 로직을 만들고 화면을 붙인다. 시작은 저장 기능을 연결한 뒤에 한다.
+        private void CreateStage(int startStage, int seenIntroStage)
         {
             StageProgress = new PlumSword.Core.Stage.StageProgress(
-                Wallet, StatUpgrades, Battle, new System.Random(), 1, 0); // startStage: 1, seenIntroStage: 0
+                Wallet, StatUpgrades, Battle, new System.Random(), startStage, seenIntroStage);
 
             var viewObject = new GameObject("[StageView]");
             viewObject.transform.SetParent(transform, false);
             viewObject.AddComponent<PlumSword.Game.Stage.StageView>().Initialize(StageProgress, UiCanvas);
+        }
 
+        private void StartNewGame()
+        {
+            AutoSave.Enable();
+            Battle.SetPaused(false);
             StageProgress.Begin();
         }
     }
