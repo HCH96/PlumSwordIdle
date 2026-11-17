@@ -33,6 +33,8 @@ namespace PlumSword.Core.Stage
 
         /// <summary>소개 단계에서 흐른 시간 (초).</summary>
         private double _introElapsed;
+
+        /// <summary>가려진 순간의 교체에서 한 소개 판단의 결과. 페이드인이 끝날 때 Intro 로 갈지 정한다.</summary>
         private bool _showIntroAfterFade;
 
         /// <summary>
@@ -150,7 +152,8 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// 페이드 시간을 센다. Begin 전이거나 Playing 이면 아무것도 하지 않는다.
+        /// 페이드 시간(FadingOut·FadingIn)이나 소개 시간(Intro)을 센다. Begin 전이거나 Playing 이면 아무것도 하지 않는다.
+        /// 교체 → 페이드인 끝(소개로 가거나 Playing) → 소개 끝 순서로 본다. 페이드인·소개 뒤 남은 시간은 버린다.
         /// 음수·NaN·무한대: ArgumentOutOfRangeException (상태와 상관없이).
         /// </summary>
         public void Tick(double deltaSeconds)
@@ -200,6 +203,7 @@ namespace PlumSword.Core.Stage
                 Changed?.Invoke();
             }
 
+            // 3. 소개를 끝낸다. 2번에서 막 들어온 소개는 시간이 0 이라 같은 Tick 에서 끝나지 않는다.
             if (Phase == StagePhase.Intro && _introElapsed >= IntroSeconds - FadeTolerance)
             {
                 Phase = StagePhase.Playing;
