@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PlumSword.Core.StartMenu;
 using TMPro;
 using UnityEngine;
@@ -45,6 +46,7 @@ namespace PlumSword.Game.StartMenu
             if (art != null)
             {
                 CreateBackground(panelRect, art.Background);
+                if (art.Petals.Count > 0) CreatePetals(panelRect, art.Petals);
                 start = CreateArtButton("StartButton", panelRect, ArtStartButtonPosition, art.StartButtonSprite(button));
                 settings = CreateArtButton("SettingsButton", panelRect, ArtSettingsButtonPosition, art.SettingsButton);
             }
@@ -82,15 +84,33 @@ namespace PlumSword.Game.StartMenu
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
         }
 
+        // 배경 위, 버튼 아래에 매화 꽃잎을 흩날린다. 영역은 화면 전체 (긴 가로 화면에서도 양옆까지).
+        private static void CreatePetals(RectTransform parent, IReadOnlyList<Sprite> sprites)
+        {
+            var obj = new GameObject("Petals", typeof(RectTransform));
+            var rect = (RectTransform)obj.transform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            obj.AddComponent<StartScreenPetals>().Initialize(sprites, PetalField.DefaultCount, Environment.TickCount);
+        }
+
         // 글자가 그림에 들어 있는 버튼. 글자 오브젝트는 만들지 않는다.
+        // 버튼 자신은 눌리는 영역(투명 Image)만 맡고, 그림은 자식 "Art" 가 그린다. 호버·누름 반응은 Art 만 움직인다.
         private static Button CreateArtButton(string name, Transform parent, Vector2 position, Sprite sprite)
         {
             var rect = CreateRect(name, parent, position, ArtButtonSize);
-            var image = rect.gameObject.AddComponent<Image>();
+            var hitArea = rect.gameObject.AddComponent<Image>();
+            hitArea.color = new Color(1, 1, 1, 0);
+            var art = CreateRect("Art", rect, Vector2.zero, ArtButtonSize);
+            var image = art.gameObject.AddComponent<Image>();
             image.sprite = sprite;
             image.preserveAspect = true;
+            image.raycastTarget = false;
             var button = rect.gameObject.AddComponent<Button>();
             button.transition = Selectable.Transition.None;
+            rect.gameObject.AddComponent<StartButtonHover>().Initialize(art);
             return button;
         }
 

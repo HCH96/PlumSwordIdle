@@ -53,6 +53,22 @@
   - 닫혀 있고, 시작 화면이 없고, 스테이지가 시작됐으면 `OpenSettings` (`InGame`으로 연다).
   - 그 밖(시작 화면, 보상 창·손상 창이 떠 있어 아직 시작 전)은 `None`. 앱을 끄지 않는다.
 - **시작 화면에 머문 시간** (정리): 보상은 켤 때 한 번 계산하므로 시작 화면에 머문 시간은 이번 보상에 들어가지 않는다. 보상이 없는 저장이면 자동 저장이 켜져 있어, 시작 화면에서 끄거나 백그라운드로 갈 때 그 시각이 저장되어 다음 보상에도 들어가지 않는다. 보상을 받기 전에 시작 화면에서 끄면 파일을 쓰지 않으므로 다음에 켤 때 옛 저장 시각부터 다시 계산한다 (머문 시간도 들어간다. 오프라인 보상 사양이 보상 창에 대해 허용한 것과 같다). 시작 화면으로 돌아간 뒤에는 보상을 계산하지 않는다.
+- **매화 꽃잎 흩날림** `PetalField` (2026-11-17 추가. 시작 화면 그림과 꽃잎 그림이 있을 때만): 꽃잎 `DefaultCount`(50)장 중 약 22~40장이 늘 화면에 떠 있고, 새 꽃잎이 약 0.7초마다 한 장씩 꾸준히 들어와 시작 화면 전체를 오른쪽 아래로 흩날린다. 좌표는 꽃잎 영역 가운데가 원점, 오른쪽·위쪽이 +인 UI 단위다.
+  - 꽃잎마다 깊이 `Depth`(0 = 멂 ~ 1 = 가까움, 고르게 무작위)를 정하고, 깊이에 비례해 크기(긴 변 7~14), 떨어지는 속도(초당 12~26에 ×0.85~1.15 무작위), 불투명도(0.55~1.0), 바람을 받는 정도(×0.5~1.0)가 커진다. 그래서 가까운 꽃잎일수록 크고 진하고 빠르다.
+  - 바람 `Wind` = 8 + 6·sin(0.35t) + 3·sin(0.9t + 1) (t = 지난 초. 초당 −1 ~ 17, 대개 오른쪽): 천천히 세졌다 약해지는 돌풍.
+  - 흔들림: 꽃잎마다 폭 6~16, 빠르기 0.8~1.8 rad/s의 좌우 흔들림(가로 속도 = 폭 × 빠르기 × cos 위상). 옆으로 크게 움직일 때는 떨어지는 속도가 0.6배까지 줄어 나뭇잎처럼 미끄러진다 (× (0.6 + 0.4·sin²)).
+  - 돌기·뒤집기: 화면 평면 회전 초당 20~70도(방향 무작위), 뒤집힘 위상 1.0~3.0 rad/s로 가로 배율 `FlipScale` = 부호(cos) × (0.25 + 0.75·|cos|). 부호가 바뀌면 그림이 좌우로 뒤집혀 앞뒷면처럼 보이고, 0.25보다 얇아지지 않아 사라지지 않는다.
+  - 나가면 기다리기: 아래로 `Margin`(16)보다 더, 오른쪽으로 16보다 더, 왼쪽으로 64보다 더 나가면 깊이·종류·움직임을 새로 정하고 화면 밖 기다리는 자리에 멈춘다 (`IsWaiting = true`, 움직이지 않고 그리지 않음). 기다리는 자리는 `LeftShare` 몫으로 왼쪽 바깥 띠(왼쪽 끝 − 16 ~ − 40, 세로는 아래에서 높이의 1/4 위 ~ 위 끝), 나머지는 위쪽 바깥 띠(위 끝 + 16 ~ + 40, 가로는 화면 폭). `LeftShare` = 들어오는 양의 비 (왼쪽: 바람 8 × 0.75 × 높이 × 0.75, 위: 평균 떨어지는 속도 19 × 0.8 × 폭). 640×360에서 약 14%.
+  - 내보내기 (꾸준히 들어오게 하는 부분): `EmitInterval`(0.7초) × 0.5~1.5 무작위 간격마다 기다리는 꽃잎을 먼저 들어온 순서로 한 장 내보낸다. 내보낼 때 화면 가장자리 바로 바깥(위쪽이면 위 끝 + 크기×0.6 + 0~4, 왼쪽이면 왼쪽 끝 − 같은 값)으로 옮겨서 곧바로 화면에 들어온다. 간격이 됐는데 기다리는 꽃잎이 없으면 다음에 나가는 꽃잎을 바로 내보낸다. 꽃잎 50장은 이 속도로 내보내도 늘 몇 장(5분 시험에서 8장 이상)이 남도록 정한 수다. 그래서 몰려오거나 한동안 끊기지 않는다 (2분 동안 새 꽃잎이 들어오는 간격 3.5초 이하, 초당 평균 1.2장 이상을 에딧 모드 테스트로 확인).
+  - 처음: 모두 영역 안 전체에 고르게 흩어 둔 뒤, 만들 때 `PrewarmSeconds`(40초)만큼 미리 움직이고 `Elapsed`를 0으로 되돌린다. 그래서 첫 화면부터 꽃잎이 흩어져 있고, 나가고 들어오는 때가 서로 어긋난 흐름 중간에서 시작한다.
+  - `Tick(deltaSeconds)`: 0 이하·NaN·무한이면 아무것도 하지 않고, 0.1초(`MaxStep`)보다 길면 0.1초만 움직인다 (멈췄다 돌아올 때 한꺼번에 튀지 않게). 같은 시드의 `System.Random`이면 결과가 같다.
+  - `Resize(width, height)`: 영역이 바뀌면 모든 꽃잎 위치(기다리는 꽃잎 포함)를 같은 비율로 늘이거나 줄인다 (X × 새 폭/옛 폭, Y × 새 높이/옛 높이). 크기·속도는 그대로다. `GameRoot`는 캔버스를 만든 프레임에 시작 화면을 만드는데 그때 캔버스는 아직 화면 픽셀 크기(예: 1920×1080)이고 다음 프레임에 640×360 기준으로 줄어든다. 위치를 그대로 두면 대부분이 화면 밖으로 밀려 한꺼번에 위에서 다시 떨어지므로(2026-11-17 고친 문제), 비율로 옮겨 흩어진 모양을 지킨다. 0 이하·NaN·무한은 `ArgumentOutOfRangeException`.
+  - 시작 화면에서만 움직이고, 시작 버튼을 눌러 화면이 없어지면 함께 없어진다. 게임 속도와 상관없이 실제 시간(`Time.unscaledDeltaTime`)으로 움직인다.
+- **버튼 반응** `ButtonHoverState` (2026-11-17 추가. 시작 화면의 그림 버튼 둘에만. 그림이 없을 때의 대체 버튼에는 없다): 마우스를 올리면(호버) 버튼 그림이 살짝 커지고(×1.06) 밝아지며(색 곱 0.88 → 1.0) 2만큼 위로 뜬다. 누르는 동안은 조금 작아지고(×0.97) 덜 밝아지며(0.95) 원래 높이로 내려앉는다 (누름이 올림보다 우선). 마우스를 내리면 평소로 돌아간다. 터치처럼 올림 없이 바로 누르면 누름 모양만 보인다.
+  - 값 `Hover`·`Press`(0~1)는 목표(올림·누름이면 1, 아니면 0)를 지수 감쇠로 따라간다: 한 번에 `1 − e^(−14 × dt)`만큼. 0.1초에 약 75%, 0.2초에 약 94%.
+  - 모양: `Scale`·`Brightness`·`Lift`는 평소 값에서 올림 값으로 `Hover`만큼, 그 결과에서 누름 값으로 `Press`만큼 섞는다.
+  - `SetHovered(bool)`, `SetPressed(bool)`, `Exit()`(둘 다 풀기), `Tick(deltaSeconds)`(0 이하·NaN·무한은 무시, 0.1초보다 길면 0.1초만), `Snap()`(바로 목표 값으로).
+  - 버튼(눌리는 영역)은 움직이지 않고 그림 자식만 움직인다. 그림이 커지거나 뜨면서 마우스가 버튼 가장자리에서 들어갔다 나갔다를 되풀이하지 않게 하려는 것이다. 클릭 판정과 동작은 그대로다.
 
 ### 경계 상황
 
@@ -99,6 +115,24 @@
 | 비율 `BgmScale`, `SfxScale` | `Bgm / 100.0`, `Sfx / 100.0` | `double`, 반올림 없음. 80 → 0.8 |
 | PlayerPrefs 키 `VolumePrefs.BgmKey` / `SfxKey` | `PlumSword.BgmVolume` / `PlumSword.SfxVolume` | `int` 값 |
 | 백그라운드 복귀 때 다시 만드는 기준 | 오프라인 보상 사양 그대로 (10초) | 이 기능의 수치 아님 |
+| 꽃잎 수 `PetalField.DefaultCount` | 50 (임시) | 화면에 약 22~40장, 나머지는 화면 밖에서 차례를 기다림 |
+| 내보내는 간격 `EmitInterval` × `MinEmitJitter`~`MaxEmitJitter` | 0.7초 × 0.5~1.5 (임시) | |
+| 내보낼 때 가장자리 바깥 거리 | 크기 × 0.6 + 0~`EdgeJitter`(4) | |
+| 미리 움직이기 `PrewarmSeconds` | 40초 | |
+| 왼쪽에서 나타나는 세로 범위 `LeftSpawnBottom` | 아래에서 높이 × 0.25 위 ~ 위 끝 | |
+| 꽃잎 크기 `MinSize` / `MaxSize` | 7 / 14 (임시) | 긴 변, UI 단위. 깊이에 비례 |
+| 떨어지는 속도 `MinFallSpeed` / `MaxFallSpeed` | 12 / 26 (임시) | 초당 UI 단위. 깊이에 비례, ×0.85~1.15 |
+| 불투명도 `MinAlpha` / `MaxAlpha` | 0.55 / 1.0 (임시) | 깊이에 비례 |
+| 흔들림 폭 / 빠르기 | 6~16 / 0.8~1.8 rad/s (임시) | |
+| 회전 `MinSpinSpeed` / `MaxSpinSpeed` | 20 / 70 (임시) | 초당 도, 방향 무작위 |
+| 뒤집힘 빠르기 / 가장 얇은 배율 | 1.0~3.0 rad/s / 0.25 (임시) | |
+| 바람 `BaseWind` / `GustWind` / `FlutterWind` | 8 / 6 / 3 (임시) | 초당 UI 단위 |
+| 다시 나타나는 기준 `Margin` / 띠 `SpawnBand` | 16 / 24 (임시) | |
+| 한 번에 움직이는 가장 긴 시간 `MaxStep` | 0.1초 | |
+| 버튼 호버 배율 / 누름 배율 `ButtonHoverState.HoverScale` / `PressScale` | 1.06 / 0.97 (임시) | |
+| 버튼 밝기 평소 / 호버 / 누름 `NormalBrightness` / `HoverBrightness` / `PressBrightness` | 0.88 / 1.0 / 0.95 (임시) | 그림 색에 곱함 |
+| 버튼 뜨는 높이 호버 / 누름 `HoverLift` / `PressLift` | 2 / 0 (임시) | UI 단위 |
+| 버튼 반응 빠르기 `Response` / 한 번에 가장 긴 시간 `MaxStep` | 14 /초 / 0.1초 (임시) | |
 
 **표시 글자** (`StartMenuText`, 한글 글꼴 전이라 영문):
 
@@ -206,6 +240,82 @@ namespace PlumSword.Core.StartMenu
         public bool TryLeave(long nowUtcTicks);
     }
 
+    // 꽃잎 한 장의 지금 상태. PetalField 만 바꾼다. 좌표는 영역 가운데 원점, 오른쪽·위쪽 +.
+    public sealed class Petal
+    {
+        public double X { get; }
+        public double Y { get; }
+        public double Size { get; }        // 긴 변 (UI 단위)
+        public int Variant { get; }        // 0 ~ variantCount-1 (그림 종류)
+        public double Rotation { get; }    // 0 이상 360 미만 (도, 반시계 +)
+        public double FlipScale { get; }   // ±(0.25 ~ 1). 음수면 좌우 뒤집힘
+        public double Alpha { get; }       // 0.55 ~ 1.0
+        public double Depth { get; }       // 0 = 멂 ~ 1 = 가까움
+        public bool IsWaiting { get; }     // 화면 밖에서 내보낼 차례를 기다리는 중 (움직이지 않음, 그리지 않음)
+    }
+
+    public sealed class PetalField
+    {
+        public const int DefaultCount = 50;
+        public const double MinSize = 7, MaxSize = 14;
+        public const double MinFallSpeed = 12, MaxFallSpeed = 26;
+        public const double MinAlpha = 0.55, MaxAlpha = 1.0;
+        public const double MinSwayAmplitude = 6, MaxSwayAmplitude = 16;
+        public const double MinSwayRate = 0.8, MaxSwayRate = 1.8;
+        public const double MinSpinSpeed = 20, MaxSpinSpeed = 70;
+        public const double MinFlipRate = 1.0, MaxFlipRate = 3.0;
+        public const double MinFlipScale = 0.25;
+        public const double BaseWind = 8, GustWind = 6, FlutterWind = 3;
+        public const double Margin = 16;
+        public const double SpawnBand = 24;
+        public const double MaxStep = 0.1;
+        public const double PrewarmSeconds = 40;
+        public const double LeftSpawnBottom = 0.25;
+        public const double EmitInterval = 0.7;
+        public const double MinEmitJitter = 0.5, MaxEmitJitter = 1.5;
+        public const double EdgeJitter = 4;
+
+        // 만들면서 PrewarmSeconds 만큼 미리 움직이고 Elapsed 를 0 으로 되돌린다.
+        // width·height 가 0 이하·NaN·무한, count < 0, variantCount < 1 이면 ArgumentOutOfRangeException. random 이 null 이면 ArgumentNullException.
+        public PetalField(double width, double height, int count, int variantCount, System.Random random);
+
+        public double Width { get; }
+        public double Height { get; }
+        public double Elapsed { get; }     // Tick 으로 지난 초 (MaxStep 으로 자른 값의 합)
+        public double Wind { get; }        // 지금 바람 (초당, 오른쪽 +)
+        public System.Collections.Generic.IReadOnlyList<Petal> Petals { get; }
+        public int WaitingCount { get; }   // 기다리는 꽃잎 수
+        public double LeftShare { get; }   // 다시 나타날 때 왼쪽 바깥을 고를 몫 (0~1)
+
+        // 모든 꽃잎 위치를 새 크기에 비례해 옮긴다.
+        public void Resize(double width, double height);
+        public void Tick(double deltaSeconds);
+    }
+
+    // 시작 화면 그림 버튼의 호버·누름 반응 값.
+    public sealed class ButtonHoverState
+    {
+        public const double HoverScale = 1.06, PressScale = 0.97;
+        public const double NormalBrightness = 0.88, HoverBrightness = 1.0, PressBrightness = 0.95;
+        public const double HoverLift = 2, PressLift = 0;
+        public const double Response = 14;
+        public const double MaxStep = 0.1;
+
+        public bool IsHovered { get; }
+        public bool IsPressed { get; }
+        public double Hover { get; }        // 0~1
+        public double Press { get; }        // 0~1
+        public double Scale { get; }        // PressScale ~ HoverScale
+        public double Brightness { get; }   // NormalBrightness ~ HoverBrightness
+        public double Lift { get; }         // 0 ~ HoverLift
+
+        public void SetHovered(bool hovered);
+        public void SetPressed(bool pressed);
+        public void Exit();                 // 올림·누름 모두 풂
+        public void Tick(double deltaSeconds);
+        public void Snap();
+    }
+
     public static class StartMenuText
     {
         public const string Title = "PLUM BLOSSOM SWORD";
@@ -287,23 +397,49 @@ namespace PlumSword.Game.StartMenu
     }
 
     // 시작 화면 그림 네 장 (Resources 경로 Art/StartMenu/...). 하나라도 없으면 Load 가 null.
+    // 꽃잎 그림 세 장은 따로: 찾은 것만 Petals 에 담는다 (없으면 빈 목록 → 꽃잎 없이 그림).
     public sealed class StartScreenArt
     {
         public const string BackgroundPath = "Art/StartMenu/title_background";
         public const string StartButtonPath = "Art/StartMenu/button_start";
         public const string ContinueButtonPath = "Art/StartMenu/button_continue";
         public const string SettingsButtonPath = "Art/StartMenu/button_settings";
+        public static readonly string[] PetalPaths;   // petal_open, petal_curled, petal_folded (이 순서가 Variant 0, 1, 2)
 
-        public StartScreenArt(UnityEngine.Sprite background, UnityEngine.Sprite startButton, UnityEngine.Sprite continueButton, UnityEngine.Sprite settingsButton);
+        // petals 가 null 이면 꽃잎 없음. null 항목은 뺀다.
+        public StartScreenArt(UnityEngine.Sprite background, UnityEngine.Sprite startButton, UnityEngine.Sprite continueButton, UnityEngine.Sprite settingsButton,
+            System.Collections.Generic.IReadOnlyList<UnityEngine.Sprite> petals = null);
         public UnityEngine.Sprite Background { get; }
         public UnityEngine.Sprite StartButton { get; }
         public UnityEngine.Sprite ContinueButton { get; }
         public UnityEngine.Sprite SettingsButton { get; }
+        public System.Collections.Generic.IReadOnlyList<UnityEngine.Sprite> Petals { get; }
 
         public static StartScreenArt Load();
 
         // Continue → ContinueButton, 나머지(정의되지 않은 값 포함) → StartButton.
         public UnityEngine.Sprite StartButtonSprite(PlumSword.Core.StartMenu.StartButtonKind kind);
+    }
+
+    // 그림 버튼에 붙어 포인터 들어옴·나감·누름·뗌을 ButtonHoverState 에 전하고, 매 프레임(unscaledDeltaTime) 그림 자식에
+    // 배율(localScale x·y), 높이(anchoredPosition.y = Lift), 색(Brightness, Brightness, Brightness, 1)을 적용한다.
+    // 누름·뗌은 왼쪽 버튼(eventData 가 null 이면 그대로)만. 꺼지면(OnDisable) 평소 모양으로 바로 돌아간다.
+    public sealed class StartButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+    {
+        public PlumSword.Core.StartMenu.ButtonHoverState State { get; }
+
+        // visual 이 null 이면 ArgumentNullException. Snap 한 평소 모양으로 바로 맞춘다.
+        public void Initialize(UnityEngine.RectTransform visual);
+    }
+
+    // 꽃잎 Image 를 PetalField 에 맞춰 그린다. 자기 RectTransform 이 꽃잎 영역이다.
+    public sealed class StartScreenPetals : MonoBehaviour
+    {
+        public PlumSword.Core.StartMenu.PetalField Field { get; }
+
+        // sprites 가 null 이거나 비었으면 ArgumentException. 자식으로 "Petal" Image count 개를 만든다.
+        // Update: 영역 크기가 Field 와 다르면 Resize → Tick(Time.unscaledDeltaTime) → 위치·회전·배율·크기·불투명도 적용.
+        public void Initialize(System.Collections.Generic.IReadOnlyList<UnityEngine.Sprite> sprites, int count, int seed);
     }
 
     public sealed class SettingsView : MonoBehaviour
@@ -384,8 +520,9 @@ namespace PlumSword.Game.StartMenu
   - 바탕: 캔버스를 꽉 채우는(앵커 (0, 0)~(1, 1)) 불투명 `Image`, RGB (0.10, 0.07, 0.12) (임시). `raycastTarget = true`라 뒤의 버튼이 눌리지 않는다.
   - **그림이 있을 때** (2026-11-17 적용. `StartScreenArt.Load()`가 그림 네 장을 모두 찾음. 그림은 [에셋 목록](../dev/assets.md) "시작 화면"):
     - 배경 "Background": 바탕의 자식. 제목 `매화검 키우기`가 그려진 `title_background`(1672×941) `Image`, `raycastTarget = false`. `AspectRatioFitter`(`EnvelopeParent`, 비율 = 그림 폭 ÷ 높이)로 비율을 지키며 화면을 빈틈없이 덮고, 넘치는 쪽은 가운데 기준으로 잘린다. 16:9(640×360)는 꼭 맞고, 더 긴 가로 화면(780·800·840)은 위아래가, 4:3(480)은 양옆이 조금 잘린다. 제목 글자와 두 버튼은 이 모든 비율에서 화면 안에 남고 버튼은 제목·제자와 겹치지 않는다 (플레이 모드 테스트 `Initialize_WithArt_KeepsTitleAndButtonsVisible`). 21:9에서는 제목 위 매화 가지 끝과 제자 발끝이 조금 잘린다.
+    - 꽃잎 "Petals": 배경 바로 다음 자식(배경 위, 버튼 아래). 바탕을 꽉 채우는 영역(앵커 (0, 0)~(1, 1))에 `StartScreenPetals`를 붙여 `Initialize(art.Petals, PetalField.DefaultCount, Environment.TickCount)`. 자식 "Petal" `Image` 50개, `raycastTarget = false`라 버튼 누르기를 막지 않는다. 꽃잎 하나는 그림 비율대로 긴 변을 `Size`로 맞추고, 위치 (`X`, `Y`), z 회전 `Rotation`, 가로 배율 `FlipScale`(회전 전 꽃잎 자신의 가로), 색 흰색에 알파 `Alpha`. `IsWaiting`이면 `Image.enabled = false`로 숨긴다. 그림 종류는 `Variant`(0 펼쳐진, 1 휘어진, 2 접힌). `art.Petals`가 비었으면 만들지 않는다.
     - 제목 글자 "Title"은 **만들지 않는다** (배경 그림에 이미 있다).
-    - 시작 버튼 "StartButton": 위치 (44, −28), 크기 230×42. 그림 `StartScreenArt.StartButtonSprite(button)`: `Continue`면 `button_continue`(이어하기), 나머지는 `button_start`(게임 시작). 설정 버튼 "SettingsButton": 위치 (44, −80), 크기 230×42, 그림 `button_settings`(설정). 두 버튼 모두 `Image.preserveAspect = true`, 색 흰색, 글자 오브젝트 없음(글자가 그림에 있다). x = 44는 배경 그림의 제목 가운데에 맞춘 값이고, 버튼은 제목 아래·제자 오른쪽의 빈 곳에 있다.
+    - 시작 버튼 "StartButton": 위치 (44, −28), 크기 230×42. 그림 `StartScreenArt.StartButtonSprite(button)`: `Continue`면 `button_continue`(이어하기), 나머지는 `button_start`(게임 시작). 설정 버튼 "SettingsButton": 위치 (44, −80), 크기 230×42, 그림 `button_settings`(설정). 두 버튼 모두 버튼 자신은 투명한 눌리는 영역(`Image` 색 (1, 1, 1, 0), `raycastTarget = true`, 그림 없음)이고, 그림은 같은 크기의 자식 "Art" `Image`(`preserveAspect = true`, `raycastTarget = false`, 색 = 평소 밝기 (0.88, 0.88, 0.88, 1))가 그린다. 버튼에 `StartButtonHover`를 붙여 "Art"만 키우고 밝히고 띄운다("동작"의 "버튼 반응"). 글자 오브젝트 없음(글자가 그림에 있다). x = 44는 배경 그림의 제목 가운데에 맞춘 값이고, 버튼은 제목 아래·제자 오른쪽의 빈 곳에 있다.
   - **그림이 없을 때** (대체 표시. 아래 세 줄은 그림 적용 전과 같다):
   - 제목 "Title" `StartMenuText.Title`: 가운데 기준 위치 (0, 70), 크기 600×48, 글자 크기 36 (임시), 매화색 RGB (1.0, 0.78, 0.86) (임시).
   - 시작 버튼 "StartButton": 위치 (0, −20), 크기 200×40 (임시), 색 RGB (0.20, 0.45, 0.25) (강화 버튼의 누를 수 있는 색과 같다). 글자 `StartMenuText.StartButtonLabel(button)`, 글자 크기 18 (임시).
@@ -404,7 +541,7 @@ namespace PlumSword.Game.StartMenu
   - `CLOSE` "CloseButton": 위치 (0, −86), 크기 120×28 (임시), 색 RGB (0.25, 0.25, 0.30), 글자 크기 14 (임시).
   - 창 안의 위치는 창 가운데 기준이다.
 - **공통**: 버튼은 `Image` + `Button`, `Button.transition = None`, 글자는 흰색 가운데 정렬(따로 적은 것 말고), `raycastTarget = false`. 글자는 모두 `TextMeshProUGUI`, TMP 기본 글꼴.
-- **연출**: 없다. 시작 화면과 게임 사이의 페이드, 버튼 소리는 없다.
+- **연출**: 시작 화면의 매화 꽃잎 흩날림("동작"의 `PetalField`)과 그림 버튼의 호버·누름 반응("동작"의 "버튼 반응")뿐이다. 시작 화면과 게임 사이의 페이드, 버튼 소리는 없다.
 - **사람이 먼저 해 둘 것**: 금화 사양과 같다 (TMP Essentials). 없어도 예외로 게임이 멈추지 않아야 한다.
 - **사람이 확인하는 법** (에디터 플레이):
   1. `save.dat`이 없는 채로 플레이 → 시작 화면에 `게임 시작` 그림 버튼(그림이 없으면 `START`) → 누르면 1스테이지. 바로 멈췄다가 다시 플레이하면 `이어하기`(`CONTINUE`). 아래 단계의 `START`·`CONTINUE`·`SETTINGS`도 시작 화면에서는 그림의 `게임 시작`·`이어하기`·`설정`이다. 게임 창 비율을 16:9와 더 긴 가로(예: 2400×1080)로 바꿔 제목과 버튼이 잘리지 않는지 본다.
@@ -436,7 +573,7 @@ namespace PlumSword.Game.StartMenu
 - 다른 설정 항목(언어, 진동, 화질, 음소거 단추 등), 계정·클라우드: 하지 않는다.
 - 저장이 있는데 처음부터 새로 시작하는 버튼(저장 지우기), 시작 화면의 종료 버튼, 떠나기 확인 창("정말 나갈까요?"), 저장 실패 때 `그냥 종료`: 하지 않는다.
 - 시작 화면에서 뒤로 가기 키로 앱 끄기: 하지 않는다.
-- 시작 화면과 게임 사이의 페이드·연출, 버튼 누름 표시: 하지 않는다 (4단계 후보). 시작 화면 배경·버튼 그림은 2026-11-17에 적용했다 ("화면").
+- 시작 화면과 게임 사이의 페이드·연출, 게임 화면·설정 창 버튼의 누름 표시, 키보드·게임패드로 버튼 고르기 표시: 하지 않는다 (4단계 후보). 시작 화면 그림 버튼의 호버·누름 반응은 2026-11-17에 넣었다. 시작 화면 배경·버튼 그림은 2026-11-17에 적용했다 ("화면").
 - 씬 나누기: 하지 않는다 (한 씬에서 코드로 조립).
 - 같은 실행 안에서 시작 화면으로 돌아갔다가 `CONTINUE`할 때의 오프라인 보상: 하지 않는다 (오프라인 보상 사양).
 - PC 창 포커스 잃음(`OnApplicationFocus`) 처리: 하지 않는다 (오프라인 보상 사양과 같다).

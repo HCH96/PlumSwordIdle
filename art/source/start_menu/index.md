@@ -8,6 +8,10 @@
 | 버튼 시안 (원본) | [buttons_concept.png](buttons_concept.png) | 1774×887px | 선택됨, 버튼 세 장으로 나눠 게임 적용 |
 | 빈 버튼 판 (작업 파일) | [button_blank.png](button_blank.png) | 1436×261px | `설정` 판에서 글자를 지운 판. `이어하기` 버튼의 바탕 |
 | 버튼 만드는 스크립트 | [prepare_buttons.py](prepare_buttons.py) | | 원본에서 게임용 버튼 세 장과 빈 판을 다시 만든다 |
+| 펼쳐진 꽃잎 | [petal_open.png](petals/petal_open.png) | 1536×1024px | 선택됨, 게임 적용 (`Assets/Resources/Art/StartMenu/petal_open.png`, 64×62) |
+| 휘어진 꽃잎 | [petal_curled.png](petals/petal_curled.png) | 1774×887px | 선택됨, 게임 적용 (`petal_curled.png`, 64×29) |
+| 접힌 꽃잎 | [petal_folded.png](petals/petal_folded.png) | 1536×1024px | 선택됨, 게임 적용 (`petal_folded.png`, 64×59) |
+| 꽃잎 만드는 스크립트 | [prepare_petals.py](prepare_petals.py) | | 원본에서 게임용 꽃잎 세 장을 다시 만든다 |
 
 ## 제목·배경
 
@@ -33,3 +37,13 @@
 5. 세 장 모두 1436×262 투명 캔버스 가운데에 놓아 크기를 맞춘다.
 
 실행 (프로젝트 폴더에서, Pillow·numpy 필요): `python art/source/start_menu/prepare_buttons.py`
+
+## 시작 화면 꽃잎 파티클
+
+- 사용자가 선택한 세 장의 정지 원본이다. 각각 투명 알파 채널이 있고, 펼쳐진 꽃잎과 접힌 꽃잎에는 부드러운 분홍빛이 포함되어 있다. 방향은 각각 대각선, 가로, 대각선이다.
+- 생성: Codex 내장 이미지 생성. 선택한 시작 화면을 색감과 그림체 참고로 사용했다. PixelLab은 사용하지 않았다.
+- 생성 지시 요약: 분홍색 꽃잎 한 장씩, 픽셀 계단형 외곽과 단순한 명암, 투명 배경. 펼쳐진 모양, 옆으로 휘어진 모양, 접힌 모양을 각각 요청했다.
+- 애니메이션 프레임과 재생 속도는 해당 없다 (움직임은 코드가 회전·뒤집기·이동으로 만든다).
+- 게임 적용 (`prepare_petals.py`): 알파 > 8인 꽃잎 테두리로 잘라 긴 변 64px(투명 여백 2px 포함)로 BOX 축소했다. 원본 꽃잎의 픽셀 한 칸이 약 8px이라 줄인 뒤 거의 1:1이고, 알파를 곱한 색으로 줄여 가장자리에 검은 테두리가 생기지 않는다. 화면에서는 긴 변 7~14 UI 단위로 보인다. 움직임은 [시작 화면 사양](../../../docs/spec/start_menu.md) "매화 꽃잎 흩날림".
+
+실행 (프로젝트 폴더에서, Pillow·numpy 필요): `python art/source/start_menu/prepare_petals.py`

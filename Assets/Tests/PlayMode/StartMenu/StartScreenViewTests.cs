@@ -104,8 +104,8 @@ namespace PlumSword.Game.Tests.StartMenu
             Assert.AreEqual("title_background", background.GetComponent<Image>().sprite.name);
             Assert.IsFalse(background.GetComponent<Image>().raycastTarget);
             Assert.AreEqual(AspectRatioFitter.AspectMode.EnvelopeParent, background.GetComponent<AspectRatioFitter>().aspectMode);
-            Assert.AreEqual(startSprite, panel.Find("StartButton").GetComponent<Image>().sprite.name);
-            Assert.AreEqual("button_settings", panel.Find("SettingsButton").GetComponent<Image>().sprite.name);
+            Assert.AreEqual(startSprite, panel.Find("StartButton/Art").GetComponent<Image>().sprite.name);
+            Assert.AreEqual("button_settings", panel.Find("SettingsButton/Art").GetComponent<Image>().sprite.name);
             // 제목은 배경 그림에 있으므로 글자로 다시 쓰지 않는다. 버튼 글자도 그림에 있다.
             Assert.IsNull(panel.Find("Title"));
             Assert.IsEmpty(Texts(panel));
@@ -121,10 +121,66 @@ namespace PlumSword.Game.Tests.StartMenu
             foreach (var name in new[] { "StartButton", "SettingsButton" })
             {
                 var button = panel.Find(name);
-                Assert.IsTrue(button.GetComponent<Image>().preserveAspect);
-                Assert.AreEqual(Color.white, button.GetComponent<Image>().color);
+                // 버튼 자신은 투명한 눌리는 영역, 그림은 자식 Art (같은 크기, 눌림을 받지 않음).
+                var hitArea = button.GetComponent<Image>();
+                Assert.AreEqual(0f, hitArea.color.a);
+                Assert.IsTrue(hitArea.raycastTarget);
+                Assert.IsNull(hitArea.sprite);
+                var art = button.Find("Art");
+                AssertRect(art, Vector2.zero, new Vector2(230, 42));
+                var artImage = art.GetComponent<Image>();
+                Assert.IsTrue(artImage.preserveAspect);
+                Assert.IsFalse(artImage.raycastTarget);
+                var b = (float)ButtonHoverState.NormalBrightness;
+                Assert.AreEqual(new Color(b, b, b, 1), artImage.color);
+                Assert.AreEqual(Vector3.one, art.localScale);
                 Assert.AreEqual(Selectable.Transition.None, button.GetComponent<Button>().transition);
+                Assert.IsNotNull(button.GetComponent<StartButtonHover>());
             }
+        }
+
+        // 마우스를 올리면 그림만 커지고 밝아지며 위로 뜬다. 버튼(눌리는 영역)은 움직이지 않는다. 내리면 돌아온다.
+        [UnityTest]
+        public IEnumerator Hover_EnlargesBrightensAndLiftsArtOnly([Values("StartButton", "SettingsButton")] string name)
+        {
+            view.Initialize(canvas, StartButtonKind.Continue, () => { }, () => { });
+            var button = (RectTransform)canvas.transform.Find("StartScreenPanel/" + name);
+            var art = (RectTransform)button.Find("Art");
+            var hover = button.GetComponent<StartButtonHover>();
+            var artImage = art.GetComponent<Image>();
+
+            hover.OnPointerEnter(null);
+            float until = Time.realtimeSinceStartup + 0.5f;
+            while (Time.realtimeSinceStartup < until) yield return null;
+            Assert.AreEqual((float)ButtonHoverState.HoverScale, art.localScale.x, 0.01f);
+            Assert.AreEqual(art.localScale.x, art.localScale.y);
+            Assert.AreEqual((float)ButtonHoverState.HoverLift, art.anchoredPosition.y, 0.1f);
+            Assert.AreEqual((float)ButtonHoverState.HoverBrightness, artImage.color.r, 0.01f);
+            Assert.AreEqual(new Vector2(44, name == "StartButton" ? -28 : -80), button.anchoredPosition);
+            Assert.AreEqual(Vector3.one, button.localScale);
+
+            hover.OnPointerDown(null);
+            until = Time.realtimeSinceStartup + 0.5f;
+            while (Time.realtimeSinceStartup < until) yield return null;
+            Assert.AreEqual((float)ButtonHoverState.PressScale, art.localScale.x, 0.01f);
+
+            hover.OnPointerUp(null);
+            hover.OnPointerExit(null);
+            until = Time.realtimeSinceStartup + 0.6f;
+            while (Time.realtimeSinceStartup < until) yield return null;
+            Assert.AreEqual(1f, art.localScale.x, 0.01f);
+            Assert.AreEqual(0f, art.anchoredPosition.y, 0.05f);
+            Assert.AreEqual((float)ButtonHoverState.NormalBrightness, artImage.color.r, 0.01f);
+        }
+
+        // 그림이 없을 때(대체 버튼)는 호버 반응을 붙이지 않는다 (예전 모양 그대로).
+        [Test]
+        public void Initialize_WithoutArt_HasNoHover()
+        {
+            view.Initialize(canvas, StartButtonKind.NewGame, () => { }, () => { }, null);
+            var panel = canvas.transform.Find("StartScreenPanel");
+            Assert.IsNull(panel.Find("StartButton").GetComponent<StartButtonHover>());
+            Assert.IsNull(panel.Find("SettingsButton").GetComponent<StartButtonHover>());
         }
 
         // 4:3(480), 기준 640×360, 19.5:9(780), 20:9(800), 21:9(840) 화면에서 배경이 빈틈없이 덮고,
@@ -157,6 +213,110 @@ namespace PlumSword.Game.Tests.StartMenu
                 AssertInside(screen, button, name);
                 Assert.IsFalse(button.Overlaps(title), name + " overlaps title");
                 Assert.IsFalse(button.Overlaps(disciple), name + " overlaps disciple");
+            }
+        }
+
+        [Test]
+        public void ArtLoad_FindsThreePetalSprites()
+        {
+            var art = StartScreenArt.Load();
+            Assert.That(art.Petals.Count, Is.EqualTo(3));
+            Assert.That(art.Petals.Select(p => p.name), Is.EqualTo(new[] { "petal_open", "petal_curled", "petal_folded" }));
+            Assert.That(art.Petals.Select(p => p.rect.size), Is.EqualTo(new[] { new Vector2(64, 62), new Vector2(64, 29), new Vector2(64, 59) }));
+        }
+
+        [Test]
+        public void Initialize_WithArt_PutsPetalsBetweenBackgroundAndButtons()
+        {
+            view.Initialize(canvas, StartButtonKind.NewGame, () => { }, () => { });
+            var panel = canvas.transform.Find("StartScreenPanel");
+            Assert.That(Enumerable.Range(0, panel.childCount).Select(i => panel.GetChild(i).name),
+                Is.EqualTo(new[] { "Background", "Petals", "StartButton", "SettingsButton" }));
+            var petals = (RectTransform)panel.Find("Petals");
+            Assert.AreEqual(Vector2.zero, petals.anchorMin);
+            Assert.AreEqual(Vector2.one, petals.anchorMax);
+            Assert.That(petals.childCount, Is.EqualTo(PetalField.DefaultCount));
+            foreach (Transform petal in petals)
+            {
+                var image = petal.GetComponent<Image>();
+                Assert.IsFalse(image.raycastTarget);
+                Assert.That(image.sprite.name, Does.StartWith("petal_"));
+            }
+        }
+
+        [Test]
+        public void Initialize_WithArtWithoutPetals_HasNoPetals()
+        {
+            var loaded = StartScreenArt.Load();
+            var art = new StartScreenArt(loaded.Background, loaded.StartButton, loaded.ContinueButton, loaded.SettingsButton);
+            view.Initialize(canvas, StartButtonKind.NewGame, () => { }, () => { }, art);
+            Assert.IsNull(canvas.transform.Find("StartScreenPanel/Petals"));
+            Assert.IsNotNull(canvas.transform.Find("StartScreenPanel/StartButton"));
+        }
+
+        [UnityTest]
+        public IEnumerator Petals_MoveEachFrameAndFollowField()
+        {
+            view.Initialize(canvas, StartButtonKind.NewGame, () => { }, () => { });
+            var petals = canvas.transform.Find("StartScreenPanel/Petals");
+            var field = petals.GetComponent<StartScreenPetals>().Field;
+            var before = Enumerable.Range(0, petals.childCount).Select(i => ((RectTransform)petals.GetChild(i)).anchoredPosition).ToArray();
+            for (int i = 0; i < 5; i++) yield return null;
+            Assert.That(field.Elapsed, Is.GreaterThan(0));
+            int moved = 0;
+            for (int i = 0; i < petals.childCount; i++)
+            {
+                var rect = (RectTransform)petals.GetChild(i);
+                var petal = field.Petals[i];
+                Assert.AreEqual(!petal.IsWaiting, rect.GetComponent<Image>().enabled);
+                if (petal.IsWaiting) { moved++; continue; }
+                Assert.AreEqual((float)petal.X, rect.anchoredPosition.x, 1e-3f);
+                Assert.AreEqual((float)petal.Y, rect.anchoredPosition.y, 1e-3f);
+                Assert.AreEqual((float)petal.FlipScale, rect.localScale.x, 1e-4f);
+                Assert.AreEqual((float)petal.Alpha, rect.GetComponent<Image>().color.a, 1e-4f);
+                Assert.AreEqual((float)petal.Size, Mathf.Max(rect.sizeDelta.x, rect.sizeDelta.y), 1e-3f);
+                if (rect.anchoredPosition != before[i]) moved++;
+            }
+            // 기다리는 꽃잎을 빼고 모두 움직였다 (방금 다시 나타나 기다리기 시작한 꽃잎은 위치가 바뀌었다).
+            Assert.That(moved, Is.EqualTo(petals.childCount));
+        }
+
+        // GameRoot 처럼 CanvasScaler 를 붙인 그 프레임에 시작 화면을 만들면, 처음에는 캔버스가 화면 픽셀 크기였다가
+        // 다음 프레임에 640×360 기준으로 줄어든다. 그래도 꽃잎이 한꺼번에 위에서 몰려오지 않고 화면 안에 고르게 남아야 한다.
+        [UnityTest]
+        public IEnumerator Petals_CanvasScaledAfterInitialize_StayEvenlySpread()
+        {
+            var scaled = new GameObject("ScaledCanvas", typeof(Canvas));
+            try
+            {
+                var scaledCanvas = scaled.GetComponent<Canvas>();
+                scaledCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                var scaler = scaled.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(640, 360);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 1f;
+                view.Initialize(scaledCanvas, StartButtonKind.NewGame, () => { }, () => { });
+                var petals = scaledCanvas.transform.Find("StartScreenPanel/Petals");
+                var field = petals.GetComponent<StartScreenPetals>().Field;
+                yield return null;
+                yield return null;
+                yield return null;
+
+                var area = ((RectTransform)petals).rect;
+                Assert.AreEqual(360f, area.height, 1f, "canvas scaled to 360 high");
+                Assert.AreEqual(area.width, (float)field.Width, 0.5f);
+                Assert.AreEqual(area.height, (float)field.Height, 0.5f);
+                var visible = field.Petals.Where(p => Math.Abs(p.X) <= field.Width / 2 && Math.Abs(p.Y) <= field.Height / 2).ToArray();
+                int active = field.Petals.Count(p => !p.IsWaiting);
+                Assert.That(visible.Length, Is.GreaterThanOrEqualTo(active * 8 / 10), "most moving petals on screen right away");
+                Assert.That(visible.Length, Is.GreaterThanOrEqualTo(20));
+                Assert.That(visible.Count(p => p.Y < 0), Is.GreaterThanOrEqualTo(visible.Length / 4), "lower half has petals too");
+                Assert.That(visible.Count(p => p.Y > 0), Is.GreaterThanOrEqualTo(visible.Length / 4), "upper half has petals too");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(scaled);
             }
         }
 
