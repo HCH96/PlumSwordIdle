@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PlumSword.Core.StartMenu;
 using TMPro;
 using UnityEngine;
@@ -11,7 +12,19 @@ namespace PlumSword.Game.StartMenu
         private GameObject panel;
         private bool started;
 
+        // 그림 버튼 크기와 위치 (기준 해상도 640×360, 캔버스 가운데 기준). 버튼 그림 1436×262 와 같은 비율이다.
+        public static readonly Vector2 ArtButtonSize = new Vector2(230, 42);
+        public static readonly Vector2 ArtStartButtonPosition = new Vector2(44, -28);
+        public static readonly Vector2 ArtSettingsButtonPosition = new Vector2(44, -80);
+
+        // 시작 화면 그림(StartScreenArt.Load)을 읽어 만든다. 그림이 없으면 단색 바탕과 영문 글자로 만든다.
         public void Initialize(Canvas canvas, StartButtonKind button, Action onStart, Action onOpenSettings)
+        {
+            Initialize(canvas, button, onStart, onOpenSettings, StartScreenArt.Load());
+        }
+
+        // art 가 null 이면 그림 없이(대체 표시) 만든다.
+        public void Initialize(Canvas canvas, StartButtonKind button, Action onStart, Action onOpenSettings, StartScreenArt art)
         {
             if (canvas == null) throw new ArgumentNullException(nameof(canvas));
             if (onStart == null) throw new ArgumentNullException(nameof(onStart));
@@ -28,8 +41,22 @@ namespace PlumSword.Game.StartMenu
             background.color = new Color(0.10f, 0.07f, 0.12f);
             background.raycastTarget = true;
 
-            CreateText("Title", panelRect, new Vector2(0, 70), new Vector2(600, 48), StartMenuText.Title, 36, new Color(1f, 0.78f, 0.86f));
-            var start = CreateButton("StartButton", panelRect, new Vector2(0, -20), new Vector2(200, 40), new Color(0.20f, 0.45f, 0.25f), StartMenuText.StartButtonLabel(button), 18);
+            Button start;
+            Button settings;
+            if (art != null)
+            {
+                CreateBackground(panelRect, art.Background);
+                if (art.Petals.Count > 0) CreatePetals(panelRect, art.Petals);
+                start = CreateArtButton("StartButton", panelRect, ArtStartButtonPosition, art.StartButtonSprite(button));
+                settings = CreateArtButton("SettingsButton", panelRect, ArtSettingsButtonPosition, art.SettingsButton);
+            }
+            else
+            {
+                CreateText("Title", panelRect, new Vector2(0, 70), new Vector2(600, 48), StartMenuText.Title, 36, new Color(1f, 0.78f, 0.86f));
+                start = CreateButton("StartButton", panelRect, new Vector2(0, -20), new Vector2(200, 40), new Color(0.20f, 0.45f, 0.25f), StartMenuText.StartButtonLabel(button), 18);
+                settings = CreateButton("SettingsButton", panelRect, new Vector2(0, -72), new Vector2(200, 32), new Color(0.25f, 0.25f, 0.30f), StartMenuText.SettingsButton, 14);
+            }
+
             start.onClick.AddListener(() =>
             {
                 if (started) return;
@@ -37,8 +64,54 @@ namespace PlumSword.Game.StartMenu
                 try { onStart(); }
                 finally { Destroy(panel); Destroy(gameObject); }
             });
-            var settings = CreateButton("SettingsButton", panelRect, new Vector2(0, -72), new Vector2(200, 32), new Color(0.25f, 0.25f, 0.30f), StartMenuText.SettingsButton, 14);
             settings.onClick.AddListener(() => onOpenSettings());
+        }
+
+        // 제목이 그려진 배경. 화면을 빈틈없이 덮도록(EnvelopeParent) 비율을 지켜 키우고, 넘치는 쪽은 가운데 기준으로 잘린다.
+        private static void CreateBackground(RectTransform parent, Sprite sprite)
+        {
+            var obj = new GameObject("Background", typeof(RectTransform), typeof(Image), typeof(AspectRatioFitter));
+            var rect = (RectTransform)obj.transform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            var image = obj.GetComponent<Image>();
+            image.sprite = sprite;
+            image.raycastTarget = false;
+            var fitter = obj.GetComponent<AspectRatioFitter>();
+            fitter.aspectRatio = sprite.rect.width / sprite.rect.height;
+            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        }
+
+        // 배경 위, 버튼 아래에 매화 꽃잎을 흩날린다. 영역은 화면 전체 (긴 가로 화면에서도 양옆까지).
+        private static void CreatePetals(RectTransform parent, IReadOnlyList<Sprite> sprites)
+        {
+            var obj = new GameObject("Petals", typeof(RectTransform));
+            var rect = (RectTransform)obj.transform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            obj.AddComponent<StartScreenPetals>().Initialize(sprites, PetalField.DefaultCount, Environment.TickCount);
+        }
+
+        // 글자가 그림에 들어 있는 버튼. 글자 오브젝트는 만들지 않는다.
+        // 버튼 자신은 눌리는 영역(투명 Image)만 맡고, 그림은 자식 "Art" 가 그린다. 호버·누름 반응은 Art 만 움직인다.
+        private static Button CreateArtButton(string name, Transform parent, Vector2 position, Sprite sprite)
+        {
+            var rect = CreateRect(name, parent, position, ArtButtonSize);
+            var hitArea = rect.gameObject.AddComponent<Image>();
+            hitArea.color = new Color(1, 1, 1, 0);
+            var art = CreateRect("Art", rect, Vector2.zero, ArtButtonSize);
+            var image = art.gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            var button = rect.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            rect.gameObject.AddComponent<StartButtonHover>().Initialize(art);
+            return button;
         }
 
         private static Button CreateButton(string name, Transform parent, Vector2 position, Vector2 size, Color color, string label, float fontSize)
