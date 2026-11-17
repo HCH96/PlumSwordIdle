@@ -1,0 +1,239 @@
+{
+  "loop": "loop/20261117-115917",
+  "bundle": "스테이지소개",
+  "merged_at": "2026-11-17 12:07",
+  "tag": "loop-merged/20261117-115917",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 323,
+      "passed": 323,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [],
+    "stats": {
+      "files_changed": 6,
+      "files": [
+        "Assets/Scripts/Core/Stage/StagePhase.cs",
+        "Assets/Scripts/Core/Stage/StageProgress.cs",
+        "Assets/Scripts/Core/Stage/StageText.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressIntroTests.cs",
+        "Assets/Tests/EditMode/Stage/StageTextTests.cs",
+        "docs/history/023_stage_intro_begin.md"
+      ],
+      "tests_before": 236,
+      "tests_after": 245,
+      "new_tests": [
+        "StageProgressIntroTests.Begin_SeenAndRound_DetermineIntro",
+        "StageProgressIntroTests.Begin_UnseenFirstStage_PausesAfterPlacementAndNotifiesInOrder",
+        "StageProgressIntroTests.Constructor_DefaultSeen_StartsAtFiveWithoutIntro",
+        "StageProgressIntroTests.Constructor_SeenValue_ClampsAndStartsPlaying",
+        "StageProgressIntroTests.Intro_BattleStepAndTick_LeaveBattleAndPhaseUnchanged",
+        "StageProgressIntroTests.Intro_UpgradeWithGold_SucceedsWithoutEndingIntro",
+        "StageProgressIntroTests.StagePhase_Values_PreserveExistingNumbers",
+        "StageTextTests.IntroLine_InvalidStage_Throws",
+        "StageTextTests.IntroLine_ValidStage_ReturnsExactLine"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": []
+    }
+  },
+  "tasks": [
+    {
+      "doc": "023_stage_intro_begin.md",
+      "branch": "task/023_stage_intro_begin",
+      "agents": "codex(시도 1)",
+      "summary": "???? ? ?? ?? ??? ??, ?? ?? ? ?? ?? ???? ????. Unity ?? ??? ??.",
+      "review": {
+        "verdict": "pass",
+        "summary": "소개 단계, 본 소개 번호, Begin 의 소개 판단, IntroLine 이 사양과 작업 문서대로 구현됐다. 완료 조건마다 숫자까지 확인하는 테스트가 있다. 하지 말 것 범위(Tick 의 소개 처리, Combat/Currency/StatUpgrade/Game 폴더)는 건드리지 않았다. 다만 주석 두 곳의 한글이 깨졌고, 설명 주석 하나가 다른 메서드 위로 옮겨졌다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "따로 적지 않으면 `wallet = new Wallet(0)`, `upgrades = new StatUpgrades(wallet, 공격력, 최대 체력, 1.0)`(항목 앞의 `(공격력, 최대 체력)`), `battle = new Battle(upgrades)`, `stage = new StageProgress(wallet, upgrades, battle, new MinRandom(), startStage, seenIntroStage)` 로 만든 것이다 (`startStage` 를 적지 않으면 1). \"1칸 진행\"은 `battle.Step()` 을 한 번 부르는 것이다. 알림 횟수와 순서는 `StageProgress` 를 만든 직후 구독해 기록한 것이다.",
+            "test": "StageProgressIntroTests.Create 보조 메서드가 이 구성 그대로 만든다",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "`Assets/Tests/EditMode/Stage/StageProgressIntroTests.cs` 와 `Assets/Tests/EditMode/Stage/StageTextTests.cs` 에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "두 파일에 아래 조건별 테스트가 있다 (통과 여부는 루프가 실행해 확인)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "(10, 100) 으로 `seenIntroStage` 를 생략해 만들면 `SeenIntroStage` 는 5 이다.",
+            "test": "StageProgressIntroTests.Constructor_DefaultSeen_StartsAtFiveWithoutIntro",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "(10, 100) 으로 `seenIntroStage` 에 0, 3, −2, 9 를 넣어 각각 만들면 예외 없이 `SeenIntroStage` 는 0, 3, 0, 5 이다.",
+            "test": "StageProgressIntroTests.Constructor_SeenValue_ClampsAndStartsPlaying (경우 4개, DoesNotThrow 포함)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "위 다섯 경우(생략, 0, 3, −2, 9) 모두 `Begin()` 전의 `IsIntroShowing` 은 `false`, `Phase` 는 `Playing` 이다.",
+            "test": "StageProgressIntroTests.Constructor_DefaultSeen_StartsAtFiveWithoutIntro, Constructor_SeenValue_ClampsAndStartsPlaying",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "(10, 100), `seenIntroStage: 0` 으로 만들어 `Begin()` 을 부르면 `SeenIntroStage` 1, `Phase` `Intro`, `IsIntroShowing` `true`, `battle.Paused` `true`, `upgrades.Locked` `false`, `FadeAlpha` 0.0, `battle.Enemies.Count` 10 이다.",
+            "test": "StageProgressIntroTests.Begin_UnseenFirstStage_PausesAfterPlacementAndNotifiesInOrder",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "(10, 100), `seenIntroStage: 0` 으로 `Begin()` 을 부르면 `StageStarted` 가 1을 담아 1번, 그 뒤에 `Changed` 가 1번 오고, `StageStarted` 를 받는 시점에 읽은 `SeenIntroStage` 는 1, `Phase` 는 `Intro` 다.",
+            "test": "StageProgressIntroTests.Begin_UnseenFirstStage_PausesAfterPlacementAndNotifiesInOrder (알림 순서 [started:1, changed], 알림 처리 안에서 상태 확인)",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "(10, 100), `seenIntroStage: 0` 으로 `Begin()` 뒤 `battle.AddEnemy(EnemyKind.Normal, 1, 0.8)` 을 부르고 1칸 진행하면 금화 0, `DefeatedNormalCount` 0, `battle.DisciplePosition` 0 이고 `Changed` 는 더 오지 않는다 (모두 1번).",
+            "test": "StageProgressIntroTests.Intro_BattleStepAndTick_LeaveBattleAndPhaseUnchanged",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "`wallet = new Wallet(20)`, (10, 100), `seenIntroStage: 0` 으로 `Begin()` 뒤 `upgrades.TryUpgrade(StatType.Attack)` 은 `true` 이고, 금화는 0, `Phase` 는 `Intro` 그대로다.",
+            "test": "StageProgressIntroTests.Intro_UpgradeWithGold_SucceedsWithoutEndingIntro",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "(10, 100), `startStage: 3, seenIntroStage: 3` 으로 `Begin()` 을 부르면 `Phase` `Playing`, `battle.Paused` `false`, `SeenIntroStage` 3 이다.",
+            "test": "StageProgressIntroTests.Begin_SeenAndRound_DetermineIntro(3,3,Playing,false,3)",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "(10, 100), `startStage: 3, seenIntroStage: 2` 로 `Begin()` 을 부르면 `Phase` `Intro`, `SeenIntroStage` 3 이다.",
+            "test": "StageProgressIntroTests.Begin_SeenAndRound_DetermineIntro(3,2,Intro,true,3)",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "(10, 100), `startStage: 7, seenIntroStage: 0` 으로 `Begin()` 을 부르면 (2회차) `Phase` `Playing`, `battle.Paused` `false`, `SeenIntroStage` 0 이다.",
+            "test": "StageProgressIntroTests.Begin_SeenAndRound_DetermineIntro(7,0,Playing,false,0)",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "(10, 100), `seenIntroStage` 생략으로 `Begin()` 을 부르면 `Phase` `Playing`, `battle.Paused` `false`, `SeenIntroStage` 5 이다.",
+            "test": "StageProgressIntroTests.Constructor_DefaultSeen_StartsAtFiveWithoutIntro",
+            "verdict": "있음"
+          },
+          {
+            "id": 14,
+            "condition": "`StageText.IntroLine(1)`~`IntroLine(5)` 는 위 표의 영문 문구와 글자 하나까지 같다.",
+            "test": "StageTextTests.IntroLine_ValidStage_ReturnsExactLine (경우 5개, 표의 문구와 같은지 대조함)",
+            "verdict": "있음"
+          },
+          {
+            "id": 15,
+            "condition": "`StageText.IntroLine(0)` 과 `IntroLine(6)` 은 `ArgumentOutOfRangeException` 이다.",
+            "test": "StageTextTests.IntroLine_InvalidStage_Throws (0, 6)",
+            "verdict": "있음"
+          },
+          {
+            "id": 16,
+            "condition": "`(int)StagePhase.Playing`, `FadingOut`, `FadingIn`, `Intro` 는 0, 1, 2, 3 이다.",
+            "test": "StageProgressIntroTests.StagePhase_Values_PreserveExistingNumbers",
+            "verdict": "있음"
+          },
+          {
+            "id": 17,
+            "condition": "기존 테스트가 모두 통과한다. (`StageProgressTests`, `StageProgressKillTests`, `StageProgressOutcomeTests`, `StageProgressFadeTests`, `StageProgressRoundTests`, `StageTextTests`, `CoreAssemblyTests.Core_DoesNotReferenceUnity` 포함)",
+            "test": "루프가 전체 테스트를 실행해 판정",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "새로 넣은 주석의 한글이 '?' 로 깨졌다: Assets/Scripts/Core/Stage/StagePhase.cs:15 의 Intro 설명 주석, Assets/Scripts/Core/Stage/StageProgress.cs:198-201 의 PlaceStage 설명 주석."
+          },
+          {
+            "site": "",
+            "severity": "note",
+            "text": "Assets/Scripts/Core/Stage/StageProgress.cs:187-196: 원래 PlaceStage 를 설명하던 주석('스테이지 배치: battle.Reset → …')이 새 메서드 ShouldShowIntro 위에 붙어 있다. 그래서 ShouldShowIntro 에 맞지 않는 설명이 달렸고, PlaceStage 에는 깨진 사본만 남았다. 동작에는 영향이 없다."
+          },
+          {
+            "severity": "note",
+            "text": "_introElapsed(StageProgress.cs:33)는 지금 값을 넣기만 하고 읽는 곳이 없다. 024 가 Tick 에서 쓸 자리이므로 범위 안이다. IntroSeconds 에는 사양처럼 '(임시)' 주석이 없다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 323,
+          "passed": 323,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "StageProgressIntroTests.Begin_SeenAndRound_DetermineIntro",
+        "StageProgressIntroTests.Begin_UnseenFirstStage_PausesAfterPlacementAndNotifiesInOrder",
+        "StageProgressIntroTests.Constructor_DefaultSeen_StartsAtFiveWithoutIntro",
+        "StageProgressIntroTests.Constructor_SeenValue_ClampsAndStartsPlaying",
+        "StageProgressIntroTests.Intro_BattleStepAndTick_LeaveBattleAndPhaseUnchanged",
+        "StageProgressIntroTests.Intro_UpgradeWithGold_SucceedsWithoutEndingIntro",
+        "StageProgressIntroTests.StagePhase_Values_PreserveExistingNumbers",
+        "StageTextTests.IntroLine_InvalidStage_Throws",
+        "StageTextTests.IntroLine_ValidStage_ReturnsExactLine"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [],
+      "human_report": [],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": [
+    "024_stage_intro_tick.md"
+  ]
+}

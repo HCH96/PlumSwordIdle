@@ -12,7 +12,7 @@ namespace PlumSword.Core.Stage
         /// <summary>새 배치를 마치고 화면을 여는 중.</summary>
         FadingIn = 2,
 
-        /// <summary>? ?? ?? ?.</summary>
+        /// <summary>1회차 첫 진입의 소개를 보여 주는 중. 전투는 멈추고 강화는 열려 있다.</summary>
         Intro = 3,
     }
 }
