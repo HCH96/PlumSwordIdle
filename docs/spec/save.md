@@ -334,7 +334,7 @@ namespace PlumSword.Game.Save
   - **누르면**: `onNewGame` 을 한 번 부르고 창 오브젝트를 없앤다 (`Destroy`). 두 번 눌러도 한 번만 부른다.
   - 창이 떠 있는 동안 뒤의 전투는 멈춰 있고(`Battle.SetPaused(true)`) 몬스터는 없다. 금화·강화 표시는 처음 값으로 보인다.
 - **사람이 먼저 해 둘 것**: 금화 사양과 같다. TextMeshPro 기본 리소스(TMP Essentials)가 있어야 글자가 보인다. 없어도 예외로 게임이 멈추지 않아야 한다.
-- 표시 글자(`SaveText`)와 언제 보일지(`HasFailed`, `LoadResult.Status`)의 판단은 Core 에 있고 에딧 모드 테스트로 판정한다. `SaveView`, `SaveErrorView` 와 `GameRoot` 의 조립은 자동 테스트 대상이 아니며 사람이 실행해 확인한다 (손상 창은 `save.dat` 을 아무 글자로 바꿔 확인).
+- 표시 글자(`SaveText`)와 언제 보일지(`HasFailed`, `LoadResult.Status`)의 판단은 Core 에 있고 에딧 모드 테스트로 판정한다. `SaveView` 와 `SaveErrorView` 의 상태 갱신·구조·입력은 플레이 모드 테스트로 확인하고, 실제 배치와 글자는 사람이 실행해 확인한다 (손상 창은 `save.dat` 을 아무 글자로 바꿔 확인).
 
 ## 저장
 
