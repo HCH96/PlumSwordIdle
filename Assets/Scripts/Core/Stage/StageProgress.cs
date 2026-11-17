@@ -31,6 +31,7 @@ namespace PlumSword.Core.Stage
         private double _fadeElapsed;
 
         private double _introElapsed;
+        private bool _showIntroAfterFade;
 
         /// <summary>
         /// wallet: 처치 금화를 줄 지갑. upgrades: 페이드 동안 잠글 강화. battle: 적을 놓고 알림을 받을 전투.
@@ -155,18 +156,22 @@ namespace PlumSword.Core.Stage
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "경과 시간은 0 이상의 유한한 값이어야 한다.");
             }
 
-            if (!HasBegun || Phase == StagePhase.Playing || Phase == StagePhase.Intro)
+            if (!HasBegun || Phase == StagePhase.Playing)
             {
                 return;
             }
 
-            _fadeElapsed += deltaSeconds;
+            if (Phase == StagePhase.Intro)
+                _introElapsed += deltaSeconds;
+            else
+                _fadeElapsed += deltaSeconds;
 
             // 1. 가려진 순간의 교체. 남은 시간은 페이드인으로 넘긴다.
             if (Phase == StagePhase.FadingOut && _fadeElapsed >= FadeSeconds - FadeTolerance)
             {
                 StageNumber = _nextStageNumber;
                 PlaceStage();
+                _showIntroAfterFade = ShouldShowIntro();
                 _fadeElapsed = Math.Max(0.0, _fadeElapsed - FadeSeconds);
                 Phase = StagePhase.FadingIn;
                 StageStarted?.Invoke(StageNumber);
@@ -176,10 +181,26 @@ namespace PlumSword.Core.Stage
             // 2. 전환을 끝낸다. 같은 Tick 에서 1번 뒤에 이어질 수 있다.
             if (Phase == StagePhase.FadingIn && _fadeElapsed >= FadeSeconds - FadeTolerance)
             {
-                Phase = StagePhase.Playing;
                 _fadeElapsed = 0.0;
-                _battle.SetPaused(false);
                 _upgrades.SetLocked(false);
+                if (_showIntroAfterFade)
+                {
+                    Phase = StagePhase.Intro;
+                    _introElapsed = 0.0;
+                }
+                else
+                {
+                    Phase = StagePhase.Playing;
+                    _battle.SetPaused(false);
+                }
+                Changed?.Invoke();
+            }
+
+            if (Phase == StagePhase.Intro && _introElapsed >= IntroSeconds - FadeTolerance)
+            {
+                Phase = StagePhase.Playing;
+                _introElapsed = 0.0;
+                _battle.SetPaused(false);
                 Changed?.Invoke();
             }
         }
