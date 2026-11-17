@@ -68,4 +68,6 @@
 | Compression | None |
 | Generate Mip Maps | 끔 |
 
-가져오기 설정은 `.meta` 파일에 저장된다. 루프 안의 에이전트는 `.meta`의 가져오기 설정을 직접 고치지 않는다. `Assets/Resources/Art/` 아래 그림은 `Assets/Editor/PixelArtTextureImporter.cs`(에셋 후처리기)가 가져올 때 위 값으로 맞춘다 (스프라이트 모드 Single, 9-slice 테두리는 건드리지 않음). 애니메이션 시트의 프레임 자르기와 피벗은 화면 코드가 한다.
+**예외: 시작 화면 그림** (`Assets/Resources/Art/StartMenu/`). 고해상도 AI 시안을 원본 크기로 넣고 화면에서 정수배가 아니게 줄여 보이므로, Filter Mode = Trilinear, Generate Mip Maps = 켬, 최대 크기 2048로 가져온다 (나머지는 위 표와 같다). Point로 줄이면 제목과 버튼 글자의 선이 깨진다. 픽셀 크기가 다른 에셋과 같지 않은 것은 [assets.md](assets.md) "시작 화면"에 적었다.
+
+가져오기 설정은 `.meta` 파일에 저장된다. 루프 안의 에이전트는 `.meta`의 가져오기 설정을 직접 고치지 않는다. `Assets/Resources/Art/` 아래 그림은 `Assets/Editor/PixelArtTextureImporter.cs`(에셋 후처리기)가 가져올 때 위 값(시작 화면 그림은 위 예외)으로 맞춘다 (스프라이트 모드 Single, 9-slice 테두리는 건드리지 않음). 애니메이션 시트의 프레임 자르기와 피벗은 화면 코드가 한다.

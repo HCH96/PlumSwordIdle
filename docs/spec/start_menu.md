@@ -270,11 +270,40 @@ namespace PlumSword.Game.StartMenu
         // canvas 의 마지막 자식으로 시작 화면 "StartScreenPanel" 을 만든다. canvas, onStart, onOpenSettings 중 null 이면 ArgumentNullException.
         // 시작 버튼: onStart 를 한 번 부르고 자기 오브젝트와 패널을 없앤다. 없어지기 전에 또 눌러도 한 번만.
         // SETTINGS 버튼: 누를 때마다 onOpenSettings.
+        // 그림은 StartScreenArt.Load() 로 읽는다 (아래 오버로드에 그대로 넘김).
         public void Initialize(
             UnityEngine.Canvas canvas,
             PlumSword.Core.StartMenu.StartButtonKind button,
             System.Action onStart,
             System.Action onOpenSettings);
+
+        // art 가 null 이면 그림 없이 대체 표시(단색 바탕, 영문 글자)로 만든다. 테스트가 대체 표시를 확인할 때 쓴다.
+        public void Initialize(
+            UnityEngine.Canvas canvas,
+            PlumSword.Core.StartMenu.StartButtonKind button,
+            System.Action onStart,
+            System.Action onOpenSettings,
+            StartScreenArt art);
+    }
+
+    // 시작 화면 그림 네 장 (Resources 경로 Art/StartMenu/...). 하나라도 없으면 Load 가 null.
+    public sealed class StartScreenArt
+    {
+        public const string BackgroundPath = "Art/StartMenu/title_background";
+        public const string StartButtonPath = "Art/StartMenu/button_start";
+        public const string ContinueButtonPath = "Art/StartMenu/button_continue";
+        public const string SettingsButtonPath = "Art/StartMenu/button_settings";
+
+        public StartScreenArt(UnityEngine.Sprite background, UnityEngine.Sprite startButton, UnityEngine.Sprite continueButton, UnityEngine.Sprite settingsButton);
+        public UnityEngine.Sprite Background { get; }
+        public UnityEngine.Sprite StartButton { get; }
+        public UnityEngine.Sprite ContinueButton { get; }
+        public UnityEngine.Sprite SettingsButton { get; }
+
+        public static StartScreenArt Load();
+
+        // Continue → ContinueButton, 나머지(정의되지 않은 값 포함) → StartButton.
+        public UnityEngine.Sprite StartButtonSprite(PlumSword.Core.StartMenu.StartButtonKind kind);
     }
 
     public sealed class SettingsView : MonoBehaviour
@@ -353,6 +382,11 @@ namespace PlumSword.Game.StartMenu
 - **조립**: 위 "`GameRoot.Awake` 순서"의 7~9번. 씬은 하나 그대로이고 씬·프리팹·설정 파일은 고치지 않는다.
 - **시작 화면** (`StartScreenView`): 캔버스의 **마지막 자식** "StartScreenPanel"로 만든다 (`SetAsLastSibling`).
   - 바탕: 캔버스를 꽉 채우는(앵커 (0, 0)~(1, 1)) 불투명 `Image`, RGB (0.10, 0.07, 0.12) (임시). `raycastTarget = true`라 뒤의 버튼이 눌리지 않는다.
+  - **그림이 있을 때** (2026-11-17 적용. `StartScreenArt.Load()`가 그림 네 장을 모두 찾음. 그림은 [에셋 목록](../dev/assets.md) "시작 화면"):
+    - 배경 "Background": 바탕의 자식. 제목 `매화검 키우기`가 그려진 `title_background`(1672×941) `Image`, `raycastTarget = false`. `AspectRatioFitter`(`EnvelopeParent`, 비율 = 그림 폭 ÷ 높이)로 비율을 지키며 화면을 빈틈없이 덮고, 넘치는 쪽은 가운데 기준으로 잘린다. 16:9(640×360)는 꼭 맞고, 더 긴 가로 화면(780·800·840)은 위아래가, 4:3(480)은 양옆이 조금 잘린다. 제목 글자와 두 버튼은 이 모든 비율에서 화면 안에 남고 버튼은 제목·제자와 겹치지 않는다 (플레이 모드 테스트 `Initialize_WithArt_KeepsTitleAndButtonsVisible`). 21:9에서는 제목 위 매화 가지 끝과 제자 발끝이 조금 잘린다.
+    - 제목 글자 "Title"은 **만들지 않는다** (배경 그림에 이미 있다).
+    - 시작 버튼 "StartButton": 위치 (44, −28), 크기 230×42. 그림 `StartScreenArt.StartButtonSprite(button)`: `Continue`면 `button_continue`(이어하기), 나머지는 `button_start`(게임 시작). 설정 버튼 "SettingsButton": 위치 (44, −80), 크기 230×42, 그림 `button_settings`(설정). 두 버튼 모두 `Image.preserveAspect = true`, 색 흰색, 글자 오브젝트 없음(글자가 그림에 있다). x = 44는 배경 그림의 제목 가운데에 맞춘 값이고, 버튼은 제목 아래·제자 오른쪽의 빈 곳에 있다.
+  - **그림이 없을 때** (대체 표시. 아래 세 줄은 그림 적용 전과 같다):
   - 제목 "Title" `StartMenuText.Title`: 가운데 기준 위치 (0, 70), 크기 600×48, 글자 크기 36 (임시), 매화색 RGB (1.0, 0.78, 0.86) (임시).
   - 시작 버튼 "StartButton": 위치 (0, −20), 크기 200×40 (임시), 색 RGB (0.20, 0.45, 0.25) (강화 버튼의 누를 수 있는 색과 같다). 글자 `StartMenuText.StartButtonLabel(button)`, 글자 크기 18 (임시).
   - 설정 버튼 "SettingsButton": 위치 (0, −72), 크기 200×32 (임시), 색 RGB (0.25, 0.25, 0.30) (임시). 글자 `StartMenuText.SettingsButton`, 글자 크기 14 (임시).
@@ -373,7 +407,7 @@ namespace PlumSword.Game.StartMenu
 - **연출**: 없다. 시작 화면과 게임 사이의 페이드, 버튼 소리는 없다.
 - **사람이 먼저 해 둘 것**: 금화 사양과 같다 (TMP Essentials). 없어도 예외로 게임이 멈추지 않아야 한다.
 - **사람이 확인하는 법** (에디터 플레이):
-  1. `save.dat`이 없는 채로 플레이 → 시작 화면에 `START` → 누르면 1스테이지. 바로 멈췄다가 다시 플레이하면 `CONTINUE`.
+  1. `save.dat`이 없는 채로 플레이 → 시작 화면에 `게임 시작` 그림 버튼(그림이 없으면 `START`) → 누르면 1스테이지. 바로 멈췄다가 다시 플레이하면 `이어하기`(`CONTINUE`). 아래 단계의 `START`·`CONTINUE`·`SETTINGS`도 시작 화면에서는 그림의 `게임 시작`·`이어하기`·`설정`이다. 게임 창 비율을 16:9와 더 긴 가로(예: 2400×1080)로 바꿔 제목과 버튼이 잘리지 않는지 본다.
   2. 시작 화면에서 `SETTINGS` → 슬라이더를 30·60으로 → `CLOSE` → 플레이를 멈췄다 다시 켜고 열면 30·60.
   3. 게임 중 `SETTINGS`(또는 Esc) → 창이 열린 동안 전투가 계속되는지. Esc로 닫히는지.
   4. `TO TITLE` → 시작 화면에 `CONTINUE` → 누르면 같은 스테이지 처음부터, 보상 창 없음.
@@ -398,11 +432,11 @@ namespace PlumSword.Game.StartMenu
 ## 범위 밖
 
 - 실제 소리 에셋과 재생, `AudioSource`·`AudioListener`에 음량 적용: 하지 않는다. 소리를 넣는 기능(4단계 에셋 적용 등)이 `GameRoot.Volume`을 쓴다.
-- 한글 제목과 문구, 한글 글꼴: 하지 않는다. 글꼴이 준비되면 `StartMenuText`의 글자만 바꾼다.
+- 한글 글꼴(TMP 글꼴 에셋): 하지 않는다. 시작 화면의 한글 제목과 `게임 시작`·`이어하기`·`설정`은 그림에 들어 있다 (2026-11-17). 설정 창과 게임 화면 설정 버튼, 그림이 없을 때의 대체 표시는 영문 그대로이고, 글꼴이 준비되면 `StartMenuText`의 글자만 바꾼다.
 - 다른 설정 항목(언어, 진동, 화질, 음소거 단추 등), 계정·클라우드: 하지 않는다.
 - 저장이 있는데 처음부터 새로 시작하는 버튼(저장 지우기), 시작 화면의 종료 버튼, 떠나기 확인 창("정말 나갈까요?"), 저장 실패 때 `그냥 종료`: 하지 않는다.
 - 시작 화면에서 뒤로 가기 키로 앱 끄기: 하지 않는다.
-- 시작 화면과 게임 사이의 페이드·연출, 시작 화면 배경 그림: 하지 않는다 (4단계 후보).
+- 시작 화면과 게임 사이의 페이드·연출, 버튼 누름 표시: 하지 않는다 (4단계 후보). 시작 화면 배경·버튼 그림은 2026-11-17에 적용했다 ("화면").
 - 씬 나누기: 하지 않는다 (한 씬에서 코드로 조립).
 - 같은 실행 안에서 시작 화면으로 돌아갔다가 `CONTINUE`할 때의 오프라인 보상: 하지 않는다 (오프라인 보상 사양).
 - PC 창 포커스 잃음(`OnApplicationFocus`) 처리: 하지 않는다 (오프라인 보상 사양과 같다).
