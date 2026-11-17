@@ -106,7 +106,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.Throws<ArgumentOutOfRangeException>(() => StageText.ThemedBossName(stage));
         }
 
-        [TestCase(1, "A Mount Hua disciple faces a first sparring match at Jongnam.")]
+        [TestCase(1, "Mount Hua and Jongnam disciples spar in Mount Hua's training yard.")]
         [TestCase(2, "Pass the Beggar Clan's trial and hear of the Demon Cult's movements.")]
         [TestCase(3, "Cross swords with Namgung to prepare for the battle to come.")]
         [TestCase(4, "The battle to hold back the Demon Cult's army begins.")]

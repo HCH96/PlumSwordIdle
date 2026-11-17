@@ -1,0 +1,757 @@
+fileFormatVersion: 2
+guid: 8567876bafcea984aa19b343d2073ea9
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -619019098402426235
+    second: jongnam_male_attack_0
+  - first:
+      213: 1044633607701494641
+    second: jongnam_male_attack_1
+  - first:
+      213: -5978609087653492174
+    second: jongnam_male_attack_2
+  - first:
+      213: -5831715463700877165
+    second: jongnam_male_attack_3
+  - first:
+      213: -1341347950221200731
+    second: jongnam_male_attack_4
+  - first:
+      213: -3270628668854677669
+    second: jongnam_male_attack_5
+  - first:
+      213: 732477390898058547
+    second: jongnam_male_attack_6
+  - first:
+      213: 8212889325912341335
+    second: jongnam_male_attack_7
+  - first:
+      213: -4372354459256492956
+    second: jongnam_male_attack_8
+  - first:
+      213: 5465583110384875970
+    second: jongnam_male_attack_9
+  - first:
+      213: -6526643093666787996
+    second: jongnam_male_attack_10
+  - first:
+      213: 7637484079656475714
+    second: jongnam_male_attack_11
+  - first:
+      213: -273762236519159140
+    second: jongnam_male_attack_12
+  - first:
+      213: 1976393714349523622
+    second: jongnam_male_attack_13
+  - first:
+      213: -8788351081659699622
+    second: jongnam_male_attack_14
+  - first:
+      213: 7090454699325901294
+    second: jongnam_male_attack_15
+  - first:
+      213: -7278072597186202909
+    second: jongnam_male_attack_16
+  - first:
+      213: -8170818322297303531
+    second: jongnam_male_attack_17
+  - first:
+      213: -791837588350711349
+    second: jongnam_male_attack_18
+  - first:
+      213: -5772090906390843562
+    second: jongnam_male_attack_19
+  - first:
+      213: -9004893586515114892
+    second: jongnam_male_attack_20
+  - first:
+      213: -3687067746182497236
+    second: jongnam_male_attack_21
+  - first:
+      213: 5590899752756410986
+    second: jongnam_male_attack_22
+  - first:
+      213: 2829188701468325199
+    second: jongnam_male_attack_23
+  - first:
+      213: -4112572522908878747
+    second: jongnam_male_attack_24
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: jongnam_male_attack_0
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 20
+        width: 47
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5827a82e86dc867f0800000000000000
+      internalID: -619019098402426235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_1
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 20
+        width: 47
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17b7b734bb84f7e00800000000000000
+      internalID: 1044633607701494641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_2
+      rect:
+        serializedVersion: 2
+        x: 205
+        y: 20
+        width: 47
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23acd77f5b6b70da0800000000000000
+      internalID: -5978609087653492174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_3
+      rect:
+        serializedVersion: 2
+        x: 289
+        y: 20
+        width: 54
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 390f4fafea5911fa0800000000000000
+      internalID: -5831715463700877165
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_4
+      rect:
+        serializedVersion: 2
+        x: 401
+        y: 17
+        width: 31
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a2fdd26523926de0800000000000000
+      internalID: -1341347950221200731
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_5
+      rect:
+        serializedVersion: 2
+        x: 495
+        y: 20
+        width: 42
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5f45b0ed846c92d0800000000000000
+      internalID: -3270628668854677669
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_6
+      rect:
+        serializedVersion: 2
+        x: 586
+        y: 20
+        width: 33
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 335db726e484a2a00800000000000000
+      internalID: 732477390898058547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_7
+      rect:
+        serializedVersion: 2
+        x: 678
+        y: 20
+        width: 30
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75b3a92045b0af170800000000000000
+      internalID: 8212889325912341335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_8
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 20
+        width: 47
+        height: 54
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46cebe7f8c64253c0800000000000000
+      internalID: -4372354459256492956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_9
+      rect:
+        serializedVersion: 2
+        x: 841
+        y: 14
+        width: 66
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c97dd881e6a9db40800000000000000
+      internalID: 5465583110384875970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_10
+      rect:
+        serializedVersion: 2
+        x: 933
+        y: 14
+        width: 64
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46d0c3a9fa4bc65a0800000000000000
+      internalID: -6526643093666787996
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_11
+      rect:
+        serializedVersion: 2
+        x: 1025
+        y: 33
+        width: 17
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24c10a92e4bcdf960800000000000000
+      internalID: 7637484079656475714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_12
+      rect:
+        serializedVersion: 2
+        x: 1041
+        y: 17
+        width: 40
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9aeb5342b6633cf0800000000000000
+      internalID: -273762236519159140
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_13
+      rect:
+        serializedVersion: 2
+        x: 1134
+        y: 17
+        width: 37
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a24e10ac9f8d6b10800000000000000
+      internalID: 1976393714349523622
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_14
+      rect:
+        serializedVersion: 2
+        x: 1226
+        y: 17
+        width: 37
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5ee0400141890680800000000000000
+      internalID: -8788351081659699622
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_15
+      rect:
+        serializedVersion: 2
+        x: 1318
+        y: 17
+        width: 36
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee9c1517bfa566260800000000000000
+      internalID: 7090454699325901294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_16
+      rect:
+        serializedVersion: 2
+        x: 1410
+        y: 17
+        width: 35
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e23633a8871ffa90800000000000000
+      internalID: -7278072597186202909
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_17
+      rect:
+        serializedVersion: 2
+        x: 1496
+        y: 17
+        width: 40
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51e4737d60c6b9e80800000000000000
+      internalID: -8170818322297303531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_18
+      rect:
+        serializedVersion: 2
+        x: 1580
+        y: 18
+        width: 49
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc9cd82a8e3d205f0800000000000000
+      internalID: -791837588350711349
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_19
+      rect:
+        serializedVersion: 2
+        x: 1669
+        y: 19
+        width: 53
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65faf4907e965efa0800000000000000
+      internalID: -5772090906390843562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_20
+      rect:
+        serializedVersion: 2
+        x: 1764
+        y: 20
+        width: 51
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 474c2973ef0380380800000000000000
+      internalID: -9004893586515114892
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_21
+      rect:
+        serializedVersion: 2
+        x: 1860
+        y: 20
+        width: 48
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2cfdf57b67e4dcc0800000000000000
+      internalID: -3687067746182497236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_22
+      rect:
+        serializedVersion: 2
+        x: 1953
+        y: 20
+        width: 47
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6a7dd904bdd69d40800000000000000
+      internalID: 5590899752756410986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_23
+      rect:
+        serializedVersion: 2
+        x: 2045
+        y: 20
+        width: 47
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f457191622c434720800000000000000
+      internalID: 2829188701468325199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_male_attack_24
+      rect:
+        serializedVersion: 2
+        x: 2137
+        y: 20
+        width: 47
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 568fbfa64153de6c0800000000000000
+      internalID: -4112572522908878747
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable: {}
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

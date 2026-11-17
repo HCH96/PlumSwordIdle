@@ -1,0 +1,177 @@
+{
+  "group_id": "3f8c0cfa-d4c3-4e92-b1bc-3c2f75fad726",
+  "states": [
+    {
+      "character": {
+        "id": "0db24a81-6d08-4887-8eaf-504bc24d0817",
+        "name": "Idle",
+        "prompt": "Honorable elderly Jongnam martial sword master, matching the concept: white long hair in topknot, long white pointed beard and moustache, ivory layered robes, navy crossed lapels and sash, cloud ornament at belt, carries a straight sword. Compact SD chibi game sprite with large head and readable silhouette, matching the reference disciple pixel style. Taller slender stature, not wider. Calm combat pose.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-17T18:12:16.182405+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "Elder_snowstorm_skill_24f": {
+            "south-west": [
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_000.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_001.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_002.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_003.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_004.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_005.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_006.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_007.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_008.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_009.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_010.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_011.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_012.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_013.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_014.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_015.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_016.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_017.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_018.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_019.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_020.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_021.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_022.png",
+              "Idle/animations/Elder_snowstorm_skill_24f/south-west/frame_023.png"
+            ]
+          },
+          "Elder_walk_loop_24f": {
+            "south-west": [
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_000.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_001.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_002.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_003.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_004.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_005.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_006.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_007.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_008.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_009.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_010.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_011.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_012.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_013.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_014.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_015.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_016.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_017.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_018.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_019.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_020.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_021.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_022.png",
+              "Idle/animations/Elder_walk_loop_24f/south-west/frame_023.png"
+            ]
+          },
+          "Elder_sword_attack_retry_24f": {
+            "south-west": [
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_000.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_001.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_002.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_003.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_004.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_005.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_006.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_007.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_008.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_009.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_010.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_011.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_012.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_013.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_014.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_015.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_016.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_017.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_018.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_019.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_020.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_021.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_022.png",
+              "Idle/animations/Elder_sword_attack_retry_24f/south-west/frame_023.png"
+            ]
+          },
+          "Elder_sword_attack_24f": {
+            "south-west": [
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_000.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_001.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_002.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_003.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_004.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_005.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_006.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_007.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_008.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_009.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_010.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_011.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_012.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_013.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_014.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_015.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_016.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_017.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_018.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_019.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_020.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_021.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_022.png",
+              "Idle/animations/Elder_sword_attack_24f/south-west/frame_023.png"
+            ]
+          },
+          "Elder_idle_loop_24f": {
+            "south-west": [
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_000.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_001.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_002.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_003.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_004.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_005.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_006.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_007.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_008.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_009.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_010.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_011.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_012.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_013.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_014.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_015.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_016.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_017.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_018.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_019.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_020.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_021.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_022.png",
+              "Idle/animations/Elder_idle_loop_24f/south-west/frame_023.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-17T18:27:01.868011"
+}

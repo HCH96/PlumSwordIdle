@@ -27,5 +27,11 @@ namespace PlumSword.Game.Combat
 
         /// <summary>피격 번쩍임이 남은 시간(초). 0 이하면 번쩍이지 않는다.</summary>
         public float FlashRemaining;
+
+        public JongnamSprites Jongnam;
+        public double PreviousPosition;
+        public double PreviousCooldown;
+        public float WalkGrace;
+        public float AnimationTime;
     }
 }

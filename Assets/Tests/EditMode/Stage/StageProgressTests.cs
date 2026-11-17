@@ -109,18 +109,18 @@ namespace PlumSword.Core.Tests.Stage
         // Begin
 
         [Test]
-        public void Begin_MinRandom_PlacesTenNormalEnemiesAndNotifies()
+        public void Begin_MinRandom_PlacesTwoNormalEnemiesAndNotifies()
         {
             var stage = Create();
 
             stage.Begin();
 
             Assert.That(stage.HasBegun, Is.True);
-            AssertEnemies(30, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0);
+            AssertEnemies(30, 5.0, 7.0);
             Assert.That(_events, Is.EqualTo(new[] { "StageStarted:1", "Changed" }));
-            Assert.That(_battle.Paused, Is.False);
+            Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.False);
-            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
             Assert.That(stage.DefeatedNormalCount, Is.EqualTo(0));
         }
 
@@ -132,7 +132,7 @@ namespace PlumSword.Core.Tests.Stage
             stage.Begin();
             stage.Begin();
 
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             Assert.That(_events, Is.EqualTo(new[] { "StageStarted:1", "Changed" }));
             Assert.That(stage.HasBegun, Is.True);
         }
@@ -144,18 +144,18 @@ namespace PlumSword.Core.Tests.Stage
 
             stage.Begin();
 
-            AssertEnemies(50, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0);
+            AssertEnemies(50, 5.0, 7.0);
             Assert.That(_events, Is.EqualTo(new[] { "StageStarted:3", "Changed" }));
         }
 
         [Test]
-        public void Begin_MaxRandom_PlacesThreeThreeThreeOneGroups()
+        public void Begin_MaxRandom_PlacesThreeEnemiesInFirstGroup()
         {
             var stage = Create(new MaxRandom());
 
             stage.Begin();
 
-            AssertEnemies(30, 5.7, 6.0, 6.3, 8.7, 9.0, 9.3, 11.7, 12.0, 12.3, 15.0);
+            AssertEnemies(30, 4.0, 6.0, 8.0);
         }
 
         // Tick
@@ -165,14 +165,16 @@ namespace PlumSword.Core.Tests.Stage
         {
             var stage = Create();
             stage.Begin();
+            stage.Tick(StageProgress.SubstageIntroSeconds);
+            _events.Clear();
 
             stage.Tick(1.0);
             stage.Tick(0);
 
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
             Assert.That(stage.StageNumber, Is.EqualTo(1));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
-            Assert.That(_events, Is.EqualTo(new[] { "StageStarted:1", "Changed" }));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
+            Assert.That(_events, Is.Empty);
         }
 
         [TestCase(-0.1)]

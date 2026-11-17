@@ -16,7 +16,7 @@ namespace PlumSword.Game.StatUpgrade
     public sealed class StatUpgradeView : MonoBehaviour
     {
         // 위치·크기·글자 크기·색은 임시값 (docs/spec/stat_upgrade.md "화면").
-        private static readonly Vector2 ButtonSize = new Vector2(200f, 88f);
+        private static readonly Vector2 ButtonSize = new Vector2(200f, 48f);
         private const float LabelFontSize = 16f;
         private static readonly Color EnabledButtonColor = new Color(0.20f, 0.45f, 0.25f);
         private static readonly Color EnabledLabelColor = Color.white;
@@ -38,6 +38,10 @@ namespace PlumSword.Game.StatUpgrade
             public Image Image;
             public Button Button;
             public TextMeshProUGUI Label;
+            public TextMeshProUGUI NameLabel, LevelLabel, CostLabel;
+            public Image Icon, Coin;
+            public StatUpgradeButtonEffect Effect;
+            public bool HasArtwork;
         }
 
         private PlumSword.Core.StatUpgrade.StatUpgrades _upgrades;
@@ -89,13 +93,61 @@ namespace PlumSword.Game.StatUpgrade
             button.transition = Selectable.Transition.None;
             button.onClick.AddListener(() => OnClicked(stat));
 
-            return new StatButton
+            var statButton = new StatButton
             {
                 Stat = stat,
                 Image = image,
                 Button = button,
-                Label = CreateLabel(rect),
             };
+            var frame = Resources.Load<Sprite>("Art/UI/StatUpgrade/button");
+            var icon = Resources.Load<Sprite>("Art/UI/StatUpgrade/" +
+                (stat == StatType.Attack ? "attack" : stat == StatType.Health ? "health" : "speed"));
+            var coin = Resources.Load<Sprite>("Art/UI/StatUpgrade/coin");
+            if (frame != null && icon != null && coin != null)
+            {
+                statButton.HasArtwork = true;
+                image.color = Color.clear;
+                var visualImage = CreateArt(rect, "Visual", frame, Vector2.zero, ButtonSize);
+                visualImage.preserveAspect = false;
+                var visual = (RectTransform)visualImage.transform;
+                visual.pivot = new Vector2(.5f, .5f);
+                visual.anchoredPosition = ButtonSize * .5f;
+                statButton.Image = visualImage;
+                statButton.Icon = CreateArt(visual, "Icon", icon, new Vector2(9, 8), new Vector2(32, 32));
+                statButton.Coin = CreateArt(visual, "Coin", coin, new Vector2(145, 15), new Vector2(17, 17));
+                statButton.NameLabel = CreateArtLabel(visual, "Name", new Vector2(48, 23), new Vector2(82, 18), 15);
+                statButton.LevelLabel = CreateArtLabel(visual, "Level", new Vector2(48, 8), new Vector2(82, 15), 11);
+                statButton.CostLabel = CreateArtLabel(visual, "Cost", new Vector2(164, 11), new Vector2(31, 25), 12);
+                statButton.Effect = buttonObject.AddComponent<StatUpgradeButtonEffect>();
+                statButton.Effect.Initialize(button, visual, visualImage, statButton.Icon, statButton.LevelLabel);
+            }
+            else statButton.Label = CreateLabel(rect);
+            return statButton;
+        }
+
+        private static Image CreateArt(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
+        {
+            var rect = (RectTransform)new GameObject(name, typeof(RectTransform)).transform;
+            rect.SetParent(parent, false); rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.zero;
+            rect.anchoredPosition = position; rect.sizeDelta = size;
+            var image = rect.gameObject.AddComponent<Image>();
+            image.sprite = sprite; image.preserveAspect = true; image.raycastTarget = false;
+            return image;
+        }
+
+        private TextMeshProUGUI CreateArtLabel(RectTransform parent, string name, Vector2 position, Vector2 size, float fontSize)
+        {
+            try
+            {
+                var rect = (RectTransform)new GameObject(name, typeof(RectTransform)).transform;
+                rect.SetParent(parent, false); rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.zero;
+                rect.anchoredPosition = position; rect.sizeDelta = size;
+                var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
+                label.fontSize = fontSize; label.enableAutoSizing = true; label.fontSizeMin = 6; label.fontSizeMax = fontSize;
+                label.alignment = TextAlignmentOptions.MidlineLeft; label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.raycastTarget = false; return label;
+            }
+            catch (Exception e) { WarnOnce(e); return null; }
         }
 
         private TextMeshProUGUI CreateLabel(RectTransform parent)
@@ -126,7 +178,9 @@ namespace PlumSword.Game.StatUpgrade
         private void OnClicked(StatType stat)
         {
             if (_upgrades == null) return;
-            _upgrades.TryUpgrade(stat);
+            if (_upgrades.TryUpgrade(stat))
+                foreach (var item in _buttons)
+                    if (item.Stat == stat) { item.Effect?.PlaySuccess(); break; }
         }
 
         private void OnBalanceChanged(long balance)
@@ -162,7 +216,27 @@ namespace PlumSword.Game.StatUpgrade
             if (statButton.Button != null) statButton.Button.interactable = canUpgrade;
             if (statButton.Image != null)
             {
-                statButton.Image.color = canUpgrade ? EnabledButtonColor : DisabledButtonColor;
+                statButton.Image.color = statButton.HasArtwork
+                    ? (canUpgrade ? new Color(1f, 1f, 1f, .86f) : new Color(.55f, .55f, .55f, .86f))
+                    : (canUpgrade ? EnabledButtonColor : DisabledButtonColor);
+            }
+
+            if (statButton.HasArtwork)
+            {
+                var tint = canUpgrade ? Color.white : DisabledLabelColor;
+                if (statButton.Effect != null) statButton.Effect.SetEnabledAppearance(canUpgrade);
+                bool max = _upgrades.IsMaxLevel(stat);
+                if (statButton.Icon != null) statButton.Icon.color = tint;
+                if (statButton.Coin != null) { statButton.Coin.color = tint; statButton.Coin.gameObject.SetActive(!max); }
+                if (statButton.NameLabel != null) { statButton.NameLabel.text = StatUpgradeText.Name(stat); statButton.NameLabel.color = tint; }
+                if (statButton.LevelLabel != null) { statButton.LevelLabel.text = StatUpgradeText.Level(_upgrades.GetLevel(stat)); statButton.LevelLabel.color = tint; }
+                if (statButton.CostLabel != null)
+                {
+                    var cost = StatUpgradeText.Cost(_upgrades.GetCost(stat), max);
+                    statButton.CostLabel.text = max ? cost : cost.Substring(2);
+                    statButton.CostLabel.color = tint;
+                }
+                return;
             }
 
             if (statButton.Label == null) return;

@@ -11,6 +11,7 @@ namespace PlumSword.Game.StartMenu
         private GameObject panel, toTitle, quit, failure;
         private Slider bgmSlider, sfxSlider;
         private TextMeshProUGUI bgmLabel, sfxLabel;
+        private TextMeshProUGUI bgmValue, sfxValue;
         private VolumeSettings volume;
         private LeaveGame leaveGame;
         private Action saveVolume;
@@ -32,8 +33,9 @@ namespace PlumSword.Game.StartMenu
 
             var gameButton = Button("GameSettingsButton", canvas.transform, new Vector2(8, -62), new Vector2(72, 20), new Color(.25f, .25f, .30f), StartMenuText.SettingsButton, 12);
             var gameRect = (RectTransform)gameButton.transform;
-            gameRect.anchorMin = gameRect.anchorMax = gameRect.pivot = new Vector2(0, 1);
-            gameRect.anchoredPosition = new Vector2(8, -62);
+            gameRect.anchorMin = gameRect.anchorMax = Vector2.zero;
+            gameRect.pivot = new Vector2(1, 0);
+            gameRect.anchoredPosition = new Vector2(632, 60);
             gameButton.onClick.AddListener(() => Open(SettingsMode.InGame));
 
             panel = new GameObject("SettingsPanel", typeof(RectTransform), typeof(Image));
@@ -60,7 +62,13 @@ namespace PlumSword.Game.StartMenu
             AddText(failRect, StartMenuText.LeaveFailedMessage, 12, false, new Color(1, .35f, .35f));
             titleButton.onClick.AddListener(() => Leave(onReturnToTitle));
             quitButton.onClick.AddListener(() => Leave(onQuit));
-            Button("CloseButton", window, new Vector2(0, -86), new Vector2(120, 28), new Color(.25f, .25f, .30f), StartMenuText.CloseButton, 14).onClick.AddListener(Close);
+            var closeButton = Button("CloseButton", window, new Vector2(0, -86), new Vector2(120, 28), new Color(.25f, .25f, .30f), StartMenuText.CloseButton, 14);
+            closeButton.onClick.AddListener(Close);
+            ApplyArtwork(gameButton, window, titleButton, quitButton, closeButton);
+            foreach (var item in new[] { gameButton, titleButton, quitButton, closeButton })
+                item.gameObject.AddComponent<SettingsControlEffect>().InitializeButton(item);
+            foreach (var slider in new[] { bgmSlider, sfxSlider })
+                slider.gameObject.AddComponent<SettingsControlEffect>().InitializeSlider(slider);
             toTitle.SetActive(false); quit.SetActive(false); failure.SetActive(false);
             panel.SetActive(false);
         }
@@ -94,6 +102,83 @@ namespace PlumSword.Game.StartMenu
         {
             if (bgmLabel != null) bgmLabel.text = StartMenuText.BgmLine(volume.Bgm);
             if (sfxLabel != null) sfxLabel.text = StartMenuText.SfxLine(volume.Sfx);
+            if (bgmValue != null) bgmValue.text = volume.Bgm.ToString();
+            if (sfxValue != null) sfxValue.text = volume.Sfx.ToString();
+        }
+
+        private void ApplyArtwork(Button gameButton, RectTransform window, Button titleButton, Button quitButton, Button closeButton)
+        {
+            var background = Art("window");
+            var track = Art("slider_track");
+            var handle = Art("slider_handle");
+            var bgmArt = Art("label_bgm");
+            var sfxArt = Art("label_sfx");
+            var titleArt = Art("button_title");
+            var quitArt = Art("button_quit");
+            var closeArt = Art("button_close");
+            var settingsArt = Art("button_settings");
+            if (settingsArt != null)
+            {
+                ((RectTransform)gameButton.transform).sizeDelta = new Vector2(112, 32);
+                SetButtonArt(gameButton, settingsArt);
+            }
+            if (background == null || track == null || handle == null || bgmArt == null || sfxArt == null
+                || titleArt == null || quitArt == null || closeArt == null) return;
+
+            window.sizeDelta = new Vector2(350, 233.33f);
+            var windowImage = window.GetComponent<Image>();
+            windowImage.sprite = background; windowImage.color = Color.white;
+            window.Find("Title").gameObject.SetActive(false);
+            if (bgmLabel != null) bgmLabel.color = Color.clear;
+            if (sfxLabel != null) sfxLabel.color = Color.clear;
+            ArtImage("BgmArt", window, new Vector2(-91, 40), new Vector2(54, 15), bgmArt);
+            ArtImage("SfxArt", window, new Vector2(-91, 10), new Vector2(42, 15), sfxArt);
+            bgmValue = Text("BgmValue", window, new Vector2(112, 40), new Vector2(30, 18), volume.Bgm.ToString(), 12);
+            sfxValue = Text("SfxValue", window, new Vector2(112, 10), new Vector2(30, 18), volume.Sfx.ToString(), 12);
+            StyleSlider(bgmSlider, track, handle, new Vector2(15, 40));
+            StyleSlider(sfxSlider, track, handle, new Vector2(15, 10));
+            PlaceButton(titleButton, new Vector2(-69, -30), new Vector2(120, 28), titleArt);
+            PlaceButton(quitButton, new Vector2(69, -30), new Vector2(120, 28), quitArt);
+            PlaceButton(closeButton, new Vector2(0, -68), new Vector2(108, 26), closeArt);
+            var fail = (RectTransform)failure.transform;
+            fail.anchoredPosition = new Vector2(0, -52);
+        }
+
+        private static Sprite Art(string name) => Resources.Load<Sprite>("Art/UI/Settings/" + name);
+
+        private static void ArtImage(string name, Transform parent, Vector2 position, Vector2 size, Sprite sprite)
+        {
+            var image = Rect(name, parent, position, size).gameObject.AddComponent<Image>();
+            image.sprite = sprite; image.preserveAspect = true; image.raycastTarget = false;
+        }
+
+        private static void SetButtonArt(Button button, Sprite sprite)
+        {
+            var image = button.GetComponent<Image>();
+            image.sprite = sprite; image.color = Color.white; image.preserveAspect = true;
+            var text = button.transform.Find("Text");
+            if (text != null) text.gameObject.SetActive(false);
+        }
+
+        private static void PlaceButton(Button button, Vector2 position, Vector2 size, Sprite sprite)
+        {
+            var rect = (RectTransform)button.transform;
+            rect.anchoredPosition = position; rect.sizeDelta = size;
+            SetButtonArt(button, sprite);
+        }
+
+        private static void StyleSlider(Slider slider, Sprite track, Sprite handle, Vector2 position)
+        {
+            var rect = (RectTransform)slider.transform;
+            rect.anchoredPosition = position; rect.sizeDelta = new Vector2(130, 14);
+            var background = slider.GetComponent<Image>();
+            background.sprite = track; background.color = Color.white; background.preserveAspect = true;
+            var fillArea = (RectTransform)rect.Find("Fill Area");
+            fillArea.offsetMin = new Vector2(4, 3); fillArea.offsetMax = new Vector2(-4, -3);
+            slider.fillRect.GetComponent<Image>().color = new Color(.84f, .48f, .55f);
+            var handleImage = slider.handleRect.GetComponent<Image>();
+            handleImage.sprite = handle; handleImage.preserveAspect = true; handleImage.color = Color.white;
+            slider.handleRect.sizeDelta = new Vector2(17, 18);
         }
 
         private static RectTransform Rect(string name, Transform parent, Vector2 position, Vector2 size)

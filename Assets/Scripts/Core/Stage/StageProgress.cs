@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PlumSword.Core.Combat;
 using PlumSword.Core.Currency;
 using PlumSword.Core.StatUpgrade;
@@ -16,11 +17,13 @@ namespace PlumSword.Core.Stage
 
         /// <summary>스테이지 소개를 보여 주는 길이 (초, 임시).</summary>
         public const double IntroSeconds = 3.0;
+        public const double SubstageIntroSeconds = 1.2;
 
         private readonly Wallet _wallet;
         private readonly StatUpgrades _upgrades;
         private readonly Battle _battle;
         private readonly Random _random;
+        private readonly HashSet<Enemy> _substageEnemies = new HashSet<Enemy>();
 
 /// <summary>페이드 시간 비교의 허용 오차. 페이드 시간 ≥ FadeSeconds − FadeTolerance 이면 끝난 것으로 본다.</summary>
         private const double FadeTolerance = 1e-9;
@@ -91,11 +94,13 @@ namespace PlumSword.Core.Stage
 
         /// <summary>Phase == StagePhase.Intro.</summary>
         public bool IsIntroShowing => Phase == StagePhase.Intro;
+        public bool IsSubstageIntroShowing => Phase == StagePhase.SubstageIntro;
+        public int SubstageNumber { get; private set; } = 1;
 
         /// <summary>Begin 이 불린 뒤 true.</summary>
         public bool HasBegun { get; private set; }
 
-        /// <summary>0 이상 10 이하.</summary>
+        /// <summary>이번 큰 스테이지에서 처치한 일반 상대 수.</summary>
         public int DefeatedNormalCount { get; private set; }
 
         /// <summary>이번 스테이지에서 낸 보스. 없으면 null.</summary>
@@ -103,9 +108,9 @@ namespace PlumSword.Core.Stage
 
         public bool IsBossActive => Boss != null;
 
-        /// <summary>Boss 가 null 이면 처치 수 / 10.0, 아니면 보스 체력 비율.</summary>
+        /// <summary>보스 전에는 완료한 일반 구간 / 6, 보스전에는 보스 체력 비율.</summary>
         public double BarRatio => Boss == null
-            ? DefeatedNormalCount / (double)StageLayout.NormalCount
+            ? (SubstageNumber - 1) / (double)StageLayout.NormalSubstageCount
             : CombatLayout.HealthRatio(Boss.Health, Boss.MaxHealth);
 
         /// <summary>
@@ -129,8 +134,8 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// 첫 스테이지를 배치한다 (battle.Reset 뒤 일반 몬스터 10 마리).
-        /// StageStarted, Changed 를 순서대로 보낸다. 페이드·멈춤·잠금은 없다. 두 번째부터는 아무 일도 없다.
+        /// 첫 무리를 배치하고 소개 중 전투를 멈춘다. StageStarted, Changed 를 순서대로 보낸다.
+        /// 두 번째부터는 아무 일도 없다.
         /// </summary>
         public void Begin()
         {
@@ -146,6 +151,7 @@ namespace PlumSword.Core.Stage
                 _introElapsed = 0.0;
                 _battle.SetPaused(true);
             }
+            else BeginSubstageIntro();
             HasBegun = true;
             StageStarted?.Invoke(StageNumber);
             Changed?.Invoke();
@@ -168,7 +174,7 @@ namespace PlumSword.Core.Stage
                 return;
             }
 
-            if (Phase == StagePhase.Intro)
+            if (Phase == StagePhase.Intro || Phase == StagePhase.SubstageIntro)
                 _introElapsed += deltaSeconds;
             else
                 _fadeElapsed += deltaSeconds;
@@ -197,8 +203,7 @@ namespace PlumSword.Core.Stage
                 }
                 else
                 {
-                    Phase = StagePhase.Playing;
-                    _battle.SetPaused(false);
+                    BeginSubstageIntro();
                 }
                 Changed?.Invoke();
             }
@@ -206,11 +211,23 @@ namespace PlumSword.Core.Stage
             // 3. 소개를 끝낸다. 2번에서 막 들어온 소개는 시간이 0 이라 같은 Tick 에서 끝나지 않는다.
             if (Phase == StagePhase.Intro && _introElapsed >= IntroSeconds - FadeTolerance)
             {
+                BeginSubstageIntro();
+                Changed?.Invoke();
+            }
+            else if (Phase == StagePhase.SubstageIntro && _introElapsed >= SubstageIntroSeconds - FadeTolerance)
+            {
                 Phase = StagePhase.Playing;
                 _introElapsed = 0.0;
                 _battle.SetPaused(false);
                 Changed?.Invoke();
             }
+        }
+
+        private void BeginSubstageIntro()
+        {
+            Phase = StagePhase.SubstageIntro;
+            _introElapsed = 0.0;
+            _battle.SetPaused(true);
         }
 
         /// <summary>
@@ -225,22 +242,30 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// 스테이지 배치: battle.Reset → 무리 구성 → 좌표마다 일반 몬스터 추가 → 처치 수·보스 초기화.
+        /// 큰 스테이지 배치: battle.Reset → 처치 수·보스 초기화 → 첫 무리 배치.
         /// Begin 과 가려진 순간의 교체(Tick)가 함께 쓴다.
         /// </summary>
         private void PlaceStage()
         {
             _battle.Reset();
 
-            int[] groups = StageLayout.RollGroups(_random);
-            double[] positions = StageLayout.Positions(groups);
-            for (int i = 0; i < positions.Length; i++)
-            {
-                _battle.AddEnemy(EnemyKind.Normal, StageNumber, positions[i]);
-            }
-
             DefeatedNormalCount = 0;
             Boss = null;
+            SubstageNumber = 1;
+            PlaceSubstage();
+        }
+
+        private void PlaceSubstage()
+        {
+            _substageEnemies.Clear();
+            if (SubstageNumber > StageLayout.NormalSubstageCount)
+            {
+                Boss = _battle.AddEnemy(EnemyKind.Boss, StageNumber, _battle.DisciplePosition + StageLayout.BossDistance);
+                return;
+            }
+            var positions = StageLayout.SubstagePositions(_random, _battle.DisciplePosition + StageLayout.FirstGroupPosition);
+            foreach (double position in positions)
+                _substageEnemies.Add(_battle.AddEnemy(EnemyKind.Normal, StageNumber, position));
         }
 
         /// <summary>Begin 전이거나 Playing 이 아니면 전투의 알림을 모두 무시한다.</summary>
@@ -256,7 +281,7 @@ namespace PlumSword.Core.Stage
             // 적은 Kind 로만 가린다 (누가 추가했는지는 보지 않는다).
             if (enemy.Kind == EnemyKind.Normal)
             {
-                OnNormalDefeated();
+                OnNormalDefeated(enemy);
             }
 
             else if (enemy.Kind == EnemyKind.Boss)
@@ -296,22 +321,16 @@ namespace PlumSword.Core.Stage
             _upgrades.SetLocked(true);
         }
 
-        /// <summary>일반 몬스터 한 마리: 금화 → 처치 수 → (열 번째면) 보스 등장 → Changed.</summary>
-        private void OnNormalDefeated()
+        /// <summary>일반 상대 보상·처치 수를 갱신하고 현재 무리를 모두 이기면 다음 구간을 시작한다.</summary>
+        private void OnNormalDefeated(Enemy enemy)
         {
             _wallet.Add(StageRewards.NormalGold(StageNumber));
-
-            if (DefeatedNormalCount < StageLayout.NormalCount)
+            DefeatedNormalCount++;
+            if (_substageEnemies.Remove(enemy) && _substageEnemies.Count == 0 && !_battle.IsDiscipleDefeated)
             {
-                DefeatedNormalCount++;
-
-                if (DefeatedNormalCount == StageLayout.NormalCount && !_battle.IsDiscipleDefeated)
-                {
-                    Boss = _battle.AddEnemy(
-                        EnemyKind.Boss,
-                        StageNumber,
-                        _battle.DisciplePosition + StageLayout.BossDistance);
-                }
+                SubstageNumber++;
+                PlaceSubstage();
+                BeginSubstageIntro();
             }
 
             Changed?.Invoke();

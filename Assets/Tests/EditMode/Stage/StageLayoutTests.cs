@@ -17,8 +17,8 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(StageLayout.NormalCount, Is.EqualTo(10));
             Assert.That(StageLayout.MaxGroupSize, Is.EqualTo(3));
             Assert.That(StageLayout.FirstGroupPosition, Is.EqualTo(6.0).Within(Tolerance));
-            Assert.That(StageLayout.GroupSpacing, Is.EqualTo(3.0).Within(Tolerance));
-            Assert.That(StageLayout.InGroupSpacing, Is.EqualTo(0.3).Within(Tolerance));
+            Assert.That(StageLayout.GroupSpacing, Is.EqualTo(18.0).Within(Tolerance));
+            Assert.That(StageLayout.InGroupSpacing, Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(StageLayout.BossDistance, Is.EqualTo(18.0).Within(Tolerance));
         }
 
@@ -69,7 +69,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             double[] positions = StageLayout.Positions(new[] { 2, 1, 3, 1, 3 });
 
-            AssertPositions(positions, 5.85, 6.15, 9.0, 11.7, 12.0, 12.3, 15.0, 17.7, 18.0, 18.3);
+            AssertPositions(positions, 5.0, 7.0, 24.0, 40.0, 42.0, 44.0, 60.0, 76.0, 78.0, 80.0);
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             double[] positions = StageLayout.Positions(new[] { 3, 3, 3, 1 });
 
-            AssertPositions(positions, 5.7, 6.0, 6.3, 8.7, 9.0, 9.3, 11.7, 12.0, 12.3, 15.0);
+            AssertPositions(positions, 4.0, 6.0, 8.0, 22.0, 24.0, 26.0, 40.0, 42.0, 44.0, 60.0);
         }
 
         [Test]
@@ -85,7 +85,19 @@ namespace PlumSword.Core.Tests.Stage
         {
             double[] positions = StageLayout.Positions(Enumerable.Repeat(1, 10).ToArray());
 
-            AssertPositions(positions, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0);
+            AssertPositions(positions, 6.0, 24.0, 42.0, 60.0, 78.0, 96.0, 114.0, 132.0, 150.0, 168.0);
+        }
+
+        [Test]
+        public void Positions_AdjacentFullGroups_NextGroupMayAppearOnWideScreen()
+        {
+            double[] positions = StageLayout.Positions(new[] { 3, 3 });
+            // 20:9에서는 화면 폭 25유닛, 카메라는 제자보다 오른쪽 4유닛이다.
+            // 가장 오른쪽 상대와 붙은 제자의 위치를 보수적으로 그 상대 위치로 잡는다.
+            double screenRight = positions[2] + 4.0 + 12.5;
+            // 적 표시 오프셋 -1.85, 가장 넓은 공격 칸의 절반(96px × 1.5 / 32 / 2).
+            double nextGroupLeft = positions[3] - 1.85 - (96.0 * 1.5 / 32.0 / 2.0);
+            Assert.That(nextGroupLeft, Is.LessThan(screenRight));
         }
 
         [Test]

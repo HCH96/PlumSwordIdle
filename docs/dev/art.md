@@ -54,7 +54,7 @@
 
 ## 그림체와 AI 제작
 
-[제자 기준 아트 스타일](art_style.md)을 따른다. 제자 SD의 살짝 위에서 보는 3/4 시점과 기본 스프라이트를 새 에셋의 공통 시각 기준으로 쓴다. 기존 48×48 등 이 문서와 에셋 목록의 캔버스 수치는 게임 적용 전 계획이며, 제자 원본의 64×64 기본 그림 및 76×76 공격 프레임과의 차이를 적용 전에 결정한다.
+[제자 기준 아트 스타일](art_style.md)을 따른다. 제자 SD의 살짝 위에서 보는 3/4 시점과 기본 스프라이트를 새 에셋의 공통 시각 기준으로 쓴다. 이미 적용한 제자와 종남 일반 상대의 실제 크기는 [에셋 목록](assets.md)을 따르고, 아직 만들지 않은 에셋의 크기는 위 계획값을 기준으로 정한다.
 
 **에셋 생성은 루프 밖에서 사람과 함께 한다.** 사람의 참고 이미지 → 일러스트 시안 → PixelLab 기본 스프라이트 → 사람의 확정 → PixelLab 애니메이션 → 사람의 확정 순서와 보관 방법은 스타일 문서를 따른다. 기존 제자 기준 이미지가 있으므로 새 제자 기준 프레임을 먼저 만들 필요는 없다.
 
@@ -68,6 +68,6 @@
 | Compression | None |
 | Generate Mip Maps | 끔 |
 
-**예외: 시작 화면 그림** (`Assets/Resources/Art/StartMenu/`). 고해상도 AI 시안을 원본 크기로 넣고 화면에서 정수배가 아니게 줄여 보이므로, Filter Mode = Trilinear, Generate Mip Maps = 켬, 최대 크기 2048로 가져온다 (나머지는 위 표와 같다). Point로 줄이면 제목과 버튼 글자의 선이 깨진다. 픽셀 크기가 다른 에셋과 같지 않은 것은 [assets.md](assets.md) "시작 화면"에 적었다.
+**예외: 시작 화면과 설정·강화 UI 그림** (`Assets/Resources/Art/StartMenu/`, `Assets/Resources/Art/UI/Settings/`, `Assets/Resources/Art/UI/StatUpgrade/`). 고해상도 AI 시안을 화면에서 정수배가 아니게 줄여 보이므로, Filter Mode = Trilinear, Generate Mip Maps = 켬으로 가져온다. Point로 줄이면 제목과 버튼 글자의 선이 깨진다. 시작 화면의 최대 크기는 2048, 설정·강화 UI는 4096이다.
 
 가져오기 설정은 `.meta` 파일에 저장된다. 루프 안의 에이전트는 `.meta`의 가져오기 설정을 직접 고치지 않는다. `Assets/Resources/Art/` 아래 그림은 `Assets/Editor/PixelArtTextureImporter.cs`(에셋 후처리기)가 가져올 때 위 값(시작 화면 그림은 위 예외)으로 맞춘다 (스프라이트 모드 Single, 9-slice 테두리는 건드리지 않음). 애니메이션 시트의 프레임 자르기와 피벗은 화면 코드가 한다.

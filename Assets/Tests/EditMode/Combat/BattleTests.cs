@@ -72,7 +72,7 @@ namespace PlumSword.Core.Tests.Combat
             Assert.AreEqual(10L, Battle.DiscipleBaseAttack);
             Assert.AreEqual(100L, Battle.DiscipleBaseMaxHealth);
             Assert.AreEqual(1.0, Battle.DiscipleBaseAttackInterval, 1e-12);
-            Assert.AreEqual(3.6, Battle.DiscipleMoveSpeed, 1e-12);
+            Assert.AreEqual(6.48, Battle.DiscipleMoveSpeed, 1e-12);
             Assert.AreEqual(1.0, Battle.DiscipleAttackRange, 1e-12);
         }
 
@@ -95,10 +95,10 @@ namespace PlumSword.Core.Tests.Combat
         public void Step_NoEnemies_DiscipleAdvances()
         {
             Steps(1);
-            Assert.AreEqual(0.072, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.1296, _battle.DisciplePosition, Tolerance);
 
             Steps(49);
-            Assert.AreEqual(3.6, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(6.48, _battle.DisciplePosition, Tolerance);
             Assert.AreEqual(0.0, _battle.DiscipleAttackCooldown, Tolerance);
         }
 
@@ -161,10 +161,10 @@ namespace PlumSword.Core.Tests.Combat
         public void AddEnemy_BehindAdvancedDisciple_ThrowsButSamePositionIsAllowed()
         {
             Steps(50);
-            Assert.AreEqual(3.6, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(6.48, _battle.DisciplePosition, Tolerance);
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => _battle.AddEnemy(EnemyKind.Normal, 1, 3.5));
-            Assert.DoesNotThrow(() => _battle.AddEnemy(EnemyKind.Normal, 1, 3.6));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _battle.AddEnemy(EnemyKind.Normal, 1, 6.4));
+            Assert.DoesNotThrow(() => _battle.AddEnemy(EnemyKind.Normal, 1, 6.48));
         }
 
         // ---- 이동 (적 있음) ----
@@ -176,7 +176,7 @@ namespace PlumSword.Core.Tests.Combat
             Steps(1);
 
             Assert.AreEqual(10.0, enemy.Position, Tolerance);
-            Assert.AreEqual(0.072, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.1296, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
@@ -184,13 +184,13 @@ namespace PlumSword.Core.Tests.Combat
         {
             Enemy enemy = _battle.AddEnemy(EnemyKind.Normal, 1, 5.0);
 
-            Steps(27);
+            Steps(15);
             Assert.AreEqual(5.0, enemy.Position, Tolerance);
             Assert.AreEqual(1.944, _battle.DisciplePosition, Tolerance);
 
             Steps(1);
             Assert.AreEqual(4.98, enemy.Position, Tolerance);
-            Assert.AreEqual(2.016, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(2.0736, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
@@ -198,20 +198,20 @@ namespace PlumSword.Core.Tests.Combat
         {
             Enemy enemy = _battle.AddEnemy(EnemyKind.Normal, 1, 5.0);
 
-            Steps(49);
-            Assert.AreEqual(3.528, _battle.DisciplePosition, Tolerance);
-            Assert.AreEqual(4.56, enemy.Position, Tolerance);
+            Steps(28);
+            Assert.AreEqual(3.6288, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(4.74, enemy.Position, Tolerance);
 
             Steps(1);
-            Assert.AreEqual(3.56, _battle.DisciplePosition, Tolerance);
-            Assert.AreEqual(4.54, enemy.Position, Tolerance);
+            Assert.AreEqual(3.74, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(4.72, enemy.Position, Tolerance);
 
             Steps(9);
-            Assert.AreEqual(4.36, enemy.Position, Tolerance);
+            Assert.AreEqual(4.54, enemy.Position, Tolerance);
 
             Steps(7);
-            Assert.AreEqual(3.56, _battle.DisciplePosition, Tolerance);
-            Assert.AreEqual(4.36, enemy.Position, Tolerance);
+            Assert.AreEqual(3.74, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(4.54, enemy.Position, Tolerance);
         }
 
         [Test]
@@ -260,7 +260,7 @@ namespace PlumSword.Core.Tests.Combat
         {
             _battle.AddEnemy(EnemyKind.Normal, 1, 5.0);
             Steps(10);
-            Assert.AreEqual(0.72, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(1.296, _battle.DisciplePosition, Tolerance);
 
             _battle.Reset();
 
@@ -288,7 +288,7 @@ namespace PlumSword.Core.Tests.Combat
             Assert.AreEqual(0.0, _battle.DisciplePosition, Tolerance);
 
             _battle.Tick(0.01);
-            Assert.AreEqual(0.072, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.1296, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
@@ -318,7 +318,7 @@ namespace PlumSword.Core.Tests.Combat
             _battle.SetPaused(false);
             Assert.IsFalse(_battle.Paused);
             Steps(1);
-            Assert.AreEqual(0.072, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.1296, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
@@ -345,7 +345,7 @@ namespace PlumSword.Core.Tests.Combat
         public void Tick_PointOne_RunsFiveSteps()
         {
             _battle.Tick(0.1);
-            Assert.AreEqual(0.36, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.648, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
@@ -355,28 +355,28 @@ namespace PlumSword.Core.Tests.Combat
             Assert.AreEqual(0.0, _battle.DisciplePosition, Tolerance);
 
             _battle.Tick(0.01);
-            Assert.AreEqual(0.072, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.1296, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
         public void Tick_Remainder_CarriesOver()
         {
             _battle.Tick(0.05);
-            Assert.AreEqual(0.144, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.2592, _battle.DisciplePosition, Tolerance);
 
             _battle.Tick(0.01);
-            Assert.AreEqual(0.216, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.3888, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
         public void Tick_LargerThanMax_IsClampedToTwelveSteps()
         {
             _battle.Tick(1.0);
-            Assert.AreEqual(0.864, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(1.5552, _battle.DisciplePosition, Tolerance);
 
             // 남은 0.01 초에 0.01 초를 더하면 한 칸 더 간다.
             _battle.Tick(0.01);
-            Assert.AreEqual(0.936, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(1.6848, _battle.DisciplePosition, Tolerance);
         }
 
         [Test]
@@ -406,7 +406,7 @@ namespace PlumSword.Core.Tests.Combat
             _battle.Tick(0.05);
             _battle.SetPaused(true);
             _battle.Tick(0.05);
-            Assert.AreEqual(0.144, _battle.DisciplePosition, Tolerance);
+            Assert.AreEqual(0.2592, _battle.DisciplePosition, Tolerance);
         }
     }
 }

@@ -30,8 +30,8 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
             Assert.That(stage.IsIntroShowing, Is.False);
             stage.Begin();
-            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
-            Assert.That(_battle.Paused, Is.False);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            Assert.That(_battle.Paused, Is.True);
             Assert.That(stage.SeenIntroStage, Is.EqualTo(5));
         }
 
@@ -67,7 +67,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.False);
             Assert.That(stage.FadeAlpha, Is.EqualTo(0.0));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             Assert.That(events, Is.EqualTo(new[] { "started:1", "changed" }));
             stage.Begin();
             Assert.That(events.Count, Is.EqualTo(2));
@@ -100,9 +100,9 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Intro));
         }
 
-        [TestCase(3, 3, StagePhase.Playing, false, 3)]
+        [TestCase(3, 3, StagePhase.SubstageIntro, true, 3)]
         [TestCase(3, 2, StagePhase.Intro, true, 3)]
-        [TestCase(7, 0, StagePhase.Playing, false, 0)]
+        [TestCase(7, 0, StagePhase.SubstageIntro, true, 0)]
         public void Begin_SeenAndRound_DetermineIntro(int start, int seen, StagePhase phase, bool paused, int expectedSeen)
         {
             var stage = Create(start, seen);
@@ -119,6 +119,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That((int)StagePhase.FadingOut, Is.EqualTo(1));
             Assert.That((int)StagePhase.FadingIn, Is.EqualTo(2));
             Assert.That((int)StagePhase.Intro, Is.EqualTo(3));
+            Assert.That((int)StagePhase.SubstageIntro, Is.EqualTo(4));
         }
     }
 }

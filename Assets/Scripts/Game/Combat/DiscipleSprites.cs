@@ -7,7 +7,7 @@ namespace PlumSword.Game.Combat
     /// <summary>
     /// 제자 스프라이트 시트 세 장(대기·달리기·공격)을 Resources 에서 읽어 프레임마다 Sprite 로 자른다.
     /// 시트는 가로 한 줄이고, 칸 크기와 발 기준점(피벗)은 동작마다 다르다. 피벗을 발 아래에 맞춰 두었으므로
-    /// 동작이 바뀌어도 발 위치와 화면상 크기(PPU 32, 확대 없음)가 그대로다.
+    /// 동작이 바뀌어도 발 위치와 화면상 크기가 그대로다. 시트는 PPU 32로 자르고 화면에서 표시 크기를 정한다.
     /// 하나라도 없거나 크기가 예상과 다르면 TryLoad 가 null 을 돌려주고, CombatView 는 단색 사각형 대체 표시를 쓴다.
     /// 사양: docs/spec/combat.md "화면", 에셋: docs/dev/assets.md "캐릭터".
     /// </summary>

@@ -16,19 +16,25 @@ namespace PlumSword.Game.Stage
     public sealed class StageView : MonoBehaviour
     {
         // 위치와 크기, 글자 크기, 색은 임시값 (docs/spec/stage.md "화면").
-        private static readonly Vector2 StageLabelPosition = new Vector2(0f, -8f);
-        private static readonly Vector2 StageLabelSize = new Vector2(600f, 16f);
-        private const float StageLabelFontSize = 16f;
+        private static readonly Vector2 StageLabelPosition = new Vector2(0f, -7f);
+        private static readonly Vector2 StageLabelSize = new Vector2(290f, 16f);
+        private const float StageLabelFontSize = 13f;
 
-        private static readonly Vector2 BossNamePosition = new Vector2(0f, -26f);
-        private static readonly Vector2 BossNameSize = new Vector2(300f, 16f);
-        private const float BossNameFontSize = 14f;
+        private static readonly Vector2 BossNamePosition = new Vector2(0f, -22f);
+        private static readonly Vector2 BossNameSize = new Vector2(260f, 14f);
+        private const float BossNameFontSize = 11f;
 
-        private static readonly Vector2 BarPosition = new Vector2(0f, -44f);
-        private static readonly Vector2 BarSize = new Vector2(300f, 12f);
-        private static readonly Color BarBackgroundColor = new Color(0.15f, 0.15f, 0.15f);
-        private static readonly Color NormalFillColor = new Color(0.95f, 0.80f, 0.25f);
-        private static readonly Color BossFillColor = new Color(0.85f, 0.20f, 0.20f);
+        private static readonly Vector2 BarPosition = new Vector2(0f, -40f);
+        private static readonly Vector2 BarSize = new Vector2(276f, 7f);
+        private static readonly Color BarBackgroundColor = new Color(0.09f, 0.055f, 0.08f);
+        private static readonly Color NormalFillColor = new Color(0.80f, 0.38f, 0.48f);
+        private static readonly Color BossFillColor = new Color(0.72f, 0.16f, 0.20f);
+        private static readonly Color JongnamFillColor = new Color(0.58f, 0.72f, 0.86f);
+        private static readonly Color PanelColor = new Color(0.12f, 0.075f, 0.12f, 0.94f);
+        private static readonly Color BorderColor = new Color(0.66f, 0.47f, 0.34f);
+        private static readonly Color PlumColor = new Color(0.91f, 0.58f, 0.66f);
+        private const float JongnamHeaderWidth = 260f;
+        private const float JongnamHudScale = JongnamHeaderWidth / 380f;
 
         private static readonly Vector2 IntroPanelSize = new Vector2(640f, 72f);
         private static readonly Color IntroPanelColor = new Color(0f, 0f, 0f, 0.6f);
@@ -42,6 +48,10 @@ namespace PlumSword.Game.Stage
         private Image _fade;
         private TextMeshProUGUI _stageLabel;
         private TextMeshProUGUI _bossName;
+        private GameObject _fallbackHeader;
+        private GameObject _jongnamHeader;
+        private GameObject _jongnamTitle;
+        private RectTransform _barRect;
         private GameObject _bossNameObject;
         private RectTransform _barFillRect;
         private Image _barFill;
@@ -49,6 +59,8 @@ namespace PlumSword.Game.Stage
         private TextMeshProUGUI _introTitle;
         private TextMeshProUGUI _introLine;
         private bool _warned;
+        private SubstagePreview _substagePreview;
+        private TextMeshProUGUI _substageIntro;
 
         /// <summary>
         /// canvas 아래에 페이드 막, 스테이지 글자, 보스 이름, 진행 바, 소개 패널을 만들고 지금 상태로 바로 표시한다.
@@ -63,11 +75,16 @@ namespace PlumSword.Game.Stage
             _stage = stage;
 
             CreateFade(canvas);
+            CreateHeaderPanel(canvas);
+            CreateJongnamHeader(canvas);
             CreateStageLabel(canvas);
+            CreateJongnamTitle(canvas);
             CreateBossName(canvas);
             CreateBar(canvas);
+            _substagePreview = SubstagePreview.Create(canvas);
             // 스테이지 글자·보스 이름·진행 바보다 나중에 만들어 그 위에 그린다.
             CreateIntroPanel(canvas);
+            _substageIntro = CreatePanelText((RectTransform)_introPanelObject.transform, "SubstageNumber", Vector2.zero, Vector2.one, 28f);
 
             Redraw();
             ApplyFade();
@@ -101,6 +118,90 @@ namespace PlumSword.Game.Stage
         private void CreateStageLabel(Canvas canvas)
         {
             _stageLabel = CreateText(canvas, "StageLabel", StageLabelPosition, StageLabelSize, StageLabelFontSize);
+            if (_stageLabel != null) _stageLabel.color = new Color(0.98f, 0.88f, 0.78f);
+        }
+
+        private void CreateHeaderPanel(Canvas canvas)
+        {
+            var panel = new GameObject("StageHeader", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)panel.transform;
+            rect.SetParent(canvas.transform, false);
+            PlaceTopCenter(rect, new Vector2(0f, -3f), new Vector2(340f, 53f));
+            var background = panel.GetComponent<Image>();
+            _fallbackHeader = panel;
+            background.color = PanelColor;
+            background.raycastTarget = false;
+
+            // 각진 금속 테두리와 다섯 꽃잎 장식은 UI 요소로 조립한다.
+            AddHeaderPiece(rect, "Top", new Vector2(0f, -1f), new Vector2(324f, 1f), BorderColor);
+            AddHeaderPiece(rect, "Bottom", new Vector2(0f, -51f), new Vector2(324f, 1f), BorderColor);
+            AddHeaderPiece(rect, "Left", new Vector2(-168f, -26f), new Vector2(1f, 39f), BorderColor);
+            AddHeaderPiece(rect, "Right", new Vector2(168f, -26f), new Vector2(1f, 39f), BorderColor);
+            AddFlower(rect, -153f);
+            AddFlower(rect, 153f);
+            AddHeaderPiece(rect, "BarFrame", new Vector2(0f, -35f), new Vector2(280f, 11f), BorderColor);
+        }
+
+        private void CreateJongnamHeader(Canvas canvas)
+        {
+            var sprite = Resources.Load<Sprite>("Art/UI/jongnam_stage_hud");
+            if (sprite == null) return;
+            var panel = new GameObject("JongnamStageHeader", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)panel.transform;
+            rect.SetParent(canvas.transform, false);
+            PlaceTopCenter(rect, Vector2.zero, new Vector2(JongnamHeaderWidth, JongnamHeaderWidth * 724f / 2172f));
+            var image = panel.GetComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            _jongnamHeader = panel;
+        }
+
+        private void CreateJongnamTitle(Canvas canvas)
+        {
+            var sprite = Resources.Load<Sprite>("Art/UI/jongnam_title_plum_duel");
+            if (sprite == null) return;
+            var title = new GameObject("JongnamStageTitle", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)title.transform;
+            rect.SetParent(canvas.transform, false);
+            PlaceTopCenter(rect, new Vector2(0f, -44f * JongnamHudScale - 3f),
+                new Vector2(110f * JongnamHudScale, 18f * JongnamHudScale));
+            var image = title.GetComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            _jongnamTitle = title;
+        }
+
+        private static void AddFlower(RectTransform parent, float x)
+        {
+            var flower = new GameObject("PlumFlower", typeof(RectTransform));
+            var rect = (RectTransform)flower.transform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = TopCenter;
+            rect.anchoredPosition = new Vector2(x, -25f);
+            rect.sizeDelta = Vector2.zero;
+            for (int i = 0; i < 5; i++)
+            {
+                float angle = i * Mathf.PI * 2f / 5f;
+                var petal = AddHeaderPiece(rect, "Petal", new Vector2(Mathf.Sin(angle) * 3f, Mathf.Cos(angle) * 3f), new Vector2(4f, 4f), PlumColor);
+                petal.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            }
+            AddHeaderPiece(rect, "Center", Vector2.zero, new Vector2(3f, 3f), BorderColor);
+        }
+
+        private static RectTransform AddHeaderPiece(RectTransform parent, string name, Vector2 position, Vector2 size, Color color)
+        {
+            var obj = new GameObject(name, typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)obj.transform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = TopCenter;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var image = obj.GetComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
+            return rect;
         }
 
         private void CreateBossName(Canvas canvas)
@@ -140,6 +241,7 @@ namespace PlumSword.Game.Stage
         {
             var backgroundObject = new GameObject("StageBar", typeof(RectTransform));
             var backgroundRect = (RectTransform)backgroundObject.transform;
+            _barRect = backgroundRect;
             backgroundRect.SetParent(canvas.transform, false);
             PlaceTopCenter(backgroundRect, BarPosition, BarSize);
 
@@ -225,6 +327,34 @@ namespace PlumSword.Game.Stage
 
             bool bossActive = _stage.IsBossActive;
             float ratio = Mathf.Clamp01((float)_stage.BarRatio);
+            bool useJongnamArt = _stage.DisplayStageNumber == 1 && _jongnamHeader != null;
+            bool useJongnamTitle = useJongnamArt && !bossActive && _jongnamTitle != null;
+            bool usePreview = _stage.DisplayStageNumber == 1 && _substagePreview != null;
+            if (_substagePreview != null) _substagePreview.gameObject.SetActive(usePreview);
+            if (usePreview) _substagePreview.SetProgress(_stage.DisplayStageNumber, _stage.SubstageNumber);
+            if (_fallbackHeader != null) _fallbackHeader.SetActive(!useJongnamArt && !usePreview);
+            if (_jongnamHeader != null) _jongnamHeader.SetActive(useJongnamArt && !usePreview);
+            if (_jongnamTitle != null) _jongnamTitle.SetActive(useJongnamTitle && !usePreview);
+            if (_barRect != null) _barRect.gameObject.SetActive(!usePreview || bossActive);
+            if (_stageLabel != null)
+            {
+                _stageLabel.gameObject.SetActive(!usePreview && (!useJongnamArt || (!bossActive && !useJongnamTitle)));
+                _stageLabel.fontSize = useJongnamArt ? 10f : StageLabelFontSize;
+                PlaceTopCenter((RectTransform)_stageLabel.transform, useJongnamArt ? new Vector2(0f, -44f * JongnamHudScale - 3f) : StageLabelPosition,
+                    useJongnamArt ? new Vector2(250f * JongnamHudScale, 16f * JongnamHudScale) : StageLabelSize);
+            }
+            if (_bossName != null)
+            {
+                _bossName.fontSize = useJongnamArt ? 9f : BossNameFontSize;
+                PlaceTopCenter((RectTransform)_bossName.transform, useJongnamArt ? new Vector2(0f, -44f * JongnamHudScale - 3f) : BossNamePosition,
+                    useJongnamArt ? new Vector2(260f * JongnamHudScale, 16f * JongnamHudScale) : BossNameSize);
+                if (usePreview) PlaceTopCenter((RectTransform)_bossName.transform, new Vector2(0, -111), BossNameSize);
+            }
+            if (_barRect != null)
+                PlaceTopCenter(_barRect, useJongnamArt ? new Vector2(0f, -76f * JongnamHudScale) : BarPosition,
+                    useJongnamArt ? new Vector2(264f * JongnamHudScale, 12.2f * JongnamHudScale) : BarSize);
+            if (_barRect != null && usePreview && bossActive)
+                PlaceTopCenter(_barRect, new Vector2(0, -126), new Vector2(180, 7));
 
             if (_barFillRect != null)
             {
@@ -236,7 +366,7 @@ namespace PlumSword.Game.Stage
 
             if (_barFill != null)
             {
-                _barFill.color = bossActive ? BossFillColor : NormalFillColor;
+                _barFill.color = bossActive ? BossFillColor : (useJongnamArt ? JongnamFillColor : NormalFillColor);
             }
 
             if (_bossNameObject != null && _bossNameObject.activeSelf != bossActive)
@@ -248,7 +378,8 @@ namespace PlumSword.Game.Stage
             {
                 try
                 {
-                    _stageLabel.text = StageText.RoundStageLabel(_stage.RoundNumber, _stage.DisplayStageNumber);
+                    _stageLabel.text = StageText.RoundStageLabel(_stage.RoundNumber, _stage.DisplayStageNumber)
+                        + " · " + _stage.DisplayStageNumber + "-" + _stage.SubstageNumber;
                 }
                 catch (Exception e)
                 {
@@ -276,7 +407,7 @@ namespace PlumSword.Game.Stage
         {
             if (_introPanelObject == null) return;
 
-            bool introShowing = _stage.IsIntroShowing;
+            bool introShowing = _stage.IsIntroShowing || _stage.IsSubstageIntroShowing;
             if (_introPanelObject.activeSelf != introShowing)
             {
                 _introPanelObject.SetActive(introShowing);
@@ -284,6 +415,7 @@ namespace PlumSword.Game.Stage
 
             if (_introTitle != null)
             {
+                _introTitle.gameObject.SetActive(_stage.IsIntroShowing);
                 try
                 {
                     _introTitle.text = StageText.ThemeName(_stage.DisplayStageNumber);
@@ -296,6 +428,7 @@ namespace PlumSword.Game.Stage
 
             if (_introLine != null)
             {
+                _introLine.gameObject.SetActive(_stage.IsIntroShowing);
                 try
                 {
                     _introLine.text = StageText.IntroLine(_stage.DisplayStageNumber);
@@ -304,6 +437,11 @@ namespace PlumSword.Game.Stage
                 {
                     WarnOnce(e);
                 }
+            }
+            if (_substageIntro != null)
+            {
+                _substageIntro.gameObject.SetActive(_stage.IsSubstageIntroShowing);
+                _substageIntro.text = _stage.DisplayStageNumber + "-" + _stage.SubstageNumber;
             }
         }
 

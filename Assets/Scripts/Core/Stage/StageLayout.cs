@@ -12,9 +12,22 @@ namespace PlumSword.Core.Stage
         public const int NormalCount = 10;
         public const int MaxGroupSize = 3;
         public const double FirstGroupPosition = 6.0;
-        public const double GroupSpacing = 3.0;
-        public const double InGroupSpacing = 0.3;
+        public const double GroupSpacing = 18.0;
+        public const double InGroupSpacing = 2.0;
         public const double BossDistance = 18.0;
+        public const int NormalSubstageCount = 6;
+        public const int MinSubstageEnemies = 2;
+
+        /// <summary>작은 스테이지 하나의 일반 상대 수와 2유닛 간격을 정한다.</summary>
+        public static double[] SubstagePositions(Random random, double center)
+        {
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            int count = random.Next(MinSubstageEnemies, MaxGroupSize + 1);
+            var positions = new double[count];
+            for (int i = 0; i < count; i++)
+                positions[i] = center + (i - (count - 1) / 2.0) * InGroupSpacing;
+            return positions;
+        }
 
         /// <summary>
         /// 무리별 마리 수를 정한다. 남은 수가 0 이 될 때까지

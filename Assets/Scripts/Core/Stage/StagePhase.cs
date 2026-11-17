@@ -14,5 +14,8 @@ namespace PlumSword.Core.Stage
 
         /// <summary>1회차 첫 진입의 소개를 보여 주는 중. 전투는 멈추고 강화는 열려 있다.</summary>
         Intro = 3,
+
+        /// <summary>작은 스테이지 번호를 잠시 표시하는 동안 전투를 멈춘다.</summary>
+        SubstageIntro = 4,
     }
 }

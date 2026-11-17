@@ -76,6 +76,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 100);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, 1, BossPosition);
             _battle.Step();
         }
@@ -103,8 +104,8 @@ namespace PlumSword.Core.Tests.Stage
 
             Assert.That(_phaseAtCleared, Is.EqualTo(StagePhase.FadingOut));
             Assert.That(_stageNumberAtCleared, Is.EqualTo(1));
-            Assert.That(_events, Is.EqualTo(new[] { "Started", "Changed", "Cleared", "Changed" }));
-            Assert.That(_changedCount, Is.EqualTo(2));
+            Assert.That(_events, Is.EqualTo(new[] { "Started", "Changed", "Changed", "Cleared", "Changed" }));
+            Assert.That(_changedCount, Is.EqualTo(3));
         }
 
         [Test]
@@ -112,6 +113,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(10, 5);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(1);
 
             _battle.Step();
@@ -126,7 +128,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.True);
             Assert.That(_phaseAtFailed, Is.EqualTo(StagePhase.FadingOut));
-            Assert.That(_events, Is.EqualTo(new[] { "Started", "Changed", "Failed", "Changed" }));
+            Assert.That(_events, Is.EqualTo(new[] { "Started", "Changed", "Changed", "Failed", "Changed" }));
         }
 
         [Test]
@@ -134,6 +136,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(30, 5);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(1);
 
             _battle.Step();
@@ -150,6 +153,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(100, 10);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, 1, BossPosition);
 
             _battle.Step();
@@ -166,6 +170,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 50);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(10);
 
             _battle.Step();
@@ -173,7 +178,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_wallet.Balance, Is.EqualTo(100));
             Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(10));
             Assert.That(_stage.Boss, Is.Null);
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             Assert.That(_failed.Count, Is.EqualTo(1));
             Assert.That(_cleared, Is.Empty);
         }
@@ -223,6 +228,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.DoesNotThrow(() =>
             {
                 _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
                 _battle.AddEnemy(EnemyKind.Boss, int.MaxValue, BossPosition);
                 _battle.Step();
             });
@@ -234,19 +240,21 @@ namespace PlumSword.Core.Tests.Stage
         }
 
         [Test]
-        public void FullStagePlayed_TenNormalsThenBossCleared()
+        public void FullStagePlayed_SixGroupsThenBossCleared()
         {
             Create(1000, 100000);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
 
             for (int i = 0; i < 20000 && _stage.Phase != StagePhase.FadingOut; i++)
             {
-                _battle.Step();
+                if (_stage.IsSubstageIntroShowing) _stage.Tick(StageProgress.SubstageIntroSeconds);
+                else _battle.Step();
             }
 
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.FadingOut));
-            Assert.That(_wallet.Balance, Is.EqualTo(150));
-            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(10));
+            Assert.That(_wallet.Balance, Is.EqualTo(170));
+            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(12));
             Assert.That(_cleared, Is.EqualTo(new[] { 1 }));
             Assert.That(_failed, Is.Empty);
             Assert.That(_stage.IsBossActive, Is.True);

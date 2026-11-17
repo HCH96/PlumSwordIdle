@@ -53,6 +53,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 100);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, 1, BossPosition);
             _battle.Step();
         }
@@ -62,6 +63,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(10, 5);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Normal, 1, NearPosition);
             _battle.Step();
         }
@@ -100,11 +102,11 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(0));
             Assert.That(_stage.Boss, Is.Null);
             Assert.That(_stage.BarRatio, Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             for (int i = 0; i < _battle.Enemies.Count; i++)
             {
                 Assert.That(_battle.Enemies[i].MaxHealth, Is.EqualTo(40));
-                Assert.That(_battle.Enemies[i].Position, Is.EqualTo(6.0 + 3.0 * i).Within(Tolerance));
+                Assert.That(_battle.Enemies[i].Position, Is.EqualTo(5.0 + 2.0 * i).Within(Tolerance));
             }
 
             Assert.That(_battle.DisciplePosition, Is.EqualTo(0.0).Within(Tolerance));
@@ -127,9 +129,9 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.FadingIn));
 
             _stage.Tick(0.25);
-            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
             Assert.That(_stage.FadeAlpha, Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(_battle.Paused, Is.False);
+            Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.False);
             Assert.That(_started, Is.EqualTo(new[] { 1, 2 }));
         }
@@ -142,14 +144,14 @@ namespace PlumSword.Core.Tests.Stage
             _stage.Tick(0.5);
             Assert.That(_stage.StageNumber, Is.EqualTo(1));
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.FadingIn));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             Assert.That(_battle.DiscipleHealth, Is.EqualTo(5));
             Assert.That(_battle.IsDiscipleDefeated, Is.False);
             Assert.That(_started, Is.EqualTo(new[] { 1, 1 }));
 
             _stage.Tick(0.5);
-            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.Playing));
-            Assert.That(_battle.Paused, Is.False);
+            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.False);
         }
 
@@ -176,10 +178,10 @@ namespace PlumSword.Core.Tests.Stage
 
             _stage.Tick(2.0);
 
-            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
             Assert.That(_stage.StageNumber, Is.EqualTo(2));
             Assert.That(_stage.FadeAlpha, Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(_battle.Paused, Is.False);
+            Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.False);
             Assert.That(_started, Is.EqualTo(new[] { 2 }));
             Assert.That(_changedCount - changedBefore, Is.EqualTo(2));
@@ -222,6 +224,7 @@ namespace PlumSword.Core.Tests.Stage
             ArrangeClearedState();
             _stage.Tick(1.0);
             Assert.That(_stage.StageNumber, Is.EqualTo(2));
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.Playing));
 
             _battle.AddEnemy(EnemyKind.Normal, 2, NearPosition);
@@ -236,6 +239,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(100000000000, 100000000000, int.MaxValue);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, int.MaxValue, BossPosition);
             _battle.Step();
 
@@ -243,7 +247,7 @@ namespace PlumSword.Core.Tests.Stage
 
             Assert.That(_stage.StageNumber, Is.EqualTo(int.MaxValue));
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.FadingIn));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
         }
     }
 }

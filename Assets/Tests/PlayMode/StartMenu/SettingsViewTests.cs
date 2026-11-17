@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using NUnit.Framework;
 using PlumSword.Core.Combat;
 using PlumSword.Core.Currency;
@@ -9,6 +10,7 @@ using PlumSword.Core.StatUpgrade;
 using PlumSword.Game.StartMenu;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.TestTools;
 
 namespace PlumSword.Game.Tests.StartMenu
 {
@@ -75,6 +77,10 @@ namespace PlumSword.Game.Tests.StartMenu
             Assert.IsFalse(view.IsOpen); Assert.AreEqual(SettingsMode.Title, view.Mode);
             Assert.IsNotNull(Panel); Assert.IsFalse(Panel.gameObject.activeSelf);
             var button = canvas.transform.Find("GameSettingsButton"); Assert.IsTrue(button.gameObject.activeSelf);
+            var rect = (RectTransform)button;
+            Assert.AreEqual(Vector2.zero, rect.anchorMin);
+            Assert.AreEqual(new Vector2(1, 0), rect.pivot);
+            Assert.AreEqual(new Vector2(632, 60), rect.anchoredPosition);
             button.GetComponent<Button>().onClick.Invoke();
             Assert.IsTrue(view.IsOpen); Assert.AreEqual(SettingsMode.InGame, view.Mode);
         }
@@ -107,6 +113,64 @@ namespace PlumSword.Game.Tests.StartMenu
             Click("CloseButton");
             Assert.IsFalse(view.IsOpen); Assert.IsFalse(Panel.gameObject.activeSelf); Assert.AreEqual(1, saveCalls);
             view.Close(); Assert.AreEqual(1, saveCalls);
+        }
+
+        [Test] public void Artwork_UsesSeparateControlsAndUpdatesVisibleValues()
+        {
+            Initialize(); view.Open(SettingsMode.InGame);
+            Assert.That(Panel.Find("Window").GetComponent<Image>().sprite.name, Is.EqualTo("window"));
+            Assert.That(Item("BgmSlider").GetComponent<Image>().sprite.name, Is.EqualTo("slider_track"));
+            Assert.That(Item("BgmSlider").GetComponent<Slider>().handleRect.GetComponent<Image>().sprite.name, Is.EqualTo("slider_handle"));
+            Assert.That(Item("ToTitleButton").GetComponent<Image>().sprite.name, Is.EqualTo("button_title"));
+            Assert.That(Item("QuitButton").GetComponent<Image>().sprite.name, Is.EqualTo("button_quit"));
+            Assert.That(Item("CloseButton").GetComponent<Image>().sprite.name, Is.EqualTo("button_close"));
+            Item("BgmSlider").GetComponent<Slider>().value = 30;
+            Assert.That(Label("BgmValue"), Is.EqualTo("30"));
+            Item("SfxSlider").GetComponent<Slider>().value = 0;
+            Assert.That(Label("SfxValue"), Is.EqualTo("0"));
+        }
+
+        [Test] public void Artwork_SliderFill_ReachesBothEndsAtMaximum()
+        {
+            Initialize(); view.Open(SettingsMode.InGame);
+            foreach (var name in new[] { "BgmSlider", "SfxSlider" })
+            {
+                var slider = Item(name).GetComponent<Slider>();
+                slider.value = 100;
+                Canvas.ForceUpdateCanvases();
+                var area = (RectTransform)slider.fillRect.parent;
+                Assert.That(slider.fillRect.anchorMin.x, Is.EqualTo(0f));
+                Assert.That(slider.fillRect.anchorMax.x, Is.EqualTo(1f));
+                Assert.That(slider.fillRect.rect.width, Is.EqualTo(area.rect.width).Within(.01f));
+                Assert.That(slider.fillRect.rect.height, Is.EqualTo(area.rect.height).Within(.01f));
+                slider.value = 0;
+                Assert.That(slider.fillRect.anchorMax.x, Is.EqualTo(0f));
+            }
+        }
+
+        [UnityTest] public IEnumerator Controls_HoverPressAndSlider_ResetWhenClosed()
+        {
+            Initialize(); view.Open(SettingsMode.InGame);
+            var title = Item("ToTitleButton");
+            var effect = title.GetComponent<SettingsControlEffect>();
+            var art = (RectTransform)title.Find("InteractionArt");
+            effect.OnPointerEnter(null);
+            yield return new WaitForSecondsRealtime(.15f);
+            Assert.That(art.localScale.x, Is.GreaterThan(1f));
+            effect.OnPointerDown(null);
+            yield return new WaitForSecondsRealtime(.2f);
+            Assert.That(art.localScale.x, Is.LessThan(1f));
+            effect.OnPointerUp(null);
+            var slider = Item("BgmSlider").GetComponent<Slider>();
+            var sliderEffect = slider.GetComponent<SettingsControlEffect>();
+            sliderEffect.OnPointerEnter(null);
+            yield return new WaitForSecondsRealtime(.15f);
+            Assert.That(slider.handleRect.localScale.x, Is.GreaterThan(1f));
+            slider.value = 30;
+            Assert.That(volume.Bgm, Is.EqualTo(30));
+            view.Close();
+            Assert.That(art.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(slider.handleRect.localScale, Is.EqualTo(Vector3.one));
         }
 
         [Test] public void LeaveFailure_ReopenAndRecover_ShowsFailureAndSavesBeforeTitle()

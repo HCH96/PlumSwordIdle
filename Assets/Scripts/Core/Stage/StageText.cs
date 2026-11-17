@@ -46,7 +46,7 @@ namespace PlumSword.Core.Stage
         {
             switch (stage)
             {
-                case 1: return "A Mount Hua disciple faces a first sparring match at Jongnam.";
+                case 1: return "Mount Hua and Jongnam disciples spar in Mount Hua's training yard.";
                 case 2: return "Pass the Beggar Clan's trial and hear of the Demon Cult's movements.";
                 case 3: return "Cross swords with Namgung to prepare for the battle to come.";
                 case 4: return "The battle to hold back the Demon Cult's army begins.";

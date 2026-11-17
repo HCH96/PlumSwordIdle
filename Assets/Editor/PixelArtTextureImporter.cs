@@ -17,13 +17,14 @@ namespace PlumSword.Editor
         private const string SmoothRoot = "Assets/Resources/Art/StartMenu/";
         private const float PixelsPerUnit = 32f;
 
-        public override uint GetVersion() => 2;
+        public override uint GetVersion() => 3;
 
         private void OnPreprocessTexture()
         {
             if (!assetPath.StartsWith(ArtRoot)) return;
 
             var importer = (TextureImporter)assetImporter;
+            importer.textureShape = TextureImporterShape.Texture2D;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = PixelsPerUnit;
@@ -32,6 +33,20 @@ namespace PlumSword.Editor
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.mipmapEnabled = false;
             importer.alphaIsTransparency = true;
+
+            // 24프레임 공격 시트는 너비가 2048px을 넘는다. 자동 축소를 막는다.
+            if (assetPath.StartsWith("Assets/Resources/Art/Enemies/")) importer.maxTextureSize = 4096;
+
+            if (assetPath == "Assets/Resources/Art/UI/jongnam_stage_hud.png"
+                || assetPath == "Assets/Resources/Art/UI/jongnam_title_plum_duel.png"
+                || assetPath.StartsWith("Assets/Resources/Art/UI/Settings/")
+                || assetPath.StartsWith("Assets/Resources/Art/UI/StatUpgrade/")
+                || assetPath.StartsWith("Assets/Resources/Art/UI/Substage/"))
+            {
+                importer.filterMode = FilterMode.Trilinear;
+                importer.mipmapEnabled = true;
+                importer.maxTextureSize = 4096;
+            }
 
             if (assetPath.StartsWith(SmoothRoot))
             {

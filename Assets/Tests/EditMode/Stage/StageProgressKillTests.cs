@@ -40,6 +40,16 @@ namespace PlumSword.Core.Tests.Stage
             }
         }
 
+        private void AdvanceToBoss()
+        {
+            for (int step = 0; step < 30000 && !_stage.IsBossActive; step++)
+            {
+                if (_stage.IsSubstageIntroShowing) _stage.Tick(StageProgress.SubstageIntroSeconds);
+                else _battle.Step();
+            }
+            Assert.That(_stage.IsBossActive, Is.True);
+        }
+
         [Test]
         public void NormalDefeatedBeforeBegin_Ignored()
         {
@@ -58,7 +68,8 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 100);
             _stage.Begin();
-            Assert.That(_changedCount, Is.EqualTo(1));
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
+            Assert.That(_changedCount, Is.EqualTo(2));
             AddNormals(3);
 
             _battle.Step();
@@ -66,9 +77,9 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_wallet.Balance, Is.EqualTo(30));
             Assert.That(_balances, Is.EqualTo(new long[] { 10, 20, 30 }));
             Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(3));
-            Assert.That(_stage.BarRatio, Is.EqualTo(0.3).Within(Tolerance));
+            Assert.That(_stage.BarRatio, Is.EqualTo(0).Within(Tolerance));
             Assert.That(_stage.IsBossActive, Is.False);
-            Assert.That(_changedCount, Is.EqualTo(1 + 3));
+            Assert.That(_changedCount, Is.EqualTo(2 + 3));
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.Playing));
         }
 
@@ -77,6 +88,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 100, startStage: 2);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(1, stageNumber: 2);
 
             _battle.Step();
@@ -85,41 +97,41 @@ namespace PlumSword.Core.Tests.Stage
         }
 
         [Test]
-        public void TenthNormalDefeated_BossAppears()
+        public void SixGroupsDefeated_BossAppears()
         {
-            Create(1000, 100);
+            Create(1000, 10000);
             _stage.Begin();
-            AddNormals(10);
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
+            AdvanceToBoss();
 
-            _battle.Step();
-
-            Assert.That(_wallet.Balance, Is.EqualTo(100));
-            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(10));
+            Assert.That(_wallet.Balance, Is.EqualTo(120));
+            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(12));
             Assert.That(_stage.IsBossActive, Is.True);
             Assert.That(_stage.Boss, Is.Not.Null);
             Assert.That(_stage.Boss.Kind, Is.EqualTo(EnemyKind.Boss));
-            Assert.That(_stage.Boss.Position, Is.EqualTo(18.0).Within(Tolerance));
+            Assert.That(_stage.Boss.Position, Is.EqualTo(_battle.DisciplePosition + 18.0).Within(Tolerance));
             Assert.That(_stage.Boss.MaxHealth, Is.EqualTo(100));
             Assert.That(_stage.BarRatio, Is.EqualTo(1.0).Within(Tolerance));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(11));
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(50));
-            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(1));
+            Assert.That(_stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
         }
 
         [Test]
-        public void NormalDefeatedAfterCountTen_GoldOnlyAndNoSecondBoss()
+        public void ExtraNormalsDoNotAdvanceCurrentGroup()
         {
             Create(1000, 100);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(11);
 
             _battle.Step();
 
             Assert.That(_wallet.Balance, Is.EqualTo(110));
-            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(10));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(11));
+            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(11));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             Assert.That(_battle.DiscipleHealth, Is.EqualTo(45));
-            Assert.That(_changedCount, Is.EqualTo(1 + 11));
+            Assert.That(_changedCount, Is.EqualTo(2 + 11));
+            Assert.That(_stage.SubstageNumber, Is.EqualTo(1));
         }
 
         [Test]
@@ -127,6 +139,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 50);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(10);
 
             _battle.Step();
@@ -136,8 +149,8 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(10));
             Assert.That(_stage.Boss, Is.Null);
             Assert.That(_stage.IsBossActive, Is.False);
-            Assert.That(_stage.BarRatio, Is.EqualTo(1.0).Within(Tolerance));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_stage.BarRatio, Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -145,9 +158,10 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(30, 100000);
             _stage.Begin();
-            AddNormals(10);
-            _battle.Step();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
+            AdvanceToBoss();
             Assert.That(_stage.Boss, Is.Not.Null);
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
 
             int lastStepChanged = 0;
             for (int i = 0; i < 5000 && _stage.Boss.Health >= 100; i++)
@@ -159,7 +173,7 @@ namespace PlumSword.Core.Tests.Stage
 
             Assert.That(_stage.Boss.Health, Is.EqualTo(70));
             Assert.That(_stage.BarRatio, Is.EqualTo(0.7).Within(Tolerance));
-            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(10));
+            Assert.That(_stage.DefeatedNormalCount, Is.EqualTo(12));
             Assert.That(lastStepChanged, Is.GreaterThanOrEqualTo(1));
         }
 
@@ -169,6 +183,7 @@ namespace PlumSword.Core.Tests.Stage
             // 공격력 1 이면 일반 몬스터는 한 대에 쓰러지지 않고 체력만 준다.
             Create(1, 100000);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             AddNormals(1);
             int before = _changedCount;
 

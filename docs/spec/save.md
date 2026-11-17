@@ -11,7 +11,7 @@
 
 ## 동작
 
-- **저장 값** (판 1): 보유 금화(`Wallet.Balance`), 공격력·체력·공격 속도 강화 단계(`StatUpgrades.GetLevel`), 전체 진행 번호(`StageProgress.StageNumber`), 본 소개 번호(`StageProgress.SeenIntroStage`), 마지막 저장 시각(`savedAtUtcTicks`, 저장할 때 Game 이 넘긴 현재 UTC 시각의 `DateTime.Ticks`). 처치 수, 남은 체력, 보스, 단계(`Phase`), 무리 구성, 강화 잠금은 저장하지 않는다.
+- **저장 값** (판 1): 보유 금화(`Wallet.Balance`), 공격력·체력·공격 속도 강화 단계(`StatUpgrades.GetLevel`), 전체 진행 번호(`StageProgress.StageNumber`), 본 소개 번호(`StageProgress.SeenIntroStage`), 마지막 저장 시각(`savedAtUtcTicks`, 저장할 때 Game 이 넘긴 현재 UTC 시각의 `DateTime.Ticks`). 작은 스테이지 번호, 처치 수, 남은 체력, 보스, 단계(`Phase`), 무리 구성, 강화 잠금은 저장하지 않는다. 불러오면 저장된 큰 스테이지의 1구간부터 다시 시작한다.
 - **모으기** `SaveData.Capture(wallet, upgrades, stage, savedAtUtcTicks)`: 각 기능의 지금 값을 그대로 읽어 `SaveData` 를 만든다. 아무것도 바꾸지 않는다.
 - **글자로 바꾸기** `SaveCodec.Encode(data)`: 아래 "수치"의 파일 형식대로 여덟 줄을 만든다.
 - **되돌리기** `SaveCodec.Decode(text)`: 아래 순서로 판정해 `SaveLoadResult` 를 돌려준다. 예외를 던지지 않는다.

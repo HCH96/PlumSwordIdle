@@ -52,6 +52,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(1000, 100, 5);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, 5, 1.0);
             _battle.Step();
             Assert.That(_wallet.Balance, Is.EqualTo(90));
@@ -75,7 +76,8 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(10, 30, 6);
             _stage.Begin();
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             foreach (Enemy enemy in _battle.Enemies)
             {
                 Assert.That(enemy.Kind, Is.EqualTo(EnemyKind.Normal));
@@ -99,6 +101,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(10, 30, 6);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 6, 1.0);
             _battle.Step();
             Assert.That(boss.Health, Is.EqualTo(240));
@@ -108,7 +111,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_stage.StageNumber, Is.EqualTo(6));
             Assert.That(_stage.RoundNumber, Is.EqualTo(2));
             Assert.That(_stage.DisplayStageNumber, Is.EqualTo(1));
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             foreach (Enemy enemy in _battle.Enemies)
                 Assert.That(enemy.Kind, Is.EqualTo(EnemyKind.Normal));
             Assert.That(_battle.DiscipleHealth, Is.EqualTo(30));
@@ -124,12 +127,13 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(savedStage, Is.EqualTo(6));
             Create(10, 100, savedStage);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(_stage.StageNumber, Is.EqualTo(6));
             Assert.That(_stage.RoundNumber, Is.EqualTo(2));
             Assert.That(_stage.DisplayStageNumber, Is.EqualTo(1));
             Assert.That(_stage.DefeatedNormalCount, Is.Zero);
             Assert.That(_stage.Boss, Is.Null);
-            Assert.That(_battle.Enemies.Count, Is.EqualTo(10));
+            Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             foreach (Enemy enemy in _battle.Enemies)
             {
                 Assert.That(enemy.Kind, Is.EqualTo(EnemyKind.Normal));
@@ -142,6 +146,7 @@ namespace PlumSword.Core.Tests.Stage
         {
             Create(100000000000, 100000000000, int.MaxValue);
             _stage.Begin();
+            _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, int.MaxValue, 1.0);
             _battle.Step();
             Assert.That(_wallet.Balance, Is.EqualTo(21474836510L));

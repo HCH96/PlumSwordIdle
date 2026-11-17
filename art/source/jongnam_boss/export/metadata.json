@@ -1,0 +1,36 @@
+{
+  "group_id": "3f8c0cfa-d4c3-4e92-b1bc-3c2f75fad726",
+  "states": [
+    {
+      "character": {
+        "id": "0db24a81-6d08-4887-8eaf-504bc24d0817",
+        "name": "Idle",
+        "prompt": "Honorable elderly Jongnam martial sword master, matching the concept: white long hair in topknot, long white pointed beard and moustache, ivory layered robes, navy crossed lapels and sash, cloud ornament at belt, carries a straight sword. Compact SD chibi game sprite with large head and readable silhouette, matching the reference disciple pixel style. Taller slender stature, not wider. Calm combat pose.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-17T18:12:16.182405+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-17T18:14:45.686657"
+}

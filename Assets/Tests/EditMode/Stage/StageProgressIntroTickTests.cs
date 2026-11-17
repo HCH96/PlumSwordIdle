@@ -43,6 +43,7 @@ namespace PlumSword.Core.Tests.Stage
             Create();
             stage.Begin();
             stage.Tick(3.0);
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
             battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             battle.Step();
@@ -61,10 +62,13 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(battle.Paused, Is.True);
             Assert.That(changed, Is.EqualTo(before));
             stage.Tick(0.1);
-            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
             Assert.That(stage.IsIntroShowing, Is.False);
-            Assert.That(battle.Paused, Is.False);
+            Assert.That(battle.Paused, Is.True);
             Assert.That(changed, Is.EqualTo(before + 1));
+            stage.Tick(StageProgress.SubstageIntroSeconds);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(battle.Paused, Is.False);
         }
 
         [Test]
@@ -76,6 +80,7 @@ namespace PlumSword.Core.Tests.Stage
             battle.Step();
             Assert.That(enemy.Health, Is.EqualTo(30));
             stage.Tick(3.0);
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             battle.Step();
             Assert.That(enemy.Health, Is.EqualTo(20));
         }
@@ -86,6 +91,8 @@ namespace PlumSword.Core.Tests.Stage
             Create();
             stage.Begin();
             stage.Tick(3.0);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
         }
 
@@ -108,9 +115,11 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(stage.FadeAlpha, Is.EqualTo(0.0));
             Assert.That(changed, Is.EqualTo(before + 2));
             stage.Tick(3.0);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
             Assert.That(battle.Paused, Is.False);
-            Assert.That(changed, Is.EqualTo(before + 3));
+            Assert.That(changed, Is.EqualTo(before + 4));
         }
 
         [Test]
@@ -123,6 +132,8 @@ namespace PlumSword.Core.Tests.Stage
             stage.Tick(2.9);
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Intro));
             stage.Tick(0.1);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
         }
 
@@ -136,6 +147,8 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(battle.Paused, Is.True);
             Assert.That(started, Is.EqualTo(new[] { 1, 2 }));
             stage.Tick(3.0);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
             Assert.That(battle.Paused, Is.False);
         }
@@ -146,13 +159,14 @@ namespace PlumSword.Core.Tests.Stage
             Create(10, 5);
             stage.Begin();
             stage.Tick(3.0);
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             battle.Step();
             Assert.That(failed, Is.EqualTo(new[] { 1 }));
             stage.Tick(1.0);
             Assert.That(stage.StageNumber, Is.EqualTo(1));
-            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
-            Assert.That(battle.Paused, Is.False);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            Assert.That(battle.Paused, Is.True);
             Assert.That(upgrades.Locked, Is.False);
             Assert.That(stage.SeenIntroStage, Is.EqualTo(1));
             Assert.That(started, Is.EqualTo(new[] { 1, 1 }));
@@ -166,14 +180,15 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Intro));
             Assert.That(stage.SeenIntroStage, Is.EqualTo(5));
             stage.Tick(3.0);
+            stage.Tick(StageProgress.SubstageIntroSeconds);
             battle.AddEnemy(EnemyKind.Boss, 5, 1.0);
             battle.Step();
             Assert.That(cleared, Is.EqualTo(new[] { 5 }));
             stage.Tick(1.0);
             Assert.That(stage.StageNumber, Is.EqualTo(6));
             Assert.That(stage.RoundNumber, Is.EqualTo(2));
-            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
-            Assert.That(battle.Paused, Is.False);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            Assert.That(battle.Paused, Is.True);
             Assert.That(stage.SeenIntroStage, Is.EqualTo(5));
         }
 
@@ -195,7 +210,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(seen, Is.EqualTo(2));
             Create(start: number, seen: seen);
             stage.Begin();
-            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
             Assert.That(stage.SeenIntroStage, Is.EqualTo(2));
         }
     }

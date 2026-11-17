@@ -21,15 +21,19 @@ namespace PlumSword.Game.Combat
         private const float CameraOffsetX = 4.0f;
         private const float CameraZ = -10f;
 
-        private static readonly Vector2 DiscipleSize = new Vector2(1.0f, 1.0f);
+        private const float ActorDisplayScale = 1.5f;
+        private static readonly Vector2 DiscipleSize = new Vector2(1.5f, 1.5f);
         private static readonly Color DiscipleColor = new Color(0.25f, 0.50f, 0.90f);
-        private const int DiscipleOrder = 1;
+        private const int DiscipleOrder = 10000;
+        // 연무장 시안 위에서 제자와 적을 함께 배치하는 화면 전용 오프셋.
+        private static readonly Vector2 ActorDisplayOffset = new Vector2(-2.25f, -1.5f);
+        private const float EnemyDisplaySeparation = 0.4f;
 
-        private static readonly Vector2 NormalSize = new Vector2(1.0f, 1.0f);
+        private static readonly Vector2 NormalSize = new Vector2(1.5f, 1.5f);
         private static readonly Color NormalColor = new Color(0.80f, 0.45f, 0.20f);
-        private static readonly Vector2 BossSize = new Vector2(2.0f, 3.0f);
+        private static readonly Vector2 BossSize = new Vector2(3.0f, 4.5f);
         private static readonly Color BossColor = new Color(0.55f, 0.20f, 0.60f);
-        private const int EnemyOrder = 0;
+        private const int EnemyOrder = 10;
 
         private const float HealthBarWidth = 1.0f;
         private const float HealthBarHeight = 0.12f;
@@ -37,8 +41,8 @@ namespace PlumSword.Game.Combat
         private static readonly Color HealthBarBackColor = new Color(0.15f, 0.15f, 0.15f);
         private static readonly Color DiscipleHealthColor = new Color(0.20f, 0.80f, 0.30f);
         private static readonly Color EnemyHealthColor = new Color(0.85f, 0.20f, 0.20f);
-        private const int HealthBarBackOrder = 5;
-        private const int HealthBarFillOrder = 6;
+        private const int HealthBarBackOrder = 30000;
+        private const int HealthBarFillOrder = 30001;
 
         private const float FlashSeconds = 0.1f;
 
@@ -62,10 +66,17 @@ namespace PlumSword.Game.Combat
         private readonly Dictionary<Enemy, CombatActor> _enemies = new Dictionary<Enemy, CombatActor>();
         private Transform _ground;
         private Transform[] _trees;
+        // 사용자가 플레이하며 검토하는 임시 1스테이지 배경. 파일이 없으면 기존 대체 표시를 쓴다.
+        private Transform[] _previewBackground;
+        private float _previewWidth;
+        private GameRoot _gameRoot;
+        private GameObject _petals;
 
         // 제자 스프라이트. 불러오지 못하면 null 이고 단색 사각형을 쓴다.
         private static readonly Color DiscipleSpriteFlashColor = new Color(1.0f, 0.45f, 0.45f);
         private DiscipleSprites _discipleSprites;
+        private JongnamSprites _jongnamMale;
+        private JongnamSprites _jongnamFemale;
         private bool _discipleAttackedThisTick;
         private readonly DiscipleAnimator _discipleAnimator = new DiscipleAnimator();
 
@@ -81,6 +92,7 @@ namespace PlumSword.Game.Combat
 
             _battle = battle;
             _camera = camera;
+            _gameRoot = GetComponentInParent<GameRoot>();
 
             _camera.orthographic = true;
             _camera.orthographicSize = CameraSize;
@@ -100,6 +112,9 @@ namespace PlumSword.Game.Combat
             _sprite.name = "CombatWhite";
 
             CreateBackground();
+            CreatePetals();
+            _jongnamMale = JongnamSprites.TryLoad(false);
+            _jongnamFemale = JongnamSprites.TryLoad(true);
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
             ApplyDiscipleSprites();
 
@@ -147,6 +162,11 @@ namespace PlumSword.Game.Combat
 
             _discipleSprites?.Dispose();
             _discipleSprites = null;
+            _jongnamMale?.Dispose();
+            _jongnamFemale?.Dispose();
+            _jongnamMale = null;
+            _jongnamFemale = null;
+            if (_petals != null) Destroy(_petals);
         }
 
         // ---- 제자 스프라이트 (없으면 단색 사각형 대체 표시 그대로) ----
@@ -159,17 +179,17 @@ namespace PlumSword.Game.Combat
             _discipleSprites = DiscipleSprites.TryLoad();
             if (_discipleSprites == null) return;
 
-            // 스프라이트 피벗이 발 아래라 몸은 Root 자리에 크기 1 로 둔다.
+            // 발 피벗은 유지하면서 표시 크기만 임시로 1.5배로 한다.
             var body = _disciple.Body;
             body.sprite = _discipleSprites.Get(DiscipleMotion.Idle, 0);
-            body.transform.localScale = Vector3.one;
+            body.transform.localScale = new Vector3(ActorDisplayScale, ActorDisplayScale, 1f);
             body.transform.localPosition = Vector3.zero;
             _disciple.BodyColor = Color.white;
             _disciple.FlashColor = DiscipleSpriteFlashColor;
             body.color = Color.white;
 
             // 체력 바는 동작마다 움직이지 않게 대기 그림의 머리 높이 기준으로 고정한다.
-            _disciple.HealthBarY = DiscipleSprites.HeadHeight + HealthBarGap;
+            _disciple.HealthBarY = DiscipleSprites.HeadHeight * ActorDisplayScale + HealthBarGap;
             _disciple.HealthBack.localPosition = new Vector3(0f, _disciple.HealthBarY, 0f);
         }
 
@@ -226,6 +246,23 @@ namespace PlumSword.Game.Combat
             CombatActor actor = enemy.Kind == EnemyKind.Boss
                 ? CreateActor("[Boss]", BossSize, BossColor, EnemyOrder, null)
                 : CreateActor("[Enemy]", NormalSize, NormalColor, EnemyOrder, EnemyHealthColor);
+            // 프레임마다 스프라이트의 중심이 달라져도 적들의 앞뒤 순서는 바뀌지 않는다.
+            actor.Body.sortingOrder = EnemyOrder + Math.Min(enemy.Index, 9989);
+            bool jongnam = enemy.Kind == EnemyKind.Normal && _gameRoot != null
+                && _gameRoot.StageProgress != null && _gameRoot.StageProgress.DisplayStageNumber == 1;
+            actor.Jongnam = jongnam ? (enemy.Index % 2 == 0 ? _jongnamMale : _jongnamFemale) : null;
+            actor.PreviousPosition = enemy.Position;
+            if (actor.Jongnam != null)
+            {
+                actor.Body.sprite = actor.Jongnam.Idle[0];
+                actor.Body.transform.localPosition = Vector3.zero;
+                actor.Body.transform.localScale = new Vector3(ActorDisplayScale, ActorDisplayScale, 1f);
+                actor.BodyColor = Color.white;
+                actor.FlashColor = DiscipleSpriteFlashColor;
+                actor.Body.color = Color.white;
+                actor.HealthBarY = DiscipleSprites.HeadHeight * ActorDisplayScale + HealthBarGap;
+                actor.HealthBack.localPosition = new Vector3(0f, actor.HealthBarY, 0f);
+            }
             _enemies.Add(enemy, actor);
             UpdateEnemy(enemy, actor);
         }
@@ -275,7 +312,8 @@ namespace PlumSword.Game.Combat
         private void Refresh(float deltaTime)
         {
             // 제자
-            _disciple.Root.transform.localPosition = new Vector3((float)_battle.DisciplePosition, 0f, 0f);
+            _disciple.Root.transform.localPosition = new Vector3(
+                (float)_battle.DisciplePosition + ActorDisplayOffset.x, ActorDisplayOffset.y, 0f);
             SetHealth(_disciple, _battle.DiscipleHealth, _battle.DiscipleMaxHealth);
             UpdateFlash(_disciple, deltaTime);
 
@@ -283,6 +321,7 @@ namespace PlumSword.Game.Combat
             foreach (var pair in _enemies)
             {
                 UpdateEnemy(pair.Key, pair.Value);
+                AnimateEnemy(pair.Key, pair.Value, deltaTime);
                 UpdateFlash(pair.Value, deltaTime);
             }
 
@@ -298,13 +337,65 @@ namespace PlumSword.Game.Combat
                 float x = (float)((firstSlot + i) * TreeSpacing);
                 _trees[i].localPosition = new Vector3(x, TreeSize.y * 0.5f, 0f);
             }
+
+            bool showPreview = _previewBackground != null && _gameRoot != null
+                && _gameRoot.StageProgress != null && _gameRoot.StageProgress.DisplayStageNumber == 1;
+            _ground.gameObject.SetActive(!showPreview);
+            foreach (var tree in _trees) tree.gameObject.SetActive(!showPreview);
+            if (_previewBackground != null)
+            {
+                int centerTile = Mathf.FloorToInt((float)cameraX / _previewWidth);
+                for (int i = 0; i < _previewBackground.Length; i++)
+                {
+                    int tileIndex = centerTile + i - 1;
+                    _previewBackground[i].gameObject.SetActive(showPreview);
+                    _previewBackground[i].localPosition = new Vector3(tileIndex * _previewWidth, 2.9f, 0f);
+                    _previewBackground[i].GetComponent<SpriteRenderer>().flipX = (tileIndex & 1) != 0;
+                }
+            }
         }
 
         private void UpdateEnemy(Enemy enemy, CombatActor actor)
         {
             float y = enemy.Kind == EnemyKind.Boss ? 0f : (float)CombatLayout.EnemyOffsetY(enemy.Index);
-            actor.Root.transform.localPosition = new Vector3((float)enemy.Position, y, 0f);
+            actor.Root.transform.localPosition = new Vector3(
+                (float)enemy.Position + ActorDisplayOffset.x + EnemyDisplaySeparation, y + ActorDisplayOffset.y, 0f);
             SetHealth(actor, enemy.Health, enemy.MaxHealth);
+        }
+
+        private void AnimateEnemy(Enemy enemy, CombatActor actor, float deltaTime)
+        {
+            if (actor.Jongnam == null) return;
+            if (!_battle.Paused)
+            {
+                actor.AnimationTime += deltaTime;
+                if (Math.Abs(enemy.Position - actor.PreviousPosition) > 0.0001) actor.WalkGrace = 0.12f;
+                else actor.WalkGrace = Mathf.Max(0f, actor.WalkGrace - deltaTime);
+            }
+            actor.PreviousPosition = enemy.Position;
+
+            // 피해가 이미 처리된 순간을 검격 프레임에 맞춘다. 다음 피해 전에는 앞 동작을 보여 준다.
+            const int hitFrame = 10;
+            const int attackFrames = 24;
+            float fps = attackFrames / (float)enemy.AttackInterval;
+            double cooldown = enemy.AttackCooldown;
+            double sinceHit = enemy.AttackInterval - cooldown;
+            if (cooldown > 0 && sinceHit * fps < attackFrames - hitFrame)
+            {
+                int frame = Mathf.Clamp(hitFrame + (int)(sinceHit * fps), 0, attackFrames - 1);
+                actor.Body.sprite = actor.Jongnam.Attack[frame];
+            }
+            else if (cooldown > 0 && cooldown * fps <= hitFrame)
+            {
+                int frame = Mathf.Clamp(hitFrame - (int)Math.Ceiling(cooldown * fps), 0, hitFrame - 1);
+                actor.Body.sprite = actor.Jongnam.Attack[frame];
+            }
+            else
+            {
+                var frames = actor.WalkGrace > 0f ? actor.Jongnam.Walk : actor.Jongnam.Idle;
+                float rate = actor.WalkGrace > 0f ? 12f : 10f;
+                actor.Body.sprite = frames[(int)(actor.AnimationTime * rate) % frames.Length];
+            }
         }
 
         private static void SetHealth(CombatActor actor, long health, long maxHealth)
@@ -337,6 +428,20 @@ namespace PlumSword.Game.Combat
 
         // ---- 오브젝트 만들기 ----
 
+        private void CreatePetals()
+        {
+            if (_gameRoot == null || _gameRoot.UiCanvas == null) return;
+            _petals = new GameObject("[CombatPetals]", typeof(RectTransform));
+            var rect = (RectTransform)_petals.transform;
+            rect.SetParent(_gameRoot.UiCanvas.transform, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.SetAsFirstSibling();
+            _petals.AddComponent<CombatPetals>().Initialize(_gameRoot);
+        }
+
         private void CreateBackground()
         {
             _ground = CreateRect("[Ground]", transform, GroundSize, GroundColor, GroundOrder).transform;
@@ -345,6 +450,23 @@ namespace PlumSword.Game.Combat
             for (int i = 0; i < TreeCount; i++)
             {
                 _trees[i] = CreateRect("[Tree]", transform, TreeSize, TreeColor, TreeOrder).transform;
+            }
+
+            var preview = Resources.Load<Sprite>("Art/Backgrounds/stage1_preview");
+            if (preview == null) return;
+            // 아래 UI 뒤까지 채우면서 연무장 바닥 높이는 제자의 발에 맞춘다.
+            float scale = 18f / preview.bounds.size.y;
+            _previewWidth = preview.bounds.size.x * scale;
+            _previewBackground = new Transform[3];
+            for (int i = 0; i < _previewBackground.Length; i++)
+            {
+                var tile = new GameObject("[Stage1BackgroundPreview]");
+                tile.transform.SetParent(transform, false);
+                tile.transform.localScale = new Vector3(scale, scale, 1f);
+                var renderer = tile.AddComponent<SpriteRenderer>();
+                renderer.sprite = preview;
+                renderer.sortingOrder = GroundOrder;
+                _previewBackground[i] = tile.transform;
             }
         }
 

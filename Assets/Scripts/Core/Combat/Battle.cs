@@ -24,7 +24,7 @@ namespace PlumSword.Core.Combat
         public const double DiscipleBaseAttackInterval = 1.0;
 
         /// <summary>제자 이동 속도 (초당 유닛, 임시).</summary>
-        public const double DiscipleMoveSpeed = 3.6;
+        public const double DiscipleMoveSpeed = 6.48;
 
         /// <summary>제자 공격 범위 (앞쪽 유닛, 임시).</summary>
         public const double DiscipleAttackRange = 1.0;
