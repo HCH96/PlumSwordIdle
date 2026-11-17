@@ -47,15 +47,28 @@ namespace PlumSword.Core.Save
 
         private bool Write(long nowUtcTicks)
         {
-            if (!store.TryWrite(SaveCodec.Encode(SaveData.Capture(wallet, upgrades, stage, nowUtcTicks))))
+            var text = SaveCodec.Encode(SaveData.Capture(wallet, upgrades, stage, nowUtcTicks));
+            bool succeeded;
+            try { succeeded = store.TryWrite(text); }
+            catch (Exception) { succeeded = false; }
+            if (!succeeded)
             {
                 IsDirty = true;
+                retryRemaining = RetrySeconds;
+                SetFailed(true);
                 return false;
             }
             IsDirty = false;
             retryRemaining = 0;
-            HasFailed = false;
+            SetFailed(false);
             return true;
+        }
+
+        private void SetFailed(bool failed)
+        {
+            if (HasFailed == failed) return;
+            HasFailed = failed;
+            FailedChanged?.Invoke(failed);
         }
 
         private void MarkDirty() { if (Enabled) IsDirty = true; }
