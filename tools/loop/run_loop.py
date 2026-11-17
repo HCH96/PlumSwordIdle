@@ -2085,6 +2085,11 @@ def main() -> int:
     global _log_file
     parser = argparse.ArgumentParser(description="매화검 키우기 AI 자동 개발 루프")
     parser.add_argument("--watch", action="store_true", help="끝나지 않고 일정 간격으로 todo 를 확인")
+    parser.add_argument(
+        "--first",
+        choices=["claude", "codex"],
+        help="이번 실행에서 구현을 먼저 맡길 에이전트. 나머지는 설정(agents)의 순서를 따른다. 빼면 설정 순서 그대로",
+    )
     args = parser.parse_args()
 
     for stream in (sys.stdout, sys.stderr):
@@ -2129,6 +2134,9 @@ def _run(args: argparse.Namespace) -> int:
     loop: Loop | None = None
     try:
         cfg = load_config()
+        if args.first:
+            cfg["agents"] = [args.first] + [a for a in cfg["agents"] if a != args.first]
+        log(f"에이전트 순서: {', '.join(cfg['agents'])}")
         WT = (ROOT / cfg["worktree_path"]).resolve()
         loop = Loop(cfg, notifier, args.watch)
         if not args.watch:
