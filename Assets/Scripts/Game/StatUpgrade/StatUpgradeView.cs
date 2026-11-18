@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace PlumSword.Game.StatUpgrade
 {
     /// <summary>
-    /// 강화 버튼 두 개(ATK, HP)를 보여 준다. 누르면 StatUpgrades.TryUpgrade 를 부른다.
+    /// 강화 버튼 세 개(ATK, HP, INNER)를 보여 준다. 누르면 StatUpgrades.TryUpgrade 를 부른다.
     /// 글자는 StatUpgradeText.ButtonLabel, 누를 수 있는지는 StatUpgrades.CanUpgrade 그대로 쓴다.
     /// 처음 한 번, 그 뒤로 Wallet.BalanceChanged, Upgraded, LockedChanged 가 올 때마다 다시 그린다.
     /// 사양: docs/spec/stat_upgrade.md "화면".
@@ -23,12 +23,13 @@ namespace PlumSword.Game.StatUpgrade
         private static readonly Color DisabledButtonColor = new Color(0.25f, 0.25f, 0.25f);
         private static readonly Color DisabledLabelColor = new Color(0.6f, 0.6f, 0.6f);
 
-        // 왼쪽부터 ATK, HP.
-        private static readonly StatType[] Stats = { StatType.Attack, StatType.Health };
+        // 왼쪽부터 ATK, HP, INNER.
+        private static readonly StatType[] Stats = { StatType.Attack, StatType.Health, StatType.InnerPower };
         private static readonly Vector2[] ButtonPositions =
         {
             new Vector2(8f, 8f),
             new Vector2(220f, 8f),
+            new Vector2(432f, 8f),
         };
 
         private sealed class StatButton
@@ -49,7 +50,7 @@ namespace PlumSword.Game.StatUpgrade
         private bool _warned;
 
         /// <summary>
-        /// canvas 아래에 강화 버튼 두 개를 만들고 지금 상태로 바로 표시한다.
+        /// canvas 아래에 강화 버튼 세 개를 만들고 지금 상태로 바로 표시한다.
         /// wallet.BalanceChanged, upgrades.Upgraded, upgrades.LockedChanged 를 구독하고, OnDestroy 에서 구독을 끊는다.
         /// </summary>
         public void Initialize(PlumSword.Core.StatUpgrade.StatUpgrades upgrades, Wallet wallet, Canvas canvas)
@@ -100,9 +101,9 @@ namespace PlumSword.Game.StatUpgrade
             };
             var frame = Resources.Load<Sprite>("Art/UI/StatUpgrade/button");
             var icon = Resources.Load<Sprite>("Art/UI/StatUpgrade/" +
-                (stat == StatType.Attack ? "attack" : "health"));
+                (stat == StatType.Attack ? "attack" : stat == StatType.Health ? "health" : "inner_power"));
             var coin = Resources.Load<Sprite>("Art/UI/StatUpgrade/coin");
-            if (frame != null && icon != null && coin != null)
+            if (frame != null && coin != null)
             {
                 statButton.HasArtwork = true;
                 image.color = Color.clear;
@@ -113,6 +114,7 @@ namespace PlumSword.Game.StatUpgrade
                 visual.anchoredPosition = ButtonSize * .5f;
                 statButton.Image = visualImage;
                 statButton.Icon = CreateArt(visual, "Icon", icon, new Vector2(9, 8), new Vector2(32, 32));
+                statButton.Icon.gameObject.SetActive(icon != null);
                 statButton.Coin = CreateArt(visual, "Coin", coin, new Vector2(145, 15), new Vector2(17, 17));
                 statButton.NameLabel = CreateArtLabel(visual, "Name", new Vector2(48, 23), new Vector2(82, 18), 15);
                 statButton.LevelLabel = CreateArtLabel(visual, "Level", new Vector2(48, 8), new Vector2(82, 15), 11);

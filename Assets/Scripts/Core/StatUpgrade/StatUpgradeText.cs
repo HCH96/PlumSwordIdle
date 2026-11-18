@@ -11,7 +11,7 @@ namespace PlumSword.Core.StatUpgrade
     public static class StatUpgradeText
     {
         /// <summary>
-        /// 능력치 이름. Attack -> "ATK", Health -> "HP".
+        /// 능력치 이름. Attack -> "ATK", Health -> "HP", InnerPower -> "INNER".
         /// 정의되지 않은 값은 ArgumentOutOfRangeException.
         /// </summary>
         public static string Name(StatType stat)
@@ -20,6 +20,7 @@ namespace PlumSword.Core.StatUpgrade
             {
                 case StatType.Attack: return "ATK";
                 case StatType.Health: return "HP";
+                case StatType.InnerPower: return "INNER";
                 default: throw new ArgumentOutOfRangeException(nameof(stat), stat, "정의되지 않은 능력치");
             }
         }
@@ -48,6 +49,7 @@ namespace PlumSword.Core.StatUpgrade
         /// <summary>
         /// Name + "\n" + Level + "\n" + Cost. 줄바꿈은 항상 '\n' 한 글자.
         /// 예: (Attack, 3, 35, false) -> "ATK\nLv.3\nG 35", (Health, 5, 45, true) -> "HP\nLv.5\nMAX".
+        /// (InnerPower, 1, 25, false) -> "INNER\nLv.1\nG 25".
         /// 정의되지 않은 stat 은 ArgumentOutOfRangeException.
         /// </summary>
         public static string ButtonLabel(StatType stat, int level, long cost, bool isMaxLevel)

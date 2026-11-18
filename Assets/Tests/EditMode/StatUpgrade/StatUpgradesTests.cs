@@ -10,7 +10,7 @@ namespace PlumSword.Core.Tests.StatUpgrade
     {
         private const StatType Undefined = (StatType)99;
 
-        private static readonly StatType[] AllStats = { StatType.Attack, StatType.Health };
+        private static readonly StatType[] AllStats = { StatType.Attack, StatType.Health, StatType.InnerPower };
 
         private static StatUpgrades Create(Wallet wallet)
         {
@@ -64,6 +64,7 @@ namespace PlumSword.Core.Tests.StatUpgrade
 
             Assert.That(upgrades.GetMaxLevel(StatType.Attack), Is.EqualTo(int.MaxValue));
             Assert.That(upgrades.GetMaxLevel(StatType.Health), Is.EqualTo(int.MaxValue));
+            Assert.That(upgrades.GetMaxLevel(StatType.InnerPower), Is.EqualTo(int.MaxValue));
         }
 
         // 강화
@@ -97,6 +98,8 @@ namespace PlumSword.Core.Tests.StatUpgrade
 
             Assert.That(upgrades.GetLevel(StatType.Health), Is.EqualTo(0));
             Assert.That(upgrades.GetCost(StatType.Health), Is.EqualTo(20));
+            Assert.That(upgrades.GetLevel(StatType.InnerPower), Is.EqualTo(0));
+            Assert.That(upgrades.GetCost(StatType.InnerPower), Is.EqualTo(20));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(100));
         }
 
@@ -317,10 +320,12 @@ namespace PlumSword.Core.Tests.StatUpgrade
             var wallet = new Wallet(1000);
             var balance = RecordBalance(wallet);
 
-            var upgrades = new StatUpgrades(wallet, 10, 100, 3, 2);
+            var upgrades = new StatUpgrades(wallet, 10, 100, 3, 2, 4);
 
             Assert.That(upgrades.GetLevel(StatType.Attack), Is.EqualTo(3));
             Assert.That(upgrades.GetLevel(StatType.Health), Is.EqualTo(2));
+            Assert.That(upgrades.GetLevel(StatType.InnerPower), Is.EqualTo(4));
+            Assert.That(upgrades.GetCost(StatType.InnerPower), Is.EqualTo(40));
             Assert.That(upgrades.Attack, Is.EqualTo(16));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(140));
             Assert.That(upgrades.GetCost(StatType.Attack), Is.EqualTo(35));
@@ -333,7 +338,7 @@ namespace PlumSword.Core.Tests.StatUpgrade
         public void New_NegativeLevels_ClampedToZeroWithoutException()
         {
             StatUpgrades upgrades = null;
-            Assert.DoesNotThrow(() => upgrades = new StatUpgrades(new Wallet(), 10, 100, -1, -5));
+            Assert.DoesNotThrow(() => upgrades = new StatUpgrades(new Wallet(), 10, 100, -1, -5, -2));
 
             foreach (var stat in AllStats)
             {
