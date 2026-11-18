@@ -9,7 +9,7 @@
 | 문서 | 기능 | 연결 지점 타입 |
 | --- | --- | --- |
 | [currency.md](currency.md) | 금화. 지급·소비 동작, 수치, 보유 금화 표시, 저장 값 | `PlumSword.Core.Currency.Wallet`, `PlumSword.Core.Currency.GoldText` |
-| [stat_upgrade.md](stat_upgrade.md) | 능력치 강화. 공격력·체력·공격 속도의 단계·비용·구매, 최종 능력치 계산, 강화 버튼 화면, 저장 값 | `PlumSword.Core.StatUpgrade.StatUpgrades`, `PlumSword.Core.StatUpgrade.StatType`, `PlumSword.Core.StatUpgrade.StatUpgradeText` |
+| [stat_upgrade.md](stat_upgrade.md) | 능력치 강화. 공격력·체력·내공의 단계·비용·구매, 경지 보너스가 반영된 최종 능력치, 강화 버튼 화면, 저장 값 | `PlumSword.Core.StatUpgrade.StatUpgrades`, `PlumSword.Core.StatUpgrade.StatType`, `PlumSword.Core.StatUpgrade.StatUpgradeText` |
 | [combat.md](combat.md) | 전투. 제자 전진, 몬스터 접근, 공격·피해, 쓰러짐 알림, 몬스터 능력치, 필드 화면(제자 스프라이트와 애니메이션, 대체 표시·체력 바·카메라·임시 배경) | `PlumSword.Core.Combat.Battle`, `PlumSword.Core.Combat.Enemy`, `PlumSword.Core.Combat.EnemyKind`, `PlumSword.Core.Combat.EnemyStats`, `PlumSword.Core.Combat.CombatLayout`, `PlumSword.Core.Combat.DiscipleAnimator`, `PlumSword.Core.Combat.DiscipleMotion` |
 | [stage.md](stage.md) | 스테이지. 다섯 테마·회차, 일반 6구간과 보스 구간, 구간별 2~3명 배치·번호 소개·진행 UI, 보상·전환·재도전·저장 | `PlumSword.Core.Stage.StageProgress`, `PlumSword.Core.Stage.StagePhase`, `PlumSword.Core.Stage.StageRewards`, `PlumSword.Core.Stage.StageLayout`, `PlumSword.Core.Stage.StageText` |
 | [save.md](save.md) | 저장과 불러오기. 저장 값과 파일 형식, 자동 저장 시점, 저장 실패 재시도, 손상·판 번호 처리, 손상 오류 창, 저장 데이터 유무 | `PlumSword.Core.Save.SaveData`, `PlumSword.Core.Save.SaveCodec`, `PlumSword.Core.Save.SaveLoadResult`, `PlumSword.Core.Save.AutoSave`, `PlumSword.Core.Save.ISaveStore` |
