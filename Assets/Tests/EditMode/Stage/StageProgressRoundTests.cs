@@ -20,7 +20,7 @@ namespace PlumSword.Core.Tests.Stage
         private void Create(long attack, long health, int startStage)
         {
             _wallet = new Wallet(0);
-            _upgrades = new StatUpgrades(_wallet, attack, health, 1.0);
+            _upgrades = new StatUpgrades(_wallet, attack, health);
             _battle = new Battle(_upgrades);
             _stage = new StageProgress(_wallet, _upgrades, _battle, new MinRandom(), startStage);
             _started = new List<int>();
@@ -68,7 +68,6 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_wallet.Balance, Is.EqualTo(90));
             Assert.That(_upgrades.GetLevel(StatType.Attack), Is.Zero);
             Assert.That(_upgrades.GetLevel(StatType.Health), Is.Zero);
-            Assert.That(_upgrades.GetLevel(StatType.AttackSpeed), Is.Zero);
         }
 
         [Test]

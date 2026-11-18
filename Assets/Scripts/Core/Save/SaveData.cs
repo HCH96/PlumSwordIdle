@@ -35,7 +35,7 @@ namespace PlumSword.Core.Save
             if (upgrades == null) throw new ArgumentNullException(nameof(upgrades));
             if (stage == null) throw new ArgumentNullException(nameof(stage));
             return new SaveData(wallet.Balance, upgrades.GetLevel(StatType.Attack),
-                upgrades.GetLevel(StatType.Health), upgrades.GetLevel(StatType.AttackSpeed),
+                upgrades.GetLevel(StatType.Health), 0,   // 공격 속도 칸: 강화가 없어져 0 (칸 교체는 저장 사양에서)
                 stage.StageNumber, stage.SeenIntroStage, savedAtUtcTicks);
         }
     }

@@ -8,14 +8,13 @@ namespace PlumSword.Core.Tests.StatUpgrade
 {
     public class StatUpgradesTests
     {
-        private const double Tolerance = 1e-9;
         private const StatType Undefined = (StatType)99;
 
-        private static readonly StatType[] AllStats = { StatType.Attack, StatType.Health, StatType.AttackSpeed };
+        private static readonly StatType[] AllStats = { StatType.Attack, StatType.Health };
 
         private static StatUpgrades Create(Wallet wallet)
         {
-            return new StatUpgrades(wallet, 10, 100, 1.0);
+            return new StatUpgrades(wallet, 10, 100);
         }
 
         private static List<StatType> RecordUpgraded(StatUpgrades upgrades)
@@ -55,7 +54,6 @@ namespace PlumSword.Core.Tests.StatUpgrade
 
             Assert.That(upgrades.Attack, Is.EqualTo(10));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(100));
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(1.0).Within(Tolerance));
             Assert.That(upgrades.Locked, Is.False);
         }
 
@@ -64,7 +62,6 @@ namespace PlumSword.Core.Tests.StatUpgrade
         {
             var upgrades = Create(new Wallet());
 
-            Assert.That(upgrades.GetMaxLevel(StatType.AttackSpeed), Is.EqualTo(10));
             Assert.That(upgrades.GetMaxLevel(StatType.Attack), Is.EqualTo(int.MaxValue));
             Assert.That(upgrades.GetMaxLevel(StatType.Health), Is.EqualTo(int.MaxValue));
         }
@@ -99,11 +96,8 @@ namespace PlumSword.Core.Tests.StatUpgrade
             upgrades.TryUpgrade(StatType.Attack);
 
             Assert.That(upgrades.GetLevel(StatType.Health), Is.EqualTo(0));
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(0));
             Assert.That(upgrades.GetCost(StatType.Health), Is.EqualTo(20));
-            Assert.That(upgrades.GetCost(StatType.AttackSpeed), Is.EqualTo(20));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(100));
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]
@@ -119,60 +113,6 @@ namespace PlumSword.Core.Tests.StatUpgrade
             upgrades.TryUpgrade(StatType.Health);
             Assert.That(upgrades.MaxHealth, Is.EqualTo(140));
             Assert.That(wallet.Balance, Is.EqualTo(55));
-        }
-
-        [Test]
-        public void TryUpgrade_AttackSpeed_IntervalDecreases()
-        {
-            var wallet = new Wallet(1000);
-            var upgrades = Create(wallet);
-
-            upgrades.TryUpgrade(StatType.AttackSpeed);
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(0.95).Within(Tolerance));
-            Assert.That(wallet.Balance, Is.EqualTo(980));
-
-            upgrades.TryUpgrade(StatType.AttackSpeed);
-            upgrades.TryUpgrade(StatType.AttackSpeed);
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(0.85).Within(Tolerance));
-        }
-
-        [Test]
-        public void TryUpgrade_AttackSpeedTenTimes_ReachesMaxLevel()
-        {
-            var wallet = new Wallet(1000);
-            var upgrades = Create(wallet);
-
-            for (var i = 0; i < 10; i++)
-            {
-                Assert.That(upgrades.TryUpgrade(StatType.AttackSpeed), Is.True, $"call {i + 1}");
-            }
-
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(10));
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(0.5).Within(Tolerance));
-            Assert.That(upgrades.IsMaxLevel(StatType.AttackSpeed), Is.True);
-            Assert.That(wallet.Balance, Is.EqualTo(575));
-        }
-
-        [Test]
-        public void TryUpgrade_AttackSpeedAtMaxLevel_FailsWithoutChange()
-        {
-            var wallet = new Wallet(1000);
-            var upgrades = Create(wallet);
-            for (var i = 0; i < 10; i++)
-            {
-                upgrades.TryUpgrade(StatType.AttackSpeed);
-            }
-
-            var upgraded = RecordUpgraded(upgrades);
-            var balance = RecordBalance(wallet);
-
-            Assert.That(upgrades.TryUpgrade(StatType.AttackSpeed), Is.False);
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(10));
-            Assert.That(wallet.Balance, Is.EqualTo(575));
-            Assert.That(upgraded, Is.Empty);
-            Assert.That(balance, Is.Empty);
-            Assert.That(upgrades.CanUpgrade(StatType.AttackSpeed), Is.False);
-            Assert.That(upgrades.GetCost(StatType.AttackSpeed), Is.EqualTo(70));
         }
 
         [Test]
@@ -377,17 +317,14 @@ namespace PlumSword.Core.Tests.StatUpgrade
             var wallet = new Wallet(1000);
             var balance = RecordBalance(wallet);
 
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0, 3, 2, 4);
+            var upgrades = new StatUpgrades(wallet, 10, 100, 3, 2);
 
             Assert.That(upgrades.GetLevel(StatType.Attack), Is.EqualTo(3));
             Assert.That(upgrades.GetLevel(StatType.Health), Is.EqualTo(2));
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(4));
             Assert.That(upgrades.Attack, Is.EqualTo(16));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(140));
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(0.8).Within(Tolerance));
             Assert.That(upgrades.GetCost(StatType.Attack), Is.EqualTo(35));
             Assert.That(upgrades.GetCost(StatType.Health), Is.EqualTo(30));
-            Assert.That(upgrades.GetCost(StatType.AttackSpeed), Is.EqualTo(40));
             Assert.That(wallet.Balance, Is.EqualTo(1000));
             Assert.That(balance, Is.Empty);
         }
@@ -396,7 +333,7 @@ namespace PlumSword.Core.Tests.StatUpgrade
         public void New_NegativeLevels_ClampedToZeroWithoutException()
         {
             StatUpgrades upgrades = null;
-            Assert.DoesNotThrow(() => upgrades = new StatUpgrades(new Wallet(), 10, 100, 1.0, -1, -5, -2));
+            Assert.DoesNotThrow(() => upgrades = new StatUpgrades(new Wallet(), 10, 100, -1, -5));
 
             foreach (var stat in AllStats)
             {
@@ -405,21 +342,10 @@ namespace PlumSword.Core.Tests.StatUpgrade
         }
 
         [Test]
-        public void New_AttackSpeedLevelAboveMax_ClampedToTenWithoutException()
-        {
-            StatUpgrades upgrades = null;
-            Assert.DoesNotThrow(() => upgrades = new StatUpgrades(new Wallet(), 10, 100, 1.0, 0, 0, 11));
-
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(10));
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(0.5).Within(Tolerance));
-            Assert.That(upgrades.IsMaxLevel(StatType.AttackSpeed), Is.True);
-        }
-
-        [Test]
         public void New_AttackLevelIntMax_NoOverflowAndCannotUpgrade()
         {
             var wallet = new Wallet(long.MaxValue);
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0, int.MaxValue, 0, 0);
+            var upgrades = new StatUpgrades(wallet, 10, 100, int.MaxValue);
 
             Assert.That(upgrades.IsMaxLevel(StatType.Attack), Is.True);
             Assert.That(upgrades.Attack, Is.EqualTo(4294967304L));
@@ -431,21 +357,10 @@ namespace PlumSword.Core.Tests.StatUpgrade
         [Test]
         public void New_OtherBaseValues_FinalStatsUseBaseValues()
         {
-            var upgrades = new StatUpgrades(new Wallet(), 50, 300, 2.0, 1, 1, 10);
+            var upgrades = new StatUpgrades(new Wallet(), 50, 300, 1, 1);
 
             Assert.That(upgrades.Attack, Is.EqualTo(52));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(320));
-            Assert.That(upgrades.AttackInterval, Is.EqualTo(1.5).Within(Tolerance));
-        }
-
-        [Test]
-        public void AttackInterval_SmallBase_ClampedToMinimum()
-        {
-            var level2 = new StatUpgrades(new Wallet(), 10, 100, 0.7, 0, 0, 2);
-            var level10 = new StatUpgrades(new Wallet(), 10, 100, 0.7, 0, 0, 10);
-
-            Assert.That(level2.AttackInterval, Is.EqualTo(0.6).Within(Tolerance));
-            Assert.That(level10.AttackInterval, Is.EqualTo(0.5).Within(Tolerance));
         }
 
         // 생성자: 잘못된 인자
@@ -453,28 +368,19 @@ namespace PlumSword.Core.Tests.StatUpgrade
         [Test]
         public void New_NullWallet_ThrowsArgumentNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new StatUpgrades(null, 10, 100, 1.0));
+            Assert.Throws<ArgumentNullException>(() => new StatUpgrades(null, 10, 100));
         }
 
         [Test]
         public void New_ZeroBaseAttack_ThrowsOutOfRange()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new StatUpgrades(new Wallet(), 0, 100, 1.0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new StatUpgrades(new Wallet(), 0, 100));
         }
 
         [Test]
         public void New_ZeroBaseMaxHealth_ThrowsOutOfRange()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new StatUpgrades(new Wallet(), 10, 0, 1.0));
-        }
-
-        [TestCase(0.49)]
-        [TestCase(double.NaN)]
-        [TestCase(double.PositiveInfinity)]
-        [TestCase(double.NegativeInfinity)]
-        public void New_InvalidBaseAttackInterval_ThrowsOutOfRange(double interval)
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new StatUpgrades(new Wallet(), 10, 100, interval));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new StatUpgrades(new Wallet(), 10, 0));
         }
 
         // 정의되지 않은 StatType

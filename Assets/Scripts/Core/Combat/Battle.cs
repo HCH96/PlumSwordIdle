@@ -86,8 +86,8 @@ namespace PlumSword.Core.Combat
         /// <summary>다음 공격까지 남은 시간(초).</summary>
         public double DiscipleAttackCooldown { get; private set; }
 
-        /// <summary>upgrades.AttackInterval 그대로. 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
-        public double DiscipleAttackInterval => _upgrades.AttackInterval;
+        /// <summary>DiscipleBaseAttackInterval 그대로 (고정 1초, 임시). 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
+        public double DiscipleAttackInterval => DiscipleBaseAttackInterval;
 
         public bool IsDiscipleDefeated { get; private set; }
 
@@ -295,7 +295,7 @@ namespace PlumSword.Core.Combat
 
             if (engaged && !_wasEngaged && discipleMoved)
             {
-                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, _upgrades.AttackInterval * DiscipleAttackWindUpRatio);
+                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, DiscipleBaseAttackInterval * DiscipleAttackWindUpRatio);
             }
 
             _wasEngaged = engaged;
@@ -340,8 +340,8 @@ namespace PlumSword.Core.Combat
                 }
             }
 
-            // 공격 속도는 공격한 직후 다음 대기를 정할 때만 읽는다.
-            DiscipleAttackCooldown = _upgrades.AttackInterval;
+            // 다음 대기는 고정 공격 간격(DiscipleBaseAttackInterval)이다.
+            DiscipleAttackCooldown = DiscipleBaseAttackInterval;
             return true;
         }
 

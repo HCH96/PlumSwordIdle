@@ -247,21 +247,21 @@ namespace PlumSword.Core.Tests.Combat
         }
 
         [Test]
-        public void BattleDiscipleAttackInterval_FollowsAttackSpeedUpgrade()
+        public void BattleDiscipleAttackInterval_FixedAfterUpgrades()
         {
-            var upgrades = new StatUpgrades(new Wallet(1000), 10, 100, 1.0);
+            var upgrades = new StatUpgrades(new Wallet(1000), 10, 100);
             var battle = new Battle(upgrades);
             Assert.AreEqual(1.0, battle.DiscipleAttackInterval, 1e-9);
 
-            Assert.IsTrue(upgrades.TryUpgrade(StatType.AttackSpeed));
-            Assert.AreEqual(upgrades.AttackInterval, battle.DiscipleAttackInterval, 1e-9);
-            Assert.Less(battle.DiscipleAttackInterval, 1.0);
+            Assert.IsTrue(upgrades.TryUpgrade(StatType.Attack));
+            Assert.IsTrue(upgrades.TryUpgrade(StatType.Health));
+            Assert.AreEqual(Battle.DiscipleBaseAttackInterval, battle.DiscipleAttackInterval, 1e-9);
         }
 
         [Test]
         public void WithBattle_HitFrameCoincidesWithEnemyDamage()
         {
-            var upgrades = new StatUpgrades(new Wallet(0), 10, 100, 1.0);
+            var upgrades = new StatUpgrades(new Wallet(0), 10, 100);
             var battle = new Battle(upgrades);
             battle.AddEnemy(EnemyKind.Boss, 1, 3.0);   // 보스는 움직이지 않는다
             var animator = new DiscipleAnimator();

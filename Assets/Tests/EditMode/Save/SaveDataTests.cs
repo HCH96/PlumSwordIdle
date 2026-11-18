@@ -41,10 +41,9 @@ namespace PlumSword.Core.Tests.Save
         {
             var data = new SaveData(-5, 0, 0, 15, 0, 9, 0);
             var wallet = new Wallet(data.Gold);
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0, data.AttackLevel, data.HealthLevel, data.AttackSpeedLevel);
+            var upgrades = new StatUpgrades(wallet, 10, 100, data.AttackLevel, data.HealthLevel);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0), data.StageNumber, data.SeenIntroStage);
             Assert.That(wallet.Balance, Is.EqualTo(0));
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(10));
             Assert.That(stage.StageNumber, Is.EqualTo(1));
             Assert.That(stage.SeenIntroStage, Is.EqualTo(5));
         }
@@ -53,7 +52,7 @@ namespace PlumSword.Core.Tests.Save
         public void Capture_BeforeBegin_CopiesValuesWithoutChangesOrEvents()
         {
             var wallet = new Wallet(500);
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0, 2, 1, 3);
+            var upgrades = new StatUpgrades(wallet, 10, 100, 2, 1);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0), 4, 3);
             int events = 0;
             wallet.BalanceChanged += _ => events++;
@@ -63,14 +62,13 @@ namespace PlumSword.Core.Tests.Save
             Assert.That(data.Gold, Is.EqualTo(500));
             Assert.That(data.AttackLevel, Is.EqualTo(2));
             Assert.That(data.HealthLevel, Is.EqualTo(1));
-            Assert.That(data.AttackSpeedLevel, Is.EqualTo(3));
+            Assert.That(data.AttackSpeedLevel, Is.EqualTo(0));
             Assert.That(data.StageNumber, Is.EqualTo(4));
             Assert.That(data.SeenIntroStage, Is.EqualTo(3));
             Assert.That(data.SavedAtUtcTicks, Is.EqualTo(100));
             Assert.That(wallet.Balance, Is.EqualTo(500));
             Assert.That(upgrades.GetLevel(StatType.Attack), Is.EqualTo(2));
             Assert.That(upgrades.GetLevel(StatType.Health), Is.EqualTo(1));
-            Assert.That(upgrades.GetLevel(StatType.AttackSpeed), Is.EqualTo(3));
             Assert.That(stage.StageNumber, Is.EqualTo(4));
             Assert.That(stage.SeenIntroStage, Is.EqualTo(3));
             Assert.That(stage.HasBegun, Is.False);
@@ -81,7 +79,7 @@ namespace PlumSword.Core.Tests.Save
         public void Capture_NullDependencies_ThrowsArgumentNull()
         {
             var wallet = new Wallet();
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0);
+            var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0));
             Assert.Throws<ArgumentNullException>(() => SaveData.Capture(null, upgrades, stage, 0));
             Assert.Throws<ArgumentNullException>(() => SaveData.Capture(wallet, null, stage, 0));

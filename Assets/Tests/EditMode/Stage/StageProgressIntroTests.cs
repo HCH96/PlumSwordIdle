@@ -16,7 +16,7 @@ namespace PlumSword.Core.Tests.Stage
         private StageProgress Create(int start = 1, int seen = 5, long gold = 0)
         {
             _wallet = new Wallet(gold);
-            _upgrades = new StatUpgrades(_wallet, 10, 100, 1.0);
+            _upgrades = new StatUpgrades(_wallet, 10, 100);
             _battle = new Battle(_upgrades);
             return new StageProgress(_wallet, _upgrades, _battle, new MinRandom(), start, seen);
         }

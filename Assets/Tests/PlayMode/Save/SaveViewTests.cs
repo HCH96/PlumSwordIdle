@@ -34,7 +34,7 @@ namespace PlumSword.Game.Tests.Save
             viewObject = new GameObject("TestSaveView");
             view = viewObject.AddComponent<SaveView>();
             wallet = new Wallet(0);
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0);
+            var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new System.Random(0));
             store = new FakeStore();
             autoSave = new AutoSave(store, wallet, upgrades, stage);

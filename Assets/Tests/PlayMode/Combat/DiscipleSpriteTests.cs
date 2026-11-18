@@ -68,7 +68,7 @@ namespace PlumSword.Game.Tests.Combat
         public void EnemyDisplay_SitsSlightlyFartherWithoutChangingCombatPosition()
         {
             var upgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(
-                new PlumSword.Core.Currency.Wallet(0), 10, 100, 1.0);
+                new PlumSword.Core.Currency.Wallet(0), 10, 100);
             var battle = new PlumSword.Core.Combat.Battle(upgrades);
             var enemy = battle.AddEnemy(PlumSword.Core.Combat.EnemyKind.Normal, 1, 0.8);
             var viewObject = new GameObject("[TestCombatView]");
@@ -180,7 +180,7 @@ namespace PlumSword.Game.Tests.Combat
         private static GameObject CreateIsolatedCombat(Transform game)
         {
             var wallet = new PlumSword.Core.Currency.Wallet();
-            var upgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(wallet, 10, 100, 1);
+            var upgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(wallet, 10, 100);
             var battle = new PlumSword.Core.Combat.Battle(upgrades);
             battle.AddEnemy(PlumSword.Core.Combat.EnemyKind.Normal, 1, 5);
             battle.AddEnemy(PlumSword.Core.Combat.EnemyKind.Normal, 1, 7);

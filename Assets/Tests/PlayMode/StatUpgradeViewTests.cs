@@ -18,10 +18,10 @@ namespace PlumSword.Game.Tests
             try
             {
                 var wallet = new Wallet(1000);
-                var upgrades = new StatUpgrades(wallet, 10, 100, 1.0, 0, 0, 10);
+                var upgrades = new StatUpgrades(wallet, 10, 100, 0, int.MaxValue);
                 viewObject.GetComponent<StatUpgradeView>().Initialize(upgrades, wallet, canvas.GetComponent<Canvas>());
                 var attack = canvas.transform.Find("StatButton_Attack");
-                var speed = canvas.transform.Find("StatButton_AttackSpeed");
+                var health = canvas.transform.Find("StatButton_Health");
                 Assert.That(attack.Find("Visual").GetComponent<Image>().sprite.name, Is.EqualTo("button"));
                 Assert.That(attack.Find("Visual/Icon").GetComponent<Image>().sprite.name, Is.EqualTo("attack"));
                 Assert.That(ReadText(attack.Find("Visual/Cost")), Is.EqualTo("20"));
@@ -29,9 +29,9 @@ namespace PlumSword.Game.Tests
                 Assert.That(ReadText(attack.Find("Visual/Level")), Is.EqualTo("Lv.1"));
                 Assert.That(ReadText(attack.Find("Visual/Cost")), Is.EqualTo("25"));
                 Assert.That(wallet.Balance, Is.EqualTo(980));
-                Assert.That(ReadText(speed.Find("Visual/Cost")), Is.EqualTo("MAX"));
-                Assert.That(speed.Find("Visual/Coin").gameObject.activeSelf, Is.False);
-                Assert.That(speed.GetComponent<Button>().interactable, Is.False);
+                Assert.That(ReadText(health.Find("Visual/Cost")), Is.EqualTo("MAX"));
+                Assert.That(health.Find("Visual/Coin").gameObject.activeSelf, Is.False);
+                Assert.That(health.GetComponent<Button>().interactable, Is.False);
             }
             finally
             {
@@ -48,7 +48,7 @@ namespace PlumSword.Game.Tests
             try
             {
                 var wallet = new Wallet(20);
-                var upgrades = new StatUpgrades(wallet, 10, 100, 1.0);
+                var upgrades = new StatUpgrades(wallet, 10, 100);
                 viewObject.GetComponent<StatUpgradeView>().Initialize(upgrades, wallet, canvas.GetComponent<Canvas>());
                 var attack = canvas.transform.Find("StatButton_Attack");
                 var visual = attack.Find("Visual");

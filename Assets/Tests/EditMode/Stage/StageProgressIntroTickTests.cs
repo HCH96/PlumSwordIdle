@@ -28,7 +28,7 @@ namespace PlumSword.Core.Tests.Stage
             failed.Clear();
             changed = 0;
             wallet = new Wallet(0);
-            upgrades = new StatUpgrades(wallet, attack, health, 1.0);
+            upgrades = new StatUpgrades(wallet, attack, health);
             battle = new Battle(upgrades);
             stage = new StageProgress(wallet, upgrades, battle, new MinRandom(), start, seen);
             stage.StageStarted += n => { started.Add(n); seenAtStart.Add(stage.SeenIntroStage); };

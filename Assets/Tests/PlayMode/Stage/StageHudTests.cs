@@ -16,7 +16,7 @@ namespace PlumSword.Game.Tests.Stage
         public void ProgressHud_ChangesFromProgressToBossHealth()
         {
             var wallet = new Wallet(0);
-            var upgrades = new StatUpgrades(wallet, 1000, 10000, 1.0);
+            var upgrades = new StatUpgrades(wallet, 1000, 10000);
             var battle = new Battle(upgrades);
             var stage = new StageProgress(wallet, upgrades, battle, new System.Random(1));
             var canvasObject = new GameObject("[StageHudTestCanvas]", typeof(Canvas));

@@ -28,13 +28,13 @@ namespace PlumSword.Core.Tests.Combat
         public void SetUp()
         {
             _wallet = new Wallet(1000);
-            Create(10, 100, 1.0);
+            Create(10, 100);
         }
 
         // Battle 을 만들고 바로 구독한다. 기본 설정과 다른 강화 값이 필요한 테스트는 처음에 다시 부른다.
-        private void Create(long attack, long maxHealth, double attackInterval)
+        private void Create(long attack, long maxHealth)
         {
-            _upgrades = new StatUpgrades(_wallet, attack, maxHealth, attackInterval);
+            _upgrades = new StatUpgrades(_wallet, attack, maxHealth);
             _battle = new Battle(_upgrades);
 
             _log = new List<string>();
@@ -119,12 +119,12 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void WindUp_ScalesWithAttackInterval()
         {
-            Create(10, 100, 0.5);
+            Create(10, 100);
             _battle.AddEnemy(EnemyKind.Boss, 1, 5.0);
 
             Steps(31);    // 31칸째에 4.0 에 도착
             Assert.AreEqual(4.0, _battle.DisciplePosition, Tolerance);
-            Assert.AreEqual(0.5 * 7.0 / 17.0, _battle.DiscipleAttackCooldown, Tolerance);
+            Assert.AreEqual(Battle.DiscipleBaseAttackInterval * 7.0 / 17.0, _battle.DiscipleAttackCooldown, Tolerance);
         }
 
         [Test]
@@ -304,7 +304,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void CooldownRunsWhileMoving_WaitsRemainingTime()
         {
-            Create(30, 100, 1.0);
+            Create(30, 100);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 2.0);
 
@@ -328,7 +328,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void CooldownFinishedBeforeArrival_StillWindsUpOnArrival()
         {
-            Create(30, 100, 1.0);
+            Create(30, 100);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 8.0);
 
@@ -354,33 +354,12 @@ namespace PlumSword.Core.Tests.Combat
             Assert.AreEqual(78L, boss.Health);
         }
 
-        [Test]
-        public void AttackSpeedUpgradeMidBattle_PendingCooldownUnchangedNextUsesNewInterval()
-        {
-            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
-
-            Steps(1);
-            Assert.IsTrue(_upgrades.TryUpgrade(StatType.AttackSpeed));
-
-            Steps(49);
-            Assert.AreEqual(90L, boss.Health);
-
-            Steps(1);
-            Assert.AreEqual(80L, boss.Health);
-
-            Steps(47);
-            Assert.AreEqual(80L, boss.Health);
-
-            Steps(1);
-            Assert.AreEqual(70L, boss.Health);
-        }
-
         // ---- 동시 쓰러짐 ----
 
         [Test]
         public void DiscipleAndNormalDefeatedSameStep_EnemyDefeatedFirstWithDiscipleAlreadyDefeated()
         {
-            Create(30, 5, 1.0);
+            Create(30, 5);
             Enemy enemy = _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
 
             int enemiesCountAtEnemyDefeated = -1;
@@ -410,7 +389,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void DiscipleAndBossDefeatedSameStep_DiscipleDefeatedFlagIsTrueAtEnemyDefeated()
         {
-            Create(100, 10, 1.0);
+            Create(100, 10);
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
 
             Steps(1);
@@ -425,7 +404,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void DiscipleDefeated_StepAndTickDoNothing()
         {
-            Create(10, 5, 1.0);
+            Create(10, 5);
             Enemy enemy = _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
 
             Steps(1);
@@ -447,7 +426,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void DiscipleDefeated_AddEnemyWorksAndResetRestores()
         {
-            Create(10, 5, 1.0);
+            Create(10, 5);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             Steps(1);
             Assert.IsTrue(_battle.IsDiscipleDefeated);
@@ -471,7 +450,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void OverkillOnDisciple_HealthStaysZeroAndDefeatedOnce()
         {
-            Create(10, 12, 1.0);
+            Create(10, 12);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
@@ -486,7 +465,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void OverkillOnEnemy_HealthStaysZero()
         {
-            Create(1000, 100, 1.0);
+            Create(1000, 100);
             Enemy enemy = _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
 
             Steps(1);
@@ -521,7 +500,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void NoSubscribers_CombatToDefeat_DoesNotThrow()
         {
-            var battle = new Battle(new StatUpgrades(new Wallet(1000), 30, 5, 1.0));
+            var battle = new Battle(new StatUpgrades(new Wallet(1000), 30, 5));
             Assert.DoesNotThrow(() =>
             {
                 battle.AddEnemy(EnemyKind.Normal, 1, 0.8);

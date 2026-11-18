@@ -23,7 +23,7 @@ namespace PlumSword.Core.Tests.Stage
         public void SetUp()
         {
             _wallet = new Wallet(0);
-            _upgrades = new StatUpgrades(_wallet, 10, 100, 1.0);
+            _upgrades = new StatUpgrades(_wallet, 10, 100);
             _battle = new Battle(_upgrades);
             _events = new List<string>();
         }

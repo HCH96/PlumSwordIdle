@@ -29,7 +29,7 @@ namespace PlumSword.Core.Tests.Stage
         public void SixGroupsThenBoss_DisplayIntroPauseAndRewards()
         {
             var wallet = new Wallet();
-            var upgrades = new StatUpgrades(wallet, 1000, 10000, 1);
+            var upgrades = new StatUpgrades(wallet, 1000, 10000);
             var battle = new Battle(upgrades);
             var stage = new StageProgress(wallet, upgrades, battle, new Random(5));
             stage.Begin();
@@ -64,7 +64,7 @@ namespace PlumSword.Core.Tests.Stage
         public void Failure_RetriesLargeStageFromFirstSubstage()
         {
             var wallet = new Wallet();
-            var upgrades = new StatUpgrades(wallet, 1, 5, 1);
+            var upgrades = new StatUpgrades(wallet, 1, 5);
             var battle = new Battle(upgrades);
             var stage = new StageProgress(wallet, upgrades, battle, new Random(1));
             stage.Begin(); stage.Tick(StageProgress.SubstageIntroSeconds);

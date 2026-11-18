@@ -18,7 +18,7 @@ namespace PlumSword.Core.Tests.Save
         private AutoSave Create(long gold = 0, bool enabled = true, int seenIntroStage = 5)
         {
             wallet = new Wallet(gold);
-            upgrades = new StatUpgrades(wallet, 10, 100, 1.0);
+            upgrades = new StatUpgrades(wallet, 10, 100);
             stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0), 1, seenIntroStage);
             store = new FakeSaveStore();
             return new AutoSave(store, wallet, upgrades, stage, enabled);

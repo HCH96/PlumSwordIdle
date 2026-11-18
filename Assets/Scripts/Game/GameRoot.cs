@@ -82,10 +82,8 @@ namespace PlumSword.Game
                 Wallet,
                 PlumSword.Core.Combat.Battle.DiscipleBaseAttack,
                 PlumSword.Core.Combat.Battle.DiscipleBaseMaxHealth,
-                PlumSword.Core.Combat.Battle.DiscipleBaseAttackInterval,
                 data != null ? data.AttackLevel : 0,
-                data != null ? data.HealthLevel : 0,
-                data != null ? data.AttackSpeedLevel : 0);
+                data != null ? data.HealthLevel : 0);
             StatUpgrades.LockedChanged += locked => Realm.SetLocked(locked);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades);
 

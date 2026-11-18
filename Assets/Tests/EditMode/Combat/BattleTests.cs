@@ -23,7 +23,7 @@ namespace PlumSword.Core.Tests.Combat
         public void SetUp()
         {
             _wallet = new Wallet(1000);
-            _upgrades = new StatUpgrades(_wallet, 10, 100, 1.0);
+            _upgrades = new StatUpgrades(_wallet, 10, 100);
             _battle = new Battle(_upgrades);
 
             _added = new List<Enemy>();
@@ -294,7 +294,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void Reset_NoSubscribers_DoesNotThrow()
         {
-            var battle = new Battle(new StatUpgrades(new Wallet(1000), 10, 100, 1.0));
+            var battle = new Battle(new StatUpgrades(new Wallet(1000), 10, 100));
             Assert.DoesNotThrow(() =>
             {
                 battle.AddEnemy(EnemyKind.Normal, 1, 5.0);

@@ -36,7 +36,7 @@ namespace PlumSword.Game.Tests.StartMenu
             canvas = canvasObject.GetComponent<Canvas>();
             viewObject = new GameObject("TestSettingsView"); view = viewObject.AddComponent<SettingsView>();
             var wallet = new Wallet(0);
-            var upgrades = new StatUpgrades(wallet, 10, 100, 1.0);
+            var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new System.Random(0), 1, 1);
             store = new FakeStore();
             leave = new LeaveGame(new AutoSave(store, wallet, upgrades, stage, enabled: true));

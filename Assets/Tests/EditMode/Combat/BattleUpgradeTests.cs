@@ -23,13 +23,13 @@ namespace PlumSword.Core.Tests.Combat
         public void SetUp()
         {
             _wallet = new Wallet(1000);
-            Create(10, 100, 1.0);
+            Create(10, 100);
         }
 
         // Battle 을 만들고 바로 구독해 알림 횟수를 센다.
-        private void Create(long attack, long maxHealth, double attackInterval)
+        private void Create(long attack, long maxHealth)
         {
-            _upgrades = new StatUpgrades(_wallet, attack, maxHealth, attackInterval);
+            _upgrades = new StatUpgrades(_wallet, attack, maxHealth);
             _battle = new Battle(_upgrades);
 
             _enemyAddedCount = 0;
@@ -71,14 +71,13 @@ namespace PlumSword.Core.Tests.Combat
         }
 
         [Test]
-        public void AttackAndAttackSpeedUpgrade_DoNotChangeCurrentHealth()
+        public void AttackUpgrade_DoesNotChangeCurrentHealth()
         {
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             Steps(1);
             _upgrades.TryUpgrade(StatType.Health);
 
             Assert.That(_upgrades.TryUpgrade(StatType.Attack), Is.True);
-            Assert.That(_upgrades.TryUpgrade(StatType.AttackSpeed), Is.True);
 
             Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));
             Assert.That(_battle.DiscipleMaxHealth, Is.EqualTo(120));
@@ -127,7 +126,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void HealthUpgradeWhileDefeated_KeepsHealthZeroAndResetFillsNewMax()
         {
-            Create(10, 5, 1.0);
+            Create(10, 5);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             Steps(1);
             Assert.That(_battle.DiscipleHealth, Is.EqualTo(0));
@@ -147,7 +146,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void AddEnemyInsideEnemyDefeated_AddsBossWithoutException()
         {
-            Create(30, 100, 1.0);
+            Create(30, 100);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             _battle.EnemyDefeated += _ => _battle.AddEnemy(EnemyKind.Boss, 1, _battle.DisciplePosition + 5.0);
 
@@ -164,7 +163,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void EnemyAddedInsideEnemyDefeated_ActsFromNextStep()
         {
-            Create(30, 100, 1.0);
+            Create(30, 100);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             Enemy boss = null;
             _battle.EnemyDefeated += _ =>
@@ -194,7 +193,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void ResetInsideEnemyDefeated_StopsRemainingNotifications()
         {
-            Create(30, 5, 1.0);
+            Create(30, 5);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             _battle.EnemyDefeated += _ => _battle.Reset();
 

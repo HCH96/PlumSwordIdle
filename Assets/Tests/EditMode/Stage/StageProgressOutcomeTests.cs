@@ -33,7 +33,7 @@ namespace PlumSword.Core.Tests.Stage
         private void Create(long attack, long maxHealth, int startStage = 1)
         {
             _wallet = new Wallet(0);
-            _upgrades = new StatUpgrades(_wallet, attack, maxHealth, 1.0);
+            _upgrades = new StatUpgrades(_wallet, attack, maxHealth);
             _battle = new Battle(_upgrades);
             _stage = new StageProgress(_wallet, _upgrades, _battle, new MinRandom(), startStage);
 
@@ -219,7 +219,7 @@ namespace PlumSword.Core.Tests.Stage
         public void BossDefeatedOnMaxStage_NoOverflowAndCleared()
         {
             _wallet = new Wallet(0);
-            _upgrades = new StatUpgrades(_wallet, 100000000000, 100000000000, 1.0);
+            _upgrades = new StatUpgrades(_wallet, 100000000000, 100000000000);
             _battle = new Battle(_upgrades);
             _stage = new StageProgress(_wallet, _upgrades, _battle, new MinRandom(), int.MaxValue);
             var cleared = new List<int>();

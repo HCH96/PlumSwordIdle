@@ -5,6 +5,5 @@ namespace PlumSword.Core.StatUpgrade
     {
         Attack = 0,
         Health = 1,
-        AttackSpeed = 2,
     }
 }
