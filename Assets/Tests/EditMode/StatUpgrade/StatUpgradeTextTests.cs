@@ -11,6 +11,7 @@ namespace PlumSword.Core.Tests.StatUpgrade
 
         [TestCase(StatType.Attack, "ATK")]
         [TestCase(StatType.Health, "HP")]
+        [TestCase(StatType.InnerPower, "INNER")]
         public void Name_DefinedStat_ReturnsEnglishAbbreviation(StatType stat, string expected)
         {
             Assert.That(StatUpgradeText.Name(stat), Is.EqualTo(expected));
@@ -84,6 +85,7 @@ namespace PlumSword.Core.Tests.StatUpgrade
         [TestCase(StatType.Attack, 3, 35L, false, "ATK\nLv.3\nG 35")]
         [TestCase(StatType.Health, 0, 20L, false, "HP\nLv.0\nG 20")]
         [TestCase(StatType.Health, 5, 45L, true, "HP\nLv.5\nMAX")]
+        [TestCase(StatType.InnerPower, 1, 25L, false, "INNER\nLv.1\nG 25")]
         public void ButtonLabel_Values_JoinsNameLevelCostWithNewline(
             StatType stat, int level, long cost, bool isMaxLevel, string expected)
         {

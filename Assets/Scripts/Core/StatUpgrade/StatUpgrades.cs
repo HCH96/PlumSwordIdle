@@ -4,7 +4,7 @@ using PlumSword.Core.Currency;
 namespace PlumSword.Core.StatUpgrade
 {
     /// <summary>
-    /// 공격력·체력의 강화 단계와 비용, 금화를 쓰는 강화, 강화가 반영된 최종 능력치, 잠금을 맡는다.
+    /// 공격력·체력·내공의 강화 단계와 비용, 금화를 쓰는 강화, 공격력·체력의 최종 능력치, 잠금을 맡는다.
     /// 현재 체력, 공격 간격과 공격 대기 시간은 들고 있지 않는다 (전투 기능의 것).
     /// </summary>
     public sealed class StatUpgrades
@@ -21,11 +21,12 @@ namespace PlumSword.Core.StatUpgrade
 
         private int _attackLevel;
         private int _healthLevel;
+        private int _innerPowerLevel;
 
         /// <summary>
         /// wallet: 강화 비용을 쓸 지갑. null 이면 ArgumentNullException.
         /// baseAttack, baseMaxHealth: 1 보다 작으면 ArgumentOutOfRangeException.
-        /// 단계 둘: 음수면 0 으로 만든다 (예외 없음).
+        /// 단계 셋: 음수면 0 으로 만든다 (예외 없음).
         /// 금화를 쓰지 않고 알림을 보내지 않는다. 잠기지 않은 상태로 시작한다.
         /// </summary>
         public StatUpgrades(
@@ -33,7 +34,8 @@ namespace PlumSword.Core.StatUpgrade
             long baseAttack,
             long baseMaxHealth,
             int attackLevel = 0,
-            int healthLevel = 0)
+            int healthLevel = 0,
+            int innerPowerLevel = 0)
         {
             if (wallet == null)
             {
@@ -56,6 +58,7 @@ namespace PlumSword.Core.StatUpgrade
 
             _attackLevel = Math.Max(0, attackLevel);
             _healthLevel = Math.Max(0, healthLevel);
+            _innerPowerLevel = Math.Max(0, innerPowerLevel);
         }
 
         /// <summary>강화가 성공해 단계가 오른 뒤에 한 번, 오른 능력치를 담아 보낸다.</summary>
@@ -82,18 +85,21 @@ namespace PlumSword.Core.StatUpgrade
                     return _attackLevel;
                 case StatType.Health:
                     return _healthLevel;
+                case StatType.InnerPower:
+                    return _innerPowerLevel;
                 default:
                     throw InvalidStat(stat);
             }
         }
 
-        /// <summary>최대 단계. Attack 과 Health 모두 int.MaxValue.</summary>
+        /// <summary>최대 단계. 세 능력치 모두 int.MaxValue.</summary>
         public int GetMaxLevel(StatType stat)
         {
             switch (stat)
             {
                 case StatType.Attack:
                 case StatType.Health:
+                case StatType.InnerPower:
                     return int.MaxValue;
                 default:
                     throw InvalidStat(stat);
@@ -151,6 +157,9 @@ namespace PlumSword.Core.StatUpgrade
                 case StatType.Health:
                     _healthLevel++;
                     break;
+                case StatType.InnerPower:
+                    _innerPowerLevel++;
+                    break;
             }
 
             Upgraded?.Invoke(stat);
@@ -171,7 +180,7 @@ namespace PlumSword.Core.StatUpgrade
 
         private static void ThrowIfUndefined(StatType stat)
         {
-            if (stat != StatType.Attack && stat != StatType.Health)
+            if (stat != StatType.Attack && stat != StatType.Health && stat != StatType.InnerPower)
             {
                 throw InvalidStat(stat);
             }
