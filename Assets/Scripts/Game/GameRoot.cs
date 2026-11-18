@@ -98,6 +98,7 @@ namespace PlumSword.Game
             CreateStatUpgradeView();
             CreateRealmView();
             CreateCombatView();
+            CreateRealmAuraView();
             CreateStage(data != null ? data.StageNumber : 1, data != null ? data.SeenIntroStage : 0);
 
             if (LoadResult.Status == SaveLoadStatus.Loaded && StartMenuRules.CalculatesOfflineReward(Entry))
@@ -276,6 +277,13 @@ namespace PlumSword.Game
             var viewObject = new GameObject("[CombatView]");
             viewObject.transform.SetParent(transform, false);
             viewObject.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(Battle, worldCamera);
+        }
+
+        private void CreateRealmAuraView()
+        {
+            var viewObject = new GameObject("[RealmAuraView]");
+            viewObject.transform.SetParent(transform, false);
+            viewObject.AddComponent<PlumSword.Game.Realm.RealmAuraView>().Initialize(Realm, Battle);
         }
 
         // 스테이지 로직을 만들고 화면을 붙인다. 시작은 저장 기능을 연결한 뒤에 한다.
