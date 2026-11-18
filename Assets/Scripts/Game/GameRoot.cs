@@ -44,6 +44,8 @@ namespace PlumSword.Game
         /// <summary>게임에 하나뿐인 지갑. 금화를 주거나 쓰는 기능은 조립할 때 이것을 넘겨받는다.</summary>
         public Wallet Wallet { get; private set; }
 
+        public PlumSword.Core.Realm.RealmProgress Realm { get; private set; }
+
         /// <summary>공용 UI 캔버스. 화면 기능은 이 캔버스 아래에 UI 를 만든다.</summary>
         public Canvas UiCanvas { get; private set; }
 
@@ -75,6 +77,7 @@ namespace PlumSword.Game
             // 저장된 값이 있으면 복원하고, 없으면 처음 값으로 Core 객체를 만든다.
             var data = LoadResult.Data;
             Wallet = new Wallet(data != null ? data.Gold : 0);
+            Realm = new PlumSword.Core.Realm.RealmProgress(Wallet);
             StatUpgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(
                 Wallet,
                 PlumSword.Core.Combat.Battle.DiscipleBaseAttack,
@@ -83,6 +86,7 @@ namespace PlumSword.Game
                 data != null ? data.AttackLevel : 0,
                 data != null ? data.HealthLevel : 0,
                 data != null ? data.AttackSpeedLevel : 0);
+            StatUpgrades.LockedChanged += locked => Realm.SetLocked(locked);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades);
 
             // 공용 UI 뿌리
@@ -92,7 +96,9 @@ namespace PlumSword.Game
             // 기능별 화면 (기능이 늘면 여기에 한 줄씩 추가한다)
             CreateCurrencyView();
             CreateStatUpgradeView();
+            CreateRealmView();
             CreateCombatView();
+            CreateRealmAuraView();
             CreateStage(data != null ? data.StageNumber : 1, data != null ? data.SeenIntroStage : 0);
 
             if (LoadResult.Status == SaveLoadStatus.Loaded && StartMenuRules.CalculatesOfflineReward(Entry))
@@ -250,6 +256,13 @@ namespace PlumSword.Game
                 .Initialize(StatUpgrades, Wallet, UiCanvas);
         }
 
+        private void CreateRealmView()
+        {
+            var viewObject = new GameObject("[RealmView]");
+            viewObject.transform.SetParent(transform, false);
+            viewObject.AddComponent<PlumSword.Game.Realm.RealmView>().Initialize(Realm, Wallet, UiCanvas);
+        }
+
         private void CreateCombatView()
         {
             Camera worldCamera = Camera.main;
@@ -264,6 +277,13 @@ namespace PlumSword.Game
             var viewObject = new GameObject("[CombatView]");
             viewObject.transform.SetParent(transform, false);
             viewObject.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(Battle, worldCamera);
+        }
+
+        private void CreateRealmAuraView()
+        {
+            var viewObject = new GameObject("[RealmAuraView]");
+            viewObject.transform.SetParent(transform, false);
+            viewObject.AddComponent<PlumSword.Game.Realm.RealmAuraView>().Initialize(Realm, Battle);
         }
 
         // 스테이지 로직을 만들고 화면을 붙인다. 시작은 저장 기능을 연결한 뒤에 한다.
