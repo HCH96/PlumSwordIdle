@@ -8,6 +8,28 @@ namespace PlumSword.Core.Tests.Combat
     {
         private const double Tolerance = 1e-9;
 
+        [TestCase(0.0, 0.6)]
+        [TestCase(0.125, 0.3)]
+        [TestCase(0.25, 0.0)]
+        [TestCase(0.3, 0.0)]
+        [TestCase(-0.1, 0.6)]
+        public void SkillSlashAlpha_ElapsedTime_ClampsAndFades(double elapsed, double expected)
+        {
+            Assert.AreEqual(expected, CombatLayout.SkillSlashAlpha(elapsed), Tolerance);
+        }
+
+        [Test]
+        public void SkillSlashAlpha_NaN_IsZero()
+        {
+            Assert.AreEqual(0.0, CombatLayout.SkillSlashAlpha(double.NaN));
+        }
+
+        [Test]
+        public void SkillSlashSeconds_IsQuarterSecond()
+        {
+            Assert.AreEqual(0.25, CombatLayout.SkillSlashSeconds);
+        }
+
         [TestCase(0, -0.15)]
         [TestCase(1, 0.0)]
         [TestCase(2, 0.15)]
