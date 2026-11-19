@@ -6,7 +6,7 @@ using PlumSword.Core.StatUpgrade;
 namespace PlumSword.Core.Combat
 {
     /// <summary>
-    /// 제자와 적이 한 줄 위에서 싸우는 전투 로직. 0.02 초 칸 단위로 진행한다.
+    /// 제자와 적이 한 줄 위에서 싸우는 전투 로직. 0.02 초 칸 단위로 진행하며 skillEnabled로 스킬을 켠다.
     /// docs/spec/combat.md "동작", "연결 지점".
     /// </summary>
     public sealed class Battle
@@ -29,6 +29,11 @@ namespace PlumSword.Core.Combat
 
         /// <summary>제자 공격 범위 (앞쪽 유닛, 임시).</summary>
         public const double DiscipleAttackRange = 1.0;
+
+        public const double SkillRange = 2.0;
+        public const double SkillCooldownSeconds = 5.0;
+        public const int SkillBasePercent = 200;
+        public const int SkillPercentPerInnerLevel = 10;
 
         /// <summary>
         /// 앞 동작 비율 (임시). 제자가 전진해 범위 안에 적이 없다가 생긴 칸(달려와 멈춘 칸)에는 바로 공격하지 않고,
@@ -54,14 +59,17 @@ namespace PlumSword.Core.Combat
         /// <summary>
         /// upgrades: 제자의 공격력·최대 체력을 읽을 곳. null 이면 ArgumentNullException.
         /// realm: 돌파 알림을 받을 곳. null 이면 구독하지 않는다.
+        /// skillEnabled: 스킬을 켤지 여부. 기본값은 false.
         /// 시작 상태: 제자 좌표 0, 체력 = upgrades.MaxHealth, 공격 대기 0, 적 없음, 멈추지 않음, 패배 아님.
         /// </summary>
-        public Battle(StatUpgrades upgrades, RealmProgress realm = null)
+        public Battle(StatUpgrades upgrades, RealmProgress realm = null, bool skillEnabled = false)
         {
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
             DisciplePosition = 0.0;
             DiscipleHealth = _upgrades.MaxHealth;
             DiscipleAttackCooldown = 0.0;
+            SkillEnabled = skillEnabled;
+            SkillCooldown = 0.0;
             IsDiscipleDefeated = false;
             Paused = false;
             _lastMaxHealth = _upgrades.MaxHealth;
@@ -94,6 +102,26 @@ namespace PlumSword.Core.Combat
 
         /// <summary>DiscipleBaseAttackInterval 그대로 (고정 1초, 임시). 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
         public double DiscipleAttackInterval => DiscipleBaseAttackInterval;
+
+        public bool SkillEnabled { get; }
+        public double SkillCooldown { get; private set; }
+        public bool IsSkillReady => SkillEnabled && SkillCooldown <= Epsilon;
+        public long SkillDamage => CalculateSkillDamage(_upgrades.Attack, _upgrades.GetLevel(StatType.InnerPower));
+
+        public static long CalculateSkillDamage(long attack, int innerPowerLevel)
+        {
+            if (attack < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(attack));
+            }
+
+            if (innerPowerLevel < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(innerPowerLevel));
+            }
+
+            return attack * (SkillBasePercent + SkillPercentPerInnerLevel * (long)innerPowerLevel) / 100;
+        }
 
         public bool IsDiscipleDefeated { get; private set; }
 
@@ -210,6 +238,7 @@ namespace PlumSword.Core.Combat
             DisciplePosition = 0.0;
             DiscipleHealth = _upgrades.MaxHealth;
             DiscipleAttackCooldown = 0.0;
+            SkillCooldown = 0.0;
             IsDiscipleDefeated = false;
             _enemies.Clear();
             _nextIndex = 0;
