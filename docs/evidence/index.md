@@ -18,3 +18,4 @@
 | `20261117-182336` | 시작화면 | 2026-11-17 18:48 | 7건 | EditMode 499/499, PlayMode 45/45 | claude (교차) | 11건 | [report.md](20261117-182336/report.md) |
 | `20261118-121225` | realm | 2026-11-18 12:26 | 4건 | EditMode 627/627, PlayMode 77/77 | claude (교차) | 21건 | [report.md](20261118-121225/report.md) |
 | `20261118-141612` | stat_upgrade_m3 | 2026-11-18 14:26 | 3건 | EditMode 634/634, PlayMode 78/78 | claude (교차) | 4건 | [report.md](20261118-141612/report.md) |
+| `20261119-181417` | combat_m3 | 2026-11-19 18:21 | 2건 | EditMode 654/654, PlayMode 78/78 | claude (교차) | 0건 | [report.md](20261119-181417/report.md) |

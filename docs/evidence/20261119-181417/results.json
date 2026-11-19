@@ -1,0 +1,323 @@
+{
+  "loop": "loop/20261119-181417",
+  "bundle": "combat_m3",
+  "merged_at": "2026-11-19 18:21",
+  "tag": "loop-merged/20261119-181417",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 654,
+      "passed": 654,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 78,
+      "passed": 78,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [],
+    "stats": {
+      "files_changed": 5,
+      "files": [
+        "Assets/Scripts/Core/Combat/Battle.cs",
+        "Assets/Tests/EditMode/Combat/BattleRealmTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleSkillTests.cs",
+        "docs/history/052_battle_realm_health.md",
+        "docs/history/053_battle_skill_state.md"
+      ],
+      "tests_before": 501,
+      "tests_after": 516,
+      "new_tests": [
+        "BattleRealmTests.Breakthrough_AfterDamage_IncreasesCurrentHealthByMaxDifference",
+        "BattleRealmTests.Breakthrough_FourTimes_IncreasesHealthToFinalMaximum",
+        "BattleRealmTests.Breakthrough_WhileDefeated_LeavesCurrentHealthAtZero",
+        "BattleRealmTests.Breakthrough_WhilePaused_IncreasesHealthWithoutBattleNotifications",
+        "BattleRealmTests.Breakthrough_WithoutRealmSubscription_LeavesCurrentHealthUnchanged",
+        "BattleRealmTests.HealthUpgrade_AfterBreakthrough_UsesUpdatedMaxHealth",
+        "BattleRealmTests.New_NullRealm_StartsWithFullHealth",
+        "BattleRealmTests.Reset_AfterDefeatAndBreakthrough_RestoresNewMaximum",
+        "BattleSkillTests.CalculateSkillDamage_NegativeInputs_Throw",
+        "BattleSkillTests.CalculateSkillDamage_ValidInputs_ReturnsTruncatedDamage",
+        "BattleSkillTests.EnabledSkill_StepAndReset_DoNotActivateSkillYet",
+        "BattleSkillTests.New_DefaultSkill_IsDisabledButDamageIsAvailable",
+        "BattleSkillTests.New_EnabledSkill_IsReadyWithInitialDamage",
+        "BattleSkillTests.SkillConstants_Values_MatchSpec",
+        "BattleSkillTests.SkillDamage_AfterUpgrades_ReflectsCurrentLevels"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": []
+    }
+  },
+  "tasks": [
+    {
+      "doc": "052_battle_realm_health.md",
+      "branch": "task/052_battle_realm_health",
+      "agents": "codex(시도 1)",
+      "summary": "경지 돌파 시 최대 체력 증가분을 제자의 현재 체력에 반영하고 상황별 에딧 모드 테스트를 추가했다. Unity 테스트 결과는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "Battle 생성자에 realm 인자를 선택으로 더했고, 돌파 알림을 받으면 체력 강화와 같은 처리로 늘어난 최대 체력을 현재 체력에 더한다. 사양대로 구현됐고, 완료 조건마다 숫자를 확인하는 테스트가 있다. 하지 말 것으로 정한 범위는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Combat/BattleRealmTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "BattleRealmTests (조건 2~9를 각각 다루는 테스트 8개)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "경지 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면 `DiscipleHealth`는 90이고, 이어서 `realm.TryBreakthrough()` 뒤 `DiscipleMaxHealth`는 110, `DiscipleHealth`는 100이다.",
+            "test": "BattleRealmTests.Breakthrough_AfterDamage_IncreasesCurrentHealthByMaxDifference (TakeBossHit에서 90 확인)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "바로 위 상태에서 `upgrades.TryUpgrade(StatType.Health)` 뒤 `DiscipleMaxHealth`는 132, `DiscipleHealth`는 122다.",
+            "test": "BattleRealmTests.HealthUpgrade_AfterBreakthrough_UsesUpdatedMaxHealth",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "지갑을 `new Wallet(10000)`으로 한 경지 전투에서 `realm.TryBreakthrough()`를 4번 부르면 `DiscipleMaxHealth`는 140, `DiscipleHealth`는 140이다.",
+            "test": "BattleRealmTests.Breakthrough_FourTimes_IncreasesHealthToFinalMaximum",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "경지 전투를 `new StatUpgrades(wallet, 10, 10, 0, 0, 0, realm)`로 만들고 `AddEnemy(Normal, 1, 0.8)`을 2번 부른 뒤 1칸 뒤 `IsDiscipleDefeated`는 `true`, `DiscipleHealth`는 0이고, 이어서 `realm.TryBreakthrough()` 뒤 `DiscipleHealth`는 0 그대로, `DiscipleMaxHealth`는 11이다.",
+            "test": "BattleRealmTests.Breakthrough_WhileDefeated_LeavesCurrentHealthAtZero (DefeatDisciple에서 패배·0 확인)",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "바로 위 상태에서 이어서 `Reset()` 뒤 `DiscipleHealth`는 11이다.",
+            "test": "BattleRealmTests.Reset_AfterDefeatAndBreakthrough_RestoresNewMaximum",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "경지 전투의 `upgrades`로 `new Battle(upgrades)`(realm 없이)를 만들고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행한 뒤 `realm.TryBreakthrough()`를 부르면 `DiscipleHealth`는 90 그대로, `DiscipleMaxHealth`는 110이다.",
+            "test": "BattleRealmTests.Breakthrough_WithoutRealmSubscription_LeavesCurrentHealthUnchanged",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "경지 전투에서 `SetPaused(true)` 뒤 `realm.TryBreakthrough()`를 부르면 `DiscipleHealth`는 110이다.",
+            "test": "BattleRealmTests.Breakthrough_WhilePaused_IncreasesHealthWithoutBattleNotifications",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "`new Battle(upgrades, null)`은 예외 없이 만들어지고 `DiscipleHealth`는 100이다.",
+            "test": "BattleRealmTests.New_NullRealm_StartsWithFullHealth",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프의 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "Battle.cs:55의 생성자 주석에서 upgrades 설명에 있던 '공격 간격'이 빠졌다. 공격 간격 고정 사양에 맞춘 정리로 보이며 문제는 없다."
+          },
+          {
+            "severity": "note",
+            "text": "BattleRealmTests.cs의 DefeatDisciple와 Breakthrough_WithoutRealmSubscription에서 SetUp이 만든 이전 Battle도 realm 알림을 계속 받고 있다. 새 Battle의 검사에는 영향이 없다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 642,
+          "passed": 642,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 78,
+          "passed": 78,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "BattleRealmTests.Breakthrough_AfterDamage_IncreasesCurrentHealthByMaxDifference",
+        "BattleRealmTests.Breakthrough_FourTimes_IncreasesHealthToFinalMaximum",
+        "BattleRealmTests.Breakthrough_WhileDefeated_LeavesCurrentHealthAtZero",
+        "BattleRealmTests.Breakthrough_WhilePaused_IncreasesHealthWithoutBattleNotifications",
+        "BattleRealmTests.Breakthrough_WithoutRealmSubscription_LeavesCurrentHealthUnchanged",
+        "BattleRealmTests.HealthUpgrade_AfterBreakthrough_UsesUpdatedMaxHealth",
+        "BattleRealmTests.New_NullRealm_StartsWithFullHealth",
+        "BattleRealmTests.Reset_AfterDefeatAndBreakthrough_RestoresNewMaximum"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "전투 사양의 생성자에는 후속 작업 053의 `skillEnabled` 인자가 미리 포함되어 있다. 이번 작업은 명시된 중간 단계인 `Battle(StatUpgrades upgrades, RealmProgress realm = null)`까지만 구현하며 사양은 후속 작업을 위해 유지한다.",
+        "그 밖에 없음."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "053_battle_skill_state.md",
+      "branch": "task/053_battle_skill_state",
+      "agents": "codex(시도 1)",
+      "summary": "스킬 활성화 상태와 피해 계산 및 관련 에딧 모드 테스트를 추가했다. 기존 공격 동작은 유지하며 Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "Battle에 스킬 켜기 인자, 상수 넷, SkillEnabled·SkillCooldown·IsSkillReady·SkillDamage, CalculateSkillDamage가 사양과 작업 문서대로 들어갔습니다. 완료 조건마다 숫자까지 확인하는 테스트가 있고, 스킬 발동은 만들지 않아 전투 동작은 그대로입니다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Combat/BattleSkillTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "BattleSkillTests 전체 (조건 2~9마다 대응 테스트가 있음, 통과 여부는 루프 실행 결과로 판정)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "`Battle.CalculateSkillDamage`는 (10, 0) → 20, (10, 1) → 21, (13, 2) → 28, (11, 0) → 22, (0, 5) → 0을 돌려준다.",
+            "test": "BattleSkillTests.CalculateSkillDamage_ValidInputs_ReturnsTruncatedDamage (TestCase 5개)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "`Battle.CalculateSkillDamage(10, int.MaxValue)`는 예외 없이 2147483667을 돌려준다.",
+            "test": "BattleSkillTests.CalculateSkillDamage_ValidInputs_ReturnsTruncatedDamage (10L, int.MaxValue, 2147483667L)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "`Battle.CalculateSkillDamage(-1, 0)`과 `Battle.CalculateSkillDamage(10, -1)`은 각각 `ArgumentOutOfRangeException`을 던진다.",
+            "test": "BattleSkillTests.CalculateSkillDamage_NegativeInputs_Throw",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "스킬 전투를 새로 만들면 `SkillEnabled`는 `true`, `SkillCooldown`은 0, `IsSkillReady`는 `true`, `SkillDamage`는 20이다.",
+            "test": "BattleSkillTests.New_EnabledSkill_IsReadyWithInitialDamage",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "기본 전투를 새로 만들면 `SkillEnabled`는 `false`, `SkillCooldown`은 0, `IsSkillReady`는 `false`다.",
+            "test": "BattleSkillTests.New_DefaultSkill_IsDisabledButDamageIsAvailable",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "스킬 전투에서 `upgrades.TryUpgrade(StatType.InnerPower)` 뒤 `SkillDamage`는 21이다.",
+            "test": "BattleSkillTests.SkillDamage_AfterUpgrades_ReflectsCurrentLevels",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "바로 위 상태에서 이어서 `upgrades.TryUpgrade(StatType.Attack)` 뒤 `SkillDamage`는 25다 (공격력 12 × 210% = 25.2 → 25).",
+            "test": "BattleSkillTests.SkillDamage_AfterUpgrades_ReflectsCurrentLevels",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "`Battle.SkillRange`는 2.0, `Battle.SkillCooldownSeconds`는 5.0, `Battle.SkillBasePercent`는 200, `Battle.SkillPercentPerInnerLevel`은 10이다.",
+            "test": "BattleSkillTests.SkillConstants_Values_MatchSpec",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "새 상수 넷(Battle.cs:33-36)과 새 속성 넷·CalculateSkillDamage(Battle.cs:106-124)에 XML 주석(/// <summary>)이 없다. 같은 파일의 다른 멤버는 주석에 '(임시)' 표시와 사양 근거를 달고 있어 스타일이 맞지 않는다. 동작에는 영향이 없다."
+          },
+          {
+            "severity": "note",
+            "text": "SkillCooldown 이 { get; private set; } 로 되어 있다(Battle.cs:107). 054 가 값을 정하려면 이렇게 해야 하고, 공개 모양은 사양의 { get; } 과 같다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 654,
+          "passed": 654,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 78,
+          "passed": 78,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "BattleSkillTests.CalculateSkillDamage_NegativeInputs_Throw",
+        "BattleSkillTests.CalculateSkillDamage_ValidInputs_ReturnsTruncatedDamage",
+        "BattleSkillTests.EnabledSkill_StepAndReset_DoNotActivateSkillYet",
+        "BattleSkillTests.New_DefaultSkill_IsDisabledButDamageIsAvailable",
+        "BattleSkillTests.New_EnabledSkill_IsReadyWithInitialDamage",
+        "BattleSkillTests.SkillConstants_Values_MatchSpec",
+        "BattleSkillTests.SkillDamage_AfterUpgrades_ReflectsCurrentLevels"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "없음. 공개 연결 지점과 수치는 기존 사양에 따른다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": [
+    "054_battle_skill_attack.md"
+  ]
+}
