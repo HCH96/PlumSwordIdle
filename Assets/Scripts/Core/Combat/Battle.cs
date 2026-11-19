@@ -84,6 +84,7 @@ namespace PlumSword.Core.Combat
 
         public event Action<Enemy> EnemyAdded;
         public event Action<Enemy> EnemyDamaged;
+        public event Action SkillUsed;
         public event Action DiscipleDamaged;
         public event Action<Enemy> EnemyDefeated;
         public event Action DiscipleDefeated;
@@ -260,6 +261,10 @@ namespace PlumSword.Core.Combat
         private void ReduceCooldowns(List<Enemy> enemies)
         {
             DiscipleAttackCooldown = Math.Max(0.0, DiscipleAttackCooldown - StepSeconds);
+            if (SkillEnabled)
+            {
+                SkillCooldown = Math.Max(0.0, SkillCooldown - StepSeconds);
+            }
 
             foreach (Enemy enemy in enemies)
             {
@@ -345,22 +350,28 @@ namespace PlumSword.Core.Combat
                 return true;
             }
 
+            bool skill = IsSkillReady;
+            bool hasTarget = false;
             var hits = new List<Enemy>();
             foreach (Enemy enemy in enemies)
             {
                 if (enemy.Position - DisciplePosition <= DiscipleAttackRange + Epsilon)
                 {
+                    hasTarget = true;
+                }
+                if (enemy.Position - DisciplePosition <= (skill ? SkillRange : DiscipleAttackRange) + Epsilon)
+                {
                     hits.Add(enemy);
                 }
             }
 
-            if (hits.Count == 0)
+            if (!hasTarget)
             {
                 return true;
             }
 
             // 공격력은 피해를 줄 때마다 읽는다 (따로 저장해 두지 않는다).
-            long damage = _upgrades.Attack;
+            long damage = skill ? SkillDamage : _upgrades.Attack;
             foreach (Enemy enemy in hits)
             {
                 enemy.Health = ReduceHealth(enemy.Health, damage);
@@ -373,6 +384,16 @@ namespace PlumSword.Core.Combat
                 {
                     return false;
                 }
+            }
+
+            if (skill)
+            {
+                SkillUsed?.Invoke();
+                if (generation != _resetGeneration)
+                {
+                    return false;
+                }
+                SkillCooldown = SkillCooldownSeconds;
             }
 
             // 다음 대기는 고정 공격 간격(DiscipleBaseAttackInterval)이다.
