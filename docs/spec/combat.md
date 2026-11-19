@@ -2,42 +2,48 @@
 
 - 기능 이름: combat (네임스페이스 `PlumSword.Core.Combat`)
 - 작성일: 2026-11-16
+- 고친 날: 2026-11-19
 
 ## 목표
 
-제자와 몬스터가 외길 위에서 자동으로 싸우는 기능이다. 이 기능은 제자의 전진, 몬스터의 접근, 서로의 공격과 피해, 쓰러짐 판정과 알림, 그리고 필드 화면(제자·몬스터·보스의 대체 표시, 머리 위 체력 바, 카메라, 임시 배경)을 맡는다. 어떤 적을 어디에 놓을지, 성공·실패와 재도전, 금화 보상은 맡지 않는다 (스테이지 기능의 것).
+제자와 몬스터가 외길 위에서 자동으로 싸우는 기능이다. 이 기능은 제자의 전진, 몬스터의 접근, 서로의 공격과 피해, 자동 발동 스킬 이십사수매화검법(발동 시점·피해·재사용 대기), 쓰러짐 판정과 알림, 체력 강화·경지 돌파 때 현재 체력 증가, 그리고 필드 화면(제자·몬스터·보스의 대체 표시, 머리 위 체력 바, 카메라, 임시 배경, 스킬의 임시 검기 띠)을 맡는다. 어떤 적을 어디에 놓을지, 성공·실패와 재도전, 금화 보상은 맡지 않는다 (스테이지 기능의 것). 경지 보너스가 들어간 공격력·최대 체력과 내공 단계는 강화 기능이, 경지 단계는 경지 기능이 정하고 전투는 읽기만 한다.
 
-출처: `docs/design/milestone_1.md` "1단계: 전투", "1단계: 화면과 연출"의 "필드와 카메라", "기능 간 연결과 작업 분할 시 확인할 점".
+출처: `docs/design/milestone_1.md` "1단계: 전투", "1단계: 화면과 연출"의 "필드와 카메라", "기능 간 연결과 작업 분할 시 확인할 점". `docs/design/milestone_3.md` "목표와 현재 방향", "경지 돌파", "자동 발동 스킬", "3단계 화면".
 
 ## 동작
 
 - 전투는 한 줄(진행 방향 좌표 하나) 위에서 일어난다. 제자는 좌표가 커지는 쪽으로 전진한다. 적은 항상 제자와 같거나 더 큰 좌표에 있다.
 - **시간**: 전투는 0.02초(임시) 길이의 칸 단위로 진행한다. `Tick(deltaSeconds)`는 받은 시간을 모아 두었다가 모은 시간이 `0.02 - 1e-9` 이상인 동안 한 칸씩 진행(`Step`)하고 0.02를 뺀다 (0보다 작아지면 0). 남은 시간은 다음 `Tick`으로 넘긴다. `deltaSeconds`가 0.25(임시)보다 크면 0.25로 잘라낸다.
 - **한 칸(`Step`)의 순서**. 멈춤 상태(`Paused`)이거나 제자가 패배한 상태(`IsDiscipleDefeated`)면 아무것도 하지 않는다.
-  1. **대기 감소**: 제자와 모든 적의 공격 대기 시간을 0.02 줄인다. 0보다 작아지지 않는다. 이동 중에도 줄어든다.
+  1. **대기 감소**: 제자와 모든 적의 공격 대기 시간을 0.02 줄인다. 스킬이 켜져 있으면(`SkillEnabled`) 스킬 대기(`SkillCooldown`)도 0.02 줄인다. 0보다 작아지지 않는다. 이동 중에도, 적이 없어도 줄어든다.
   2. **이동**:
      - 제자: 가장 가까운 적까지의 거리 `d`(적 좌표 − 제자 좌표의 최솟값)를 본다. 적이 없으면 `6.48 × 0.02`만큼 전진한다. `d ≤ 1.0 + 1e-9`이면 멈춘다. 아니면 `min(6.48 × 0.02, d − 1.0)`만큼 전진한다.
      - 일반 몬스터(추가된 순서대로, 제자가 움직인 뒤의 좌표로 계산): 제자까지의 거리 `d`가 `d ≤ 3.0 + 1e-9`이고 `d > 0.8 + 1e-9`이면 `min(1.0 × 0.02, d − 0.8)`만큼 제자 쪽으로 다가온다. 그 밖에는 움직이지 않는다.
      - 보스는 움직이지 않는다.
-  2-1. **앞 동작 시작** (2026-11-17 추가): 이번 칸에 제자가 전진했고, 직전 칸이 끝났을 때는 제자의 공격 범위(`1.0 + 1e-9`) 안에 적이 없었는데 이동이 끝난 지금은 있으면(달려와 멈춘 칸), 제자의 공격 대기를 `max(지금 대기, StatUpgrades.AttackInterval × 7/17)`로 올린다 (`Battle.DiscipleAttackWindUpRatio`). 그래서 달려와 멈추자마자 피해를 주지 않고, 공격 애니메이션의 앞 동작(17프레임 중 0~6번)이 끝나는 순간 타격 프레임(7번)에 맞춰 피해를 준다. 제자가 전진하지 않은 채 범위 안에 적이 생긴 경우(처음부터 범위 안에 놓인 적, 적을 쓰러뜨린 뒤 다음 적이 이미 범위 안에 있는 경우)는 대기를 바꾸지 않는다. 범위 안 적 여부는 `Reset` 때 "없음"으로 되돌린다.
+  2-1. **앞 동작 시작** (2026-11-17 추가): 이번 칸에 제자가 전진했고, 직전 칸이 끝났을 때는 제자의 공격 범위(`1.0 + 1e-9`) 안에 적이 없었는데 이동이 끝난 지금은 있으면(달려와 멈춘 칸), 제자의 공격 대기를 `max(지금 대기, Battle.DiscipleBaseAttackInterval × 7/17)`(1.0초면 0.4118초, 21칸)로 올린다 (`Battle.DiscipleAttackWindUpRatio`). 그래서 달려와 멈추자마자 피해를 주지 않고, 공격 애니메이션의 앞 동작(17프레임 중 0~6번)이 끝나는 순간 타격 프레임(7번)에 맞춰 피해를 준다. 제자가 전진하지 않은 채 범위 안에 적이 생긴 경우(처음부터 범위 안에 놓인 적, 적을 쓰러뜨린 뒤 다음 적이 이미 범위 안에 있는 경우)는 대기를 바꾸지 않는다. 범위 안 적 여부는 `Reset` 때 "없음"으로 되돌린다.
   3. **공격** (이동이 끝난 좌표로 판정한다):
-     - 제자: 대기 시간이 `1e-9` 이하이고 거리 `1.0 + 1e-9` 이내의 적이 하나라도 있으면 공격한다. 이때 `StatUpgrades.Attack`을 한 번 읽어, 범위 안의 모든 적의 체력을 그만큼 줄인다 (0에서 멈춤). 적마다 `EnemyDamaged`를 추가된 순서대로 보낸다. 그 뒤 대기 시간을 그 순간의 `StatUpgrades.AttackInterval`로 정한다.
+     - 제자: 대기 시간이 `1e-9` 이하이고 거리 `1.0 + 1e-9` 이내의 적이 하나라도 있으면 **공격 차례**다. 차례가 되면 스킬이 준비됐는지(`IsSkillReady`: 스킬이 켜져 있고 스킬 대기가 `1e-9` 이하) 보고 아래 둘 중 하나만 한다. 차례가 아니면 스킬이 준비돼 있어도 쓰지 않는다 (거리 1.0 밖·2.0 안에만 적이 있을 때도 그렇다).
+       - **기본 공격** (스킬이 준비되지 않았을 때): `StatUpgrades.Attack`을 한 번 읽어, 거리 `1.0 + 1e-9` 이내의 모든 적의 체력을 그만큼 줄인다 (0에서 멈춤). 적마다 `EnemyDamaged`를 추가된 순서대로 보낸다. 그 뒤 공격 대기를 `Battle.DiscipleBaseAttackInterval`(1.0초)로 정한다.
+       - **스킬 이십사수매화검법** (스킬이 준비됐을 때, 기본 공격 대신): `SkillDamage`를 한 번 읽어, 거리 `2.0 + 1e-9`(`Battle.SkillRange`) 이내의 모든 적의 체력을 그만큼 줄인다 (0에서 멈춤). 적마다 `EnemyDamaged`를 추가된 순서대로 보낸 뒤 `SkillUsed`를 한 번 보낸다. 그 뒤 스킬 대기를 `Battle.SkillCooldownSeconds`(5.0초)로, 공격 대기를 `Battle.DiscipleBaseAttackInterval`(1.0초)로 정한다. 그래서 `EnemyDamaged`와 `SkillUsed`를 받는 시점에 `SkillCooldown`은 아직 0이고 `DiscipleAttackCooldown`도 정해지기 전의 값이다.
      - 적(추가된 순서대로): 대기 시간이 `1e-9` 이하이고 제자까지의 거리가 자기 공격 범위(일반 0.8, 보스 1.0)에 `1e-9`를 더한 값 이하이면 공격한다. 제자의 체력을 자기 공격력만큼 줄이고 (0에서 멈춤) `DiscipleDamaged`를 보낸 뒤, 대기 시간을 자기 공격 간격으로 정한다. **이번 칸에 제자의 공격으로 체력이 0이 된 적도 공격한다.**
   4. **쓰러짐 판정**: 체력이 0인 적을 모두 `Enemies`에서 빼고 `IsDead`를 `true`로 만든다. 제자의 체력이 0이면 `IsDiscipleDefeated`를 `true`로 만든다. 이 값들을 모두 바꾼 뒤에 알림을 보낸다: 쓰러진 적마다 `EnemyDefeated`(추가된 순서대로), 그다음 제자가 패배했으면 `DiscipleDefeated` 한 번.
 - **동시에 쓰러짐**: 같은 칸에 제자와 적이 함께 쓰러지면 둘 다 처리된다. `EnemyDefeated`를 받는 시점에 `IsDiscipleDefeated`는 이미 `true`다. 이것으로 스테이지 기능이 동시 처치를 가려낸다. 전투는 성공·실패와 보상을 판정하지 않는다.
 - **패배 뒤**: `Reset`이 불릴 때까지 `Step`과 `Tick`은 아무것도 하지 않는다. 남아 있는 적은 그대로 `Enemies`에 있다.
 - **적 추가** `AddEnemy(kind, stage, position)`: 능력치를 `EnemyStats`로 계산해 적을 만들고 `Enemies` 끝에 넣은 뒤 `EnemyAdded`를 보낸다. 새 적은 체력이 가득하고 공격 대기 시간이 0(바로 공격할 수 있음)이다. 순번 `Index`는 `Reset` 뒤 0부터, 추가할 때마다 1씩 는다.
-- **초기화** `Reset()`: 제자 좌표 0, 제자 체력 = `StatUpgrades.MaxHealth`, 제자 공격 대기 0, `IsDiscipleDefeated = false`, 모든 적 제거(`EnemyDefeated`는 보내지 않는다), 다음 `Index` 0, 모아 둔 시간 0으로 만든 뒤 `ResetCompleted`를 한 번 보낸다. `Paused`는 바꾸지 않는다.
+- **초기화** `Reset()`: 제자 좌표 0, 제자 체력 = `StatUpgrades.MaxHealth`, 제자 공격 대기 0, 스킬 대기 0(준비됨), `IsDiscipleDefeated = false`, 모든 적 제거(`EnemyDefeated`는 보내지 않는다), 다음 `Index` 0, 모아 둔 시간 0으로 만든 뒤 `ResetCompleted`를 한 번 보낸다. `Paused`는 바꾸지 않는다.
 - **멈춤** `SetPaused(paused)`: 멈춘 동안 `Step`과 `Tick`은 아무것도 하지 않고, `Tick`이 받은 시간은 모으지 않고 버린다. 알림은 없다. 처음에는 멈춰 있지 않다. 멈춤을 거는 쪽은 스테이지 기능이다 (페이드 동안).
-- **강화 반영** (`docs/spec/stat_upgrade.md`의 약속):
-  - 공격력: 피해를 줄 때마다 `StatUpgrades.Attack`을 읽는다.
-  - 공격 속도: 공격한 직후 다음 대기를 정할 때만 `StatUpgrades.AttackInterval`을 읽는다. 이미 흐르는 대기의 남은 시간은 바꾸지 않는다.
-  - 체력: `StatUpgrades.Upgraded`에서 `StatType.Health`를 받으면 `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`을 구해 기억을 새 값으로 바꾼다. 제자가 패배한 상태가 아니면 현재 체력을 늘어난 양만큼 늘린다 (예: `40/100 → 60/120`). 다른 능력치의 `Upgraded`에는 아무것도 하지 않는다.
+- **스킬 켜기**: 생성자의 `skillEnabled`가 `true`일 때만 스킬이 있다. 게임에서는 `GameRoot`가 `true`로 만든다. `false`(기본값)이면 스킬 대기가 줄지 않고(0 그대로), 공격 차례는 늘 기본 공격이며, `SkillUsed`가 오지 않는다 (1·2단계와 같은 전투). 처음 상태의 스킬 대기는 0(준비됨)이다. 별도 습득 과정은 없다.
+- **강화·경지 반영** (`docs/spec/stat_upgrade.md`, `docs/spec/realm.md`의 약속):
+  - 공격력: 기본 공격·스킬 피해를 줄 때마다 `StatUpgrades.Attack`(경지 보너스 포함)을 읽는다.
+  - 공격 간격: 늘 `Battle.DiscipleBaseAttackInterval`(1.0초)이다. 강화·경지로 바뀌지 않는다.
+  - 내공: 스킬 피해를 줄 때마다 `StatUpgrades.GetLevel(StatType.InnerPower)`를 읽는다 (`SkillDamage`). 내공·공격력을 강화해도 흐르는 스킬 대기는 바꾸지 않는다.
+  - 체력: `StatUpgrades.Upgraded`에서 `StatType.Health`를 받으면 `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`을 구해 기억을 새 값으로 바꾼다. 제자가 패배한 상태가 아니면 현재 체력을 늘어난 양만큼 늘린다 (예: `40/100 → 60/120`). 다른 능력치(공격력, 내공)의 `Upgraded`에는 아무것도 하지 않는다.
+  - 경지 돌파: 생성자에 `realm`을 받았으면 `realm.BrokeThrough`를 받을 때 체력 강화와 같은 처리를 한다: `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`, 기억을 새 값으로 바꾸고, 패배한 상태가 아니면 현재 체력을 그만큼 늘린다 (예: `90/100 → 100/110`). `BrokeThrough`를 받을 때 `realm.Current`는 이미 새 경지라 `MaxHealth`는 새 값이다. 멈춘 동안에도 반영한다. 알림은 없다. `realm`이 `null`이면 구독하지 않는다 (돌파해도 현재 체력은 그대로다).
 - 몬스터를 처치해도 제자의 체력은 회복하지 않는다. 체력이 가득 차는 것은 `Reset`뿐이다.
 - **알림 안에서 전투를 다시 부를 때**: 알림을 받는 쪽이 그 안에서 `AddEnemy`, `SetPaused`, `Reset`을 불러도 예외 없이 동작해야 한다 (보낼 대상 목록을 미리 따로 떠 둔다).
   - `AddEnemy`: 새 적은 다음 칸부터 움직이고 공격한다.
   - `SetPaused(true)`: 진행 중인 칸은 끝까지 처리하고, 다음 칸부터 멈춘다.
-  - `Reset`: 그 칸의 남은 처리와 남은 알림을 모두 그만둔다.
+  - `Reset`: 그 칸의 남은 처리와 남은 알림을 모두 그만둔다. 예: `SkillUsed` 안에서 `Reset`을 부르면 스킬 대기·공격 대기를 정하지 않고 그 칸을 끝낸다 (적의 공격도 하지 않는다).
 - 화면(`CombatView`)은 매 프레임 `Tick(Time.deltaTime)`을 부르고 전투 상태를 읽어 그린다.
 
 ### 경계 상황
@@ -71,6 +77,18 @@
 | `CombatLayout.EnemyOffsetY(음수)` | `ArgumentOutOfRangeException` | |
 | `CombatLayout.HealthRatio`의 `maxHealth`가 0 이하 | 0.0 | |
 | `CombatLayout.HealthRatio`의 `health`가 음수 / `maxHealth`보다 큼 | 0.0 / 1.0 으로 잘라낸다 | |
+| 공격 차례에 스킬이 준비됨 | 기본 공격 대신 스킬 | 2.0 안 모든 적 −`SkillDamage`, `EnemyDamaged` 적 수만큼 → `SkillUsed` 1번, 스킬 대기 5.0, 공격 대기 1.0 |
+| 스킬 대기가 끝났지만 공격 대기가 남음 | 다음 공격 차례까지 기다린다 | `IsSkillReady`는 `true` 그대로 |
+| 거리 1.0 밖·2.0 안에만 적이 있음 | 공격 차례가 아니다. 스킬도 쓰지 않는다 | 제자는 계속 다가간다 |
+| 거리 2.0 밖의 적 | 스킬에 맞지 않는다 | 체력 그대로, `EnemyDamaged` 없음 |
+| 적이 없음 | 스킬 대기는 계속 줄고, 0이면 준비된 채 기다린다 | |
+| 멈춘 동안, 패배한 뒤 | 스킬 대기도 줄지 않는다 | |
+| `skillEnabled`가 `false` | 스킬이 없다 | `SkillCooldown` 0, `IsSkillReady` `false`, `SkillUsed` 없음 |
+| 스킬 피해가 남은 체력보다 큼 | 체력 0에서 멈춘다 | |
+| 패배한 상태에서 경지 돌파 | 현재 체력을 늘리지 않는다 | 체력 0 그대로. 직전 최대 체력 기억만 바꾼다 |
+| 생성자의 `realm`이 `null` | 돌파를 구독하지 않는다 | 돌파해도 현재 체력 그대로 |
+| `CalculateSkillDamage`의 `attack` 또는 `innerPowerLevel`이 음수 | `ArgumentOutOfRangeException` | |
+| `CombatLayout.SkillSlashAlpha`의 시간이 음수 / `NaN` | 0.6 / 0.0 | |
 
 ## 수치
 
@@ -81,11 +99,16 @@
 | 허용 오차 `Battle.Epsilon` | 1e-9 | 거리 `≤ 범위 + 1e-9`, 대기 `≤ 1e-9`이면 준비됨 |
 | 한 칸의 길이 `Battle.StepSeconds` | 0.02초 (임시) | |
 | 한 번에 받는 시간의 상한 `Battle.MaxTickSeconds` | 0.25초 (임시) | |
-| 제자 시작 능력치 | 공격력 10, 최대 체력 100, 공격 간격 1.0초 (임시) | `Battle.DiscipleBaseAttack`, `DiscipleBaseMaxHealth`, `DiscipleBaseAttackInterval`. `GameRoot`가 `StatUpgrades`를 만들 때 넣는다 |
+| 제자 시작 능력치 | 공격력 10, 최대 체력 100, 공격 간격 1.0초 (임시) | `Battle.DiscipleBaseAttack`, `DiscipleBaseMaxHealth`, `DiscipleBaseAttackInterval`. `GameRoot`가 `StatUpgrades`를 만들 때 공격력·최대 체력을 넣는다. 공격 간격은 전투가 직접 쓰고 강화로 바뀌지 않는다 |
 | 제자 이동 속도 `Battle.DiscipleMoveSpeed` | 초당 6.48 유닛 (임시) | 한 칸에 0.1296. 사용자의 요청으로 기존 3.6에서 1.8배로 올렸다. 달리기 애니메이션 속도는 그대로다. |
 | 제자 공격 범위 `Battle.DiscipleAttackRange` | 앞쪽 1.0 유닛 (임시) | 범위 안 모든 적에게 같은 피해 |
-| 앞 동작 비율 `Battle.DiscipleAttackWindUpRatio` | 7/17 (임시) | 달려와 멈춘 칸에 대기를 `공격 간격 × 7/17` 이상으로 올린다. 간격 1.0초 → 0.4118초(21칸), 0.5초 → 0.2059초(11칸). 공격 애니메이션 17프레임 중 타격 프레임 7번에 맞춘 값이라 `DiscipleAnimator.AttackHitFrame / AttackFrameCount`와 같아야 한다 |
-| 제자 피해량 | `StatUpgrades.Attack` | |
+| 앞 동작 비율 `Battle.DiscipleAttackWindUpRatio` | 7/17 (임시) | 달려와 멈춘 칸에 대기를 `공격 간격 × 7/17` 이상으로 올린다. 간격 1.0초 → 0.4118초(21칸). 공격 애니메이션 17프레임 중 타격 프레임 7번에 맞춘 값이라 `DiscipleAnimator.AttackHitFrame / AttackFrameCount`와 같아야 한다 |
+| 기본 공격 피해 | `StatUpgrades.Attack` | 경지 보너스 포함 |
+| 스킬 범위 `Battle.SkillRange` | 앞쪽 2.0 유닛 (임시) | 범위 안 모든 적에게 같은 피해 |
+| 스킬 재사용 대기 `Battle.SkillCooldownSeconds` | 5.0초 (임시) | 스킬을 쓴 칸부터 센다(250칸). 기본 공격 간격과 따로 센다 |
+| 스킬 배율 `Battle.SkillBasePercent`, `Battle.SkillPercentPerInnerLevel` | 200%, 내공 한 단계당 +10%p (임시) | 정수 % (`int`) |
+| 스킬 피해 `Battle.CalculateSkillDamage(attack, innerPowerLevel)` | `attack × (200 + 10 × innerPowerLevel) / 100` | `long`으로 계산하고 정수 나눗셈(내림). (10, 0) → 20, (10, 1) → 21, (13, 2) → 28, (11, 0) → 22. `SkillDamage`는 `StatUpgrades.Attack`과 `GetLevel(StatType.InnerPower)`를 넣은 값 |
+| 검기 띠 | 가로 2.0 × 세로 0.4, RGB (1.0, 0.55, 0.75), 불투명도 0.6에서 0.25초 동안 0으로 (임시) | `CombatLayout.SkillSlashSeconds` = 0.25, `SkillSlashAlpha(t)` = `0.6 × (1 − t / 0.25)`를 0.0 ~ 0.6으로 잘라냄 |
 | 일반 몬스터 반응 거리 `EnemyStats.NormalReactRange` | 3.0 유닛 (임시) | |
 | 일반 몬스터 이동 속도 `EnemyStats.NormalMoveSpeed` | 초당 1.0 유닛 (임시) | 한 칸에 0.02 |
 | 일반 몬스터 공격 범위 | 0.8 유닛 (임시) | `EnemyStats.AttackRange(Normal)` |
@@ -159,19 +182,35 @@ namespace PlumSword.Core.Combat
         public const double DiscipleMoveSpeed = 6.48;
         public const double DiscipleAttackRange = 1.0;
         public const double DiscipleAttackWindUpRatio = 7.0 / 17.0;   // 달려와 멈춘 칸의 앞 동작 대기 = 공격 간격 × 이 값
+        public const double SkillRange = 2.0;                 // 스킬 범위 (유닛)
+        public const double SkillCooldownSeconds = 5.0;       // 스킬 재사용 대기 (초)
+        public const int SkillBasePercent = 200;              // 내공 0단계의 스킬 배율 (%)
+        public const int SkillPercentPerInnerLevel = 10;      // 내공 한 단계당 더하는 배율 (%p)
 
-        // upgrades: 제자의 공격력·최대 체력·공격 간격을 읽을 곳. null 이면 ArgumentNullException.
+        // upgrades: 제자의 공격력·최대 체력·내공 단계를 읽을 곳. null 이면 ArgumentNullException.
+        // realm: null 이 아니면 realm.BrokeThrough 를 구독해 돌파 때 현재 체력을 늘린다. null 이면 구독하지 않는다.
+        // skillEnabled: true 면 이십사수매화검법을 쓴다. false(기본값)면 기본 공격만 한다.
         // upgrades.Upgraded 를 구독한다. 시작 상태: 제자 좌표 0, 체력 = upgrades.MaxHealth,
-        // 공격 대기 0, 적 없음, 멈추지 않음, 패배 아님. 알림을 보내지 않는다.
-        public Battle(PlumSword.Core.StatUpgrade.StatUpgrades upgrades);
+        // 공격 대기 0, 스킬 대기 0, 적 없음, 멈추지 않음, 패배 아님. 알림을 보내지 않는다.
+        public Battle(PlumSword.Core.StatUpgrade.StatUpgrades upgrades,
+            PlumSword.Core.Realm.RealmProgress realm = null, bool skillEnabled = false);
 
         public double DisciplePosition { get; }
         public long DiscipleHealth { get; }             // 0 이상
         public long DiscipleMaxHealth { get; }          // upgrades.MaxHealth 그대로
         public double DiscipleAttackCooldown { get; }   // 다음 공격까지 남은 시간(초)
-        public double DiscipleAttackInterval { get; }   // upgrades.AttackInterval 그대로. 화면의 공격 애니메이션 속도에 쓴다
+        public double DiscipleAttackInterval { get; }   // 늘 DiscipleBaseAttackInterval (1.0). 화면의 공격 애니메이션 속도에 쓴다
         public bool IsDiscipleDefeated { get; }
         public bool Paused { get; }
+
+        public bool SkillEnabled { get; }               // 생성자의 skillEnabled
+        public double SkillCooldown { get; }            // 스킬을 다시 쓸 수 있을 때까지 남은 시간(초). 0 이상. 스킬이 꺼져 있으면 늘 0
+        public bool IsSkillReady { get; }               // SkillEnabled 이고 SkillCooldown <= Epsilon
+        public long SkillDamage { get; }                // CalculateSkillDamage(upgrades.Attack, upgrades.GetLevel(StatType.InnerPower)). 읽을 때마다 계산
+
+        // attack × (SkillBasePercent + SkillPercentPerInnerLevel × innerPowerLevel) / 100 을 long 정수 나눗셈(내림)으로.
+        // attack 또는 innerPowerLevel 이 음수면 ArgumentOutOfRangeException.
+        public static long CalculateSkillDamage(long attack, int innerPowerLevel);
 
         // 살아 있는 적. 추가된 순서. 쓰러진 적은 쓰러짐 판정에서 빠진다.
         public System.Collections.Generic.IReadOnlyList<Enemy> Enemies { get; }
@@ -181,7 +220,7 @@ namespace PlumSword.Core.Combat
         // 멈췄거나 패배한 상태면 아무것도 하지 않고 시간도 모으지 않는다.
         public void Tick(double deltaSeconds);
 
-        // 정확히 한 칸(0.02 초) 진행한다: 대기 감소 -> 이동 -> 앞 동작 시작 -> 공격 -> 쓰러짐 판정.
+        // 정확히 한 칸(0.02 초) 진행한다: 대기 감소(스킬 대기 포함) -> 이동 -> 앞 동작 시작 -> 공격(기본 공격 또는 스킬) -> 쓰러짐 판정.
         // 멈췄거나 패배한 상태면 아무것도 하지 않는다.
         public void Step();
 
@@ -191,7 +230,7 @@ namespace PlumSword.Core.Combat
         // (Epsilon 허용: 칸마다 0.1296 을 더한 좌표의 소수 오차 때문에 "제자와 같은 좌표" 가 거부되지 않게 한다.)
         public Enemy AddEnemy(EnemyKind kind, int stage, double position);
 
-        // 제자를 좌표 0, 체력 가득, 공격 대기 0, 패배 아님으로 되돌리고 모든 적을 없앤 뒤
+        // 제자를 좌표 0, 체력 가득, 공격 대기 0, 스킬 대기 0, 패배 아님으로 되돌리고 모든 적을 없앤 뒤
         // ResetCompleted 를 보낸다. EnemyDefeated 는 보내지 않는다. Paused 는 바꾸지 않는다.
         public void Reset();
 
@@ -204,6 +243,7 @@ namespace PlumSword.Core.Combat
         public event System.Action<Enemy> EnemyDefeated;   // 쓰러짐 판정에서. 이때 IsDiscipleDefeated 는 이미 이번 칸의 결과다
         public event System.Action DiscipleDefeated;       // 쓰러짐 판정에서, EnemyDefeated 들 다음에 한 번
         public event System.Action ResetCompleted;         // Reset 이 끝난 뒤
+        public event System.Action SkillUsed;              // 스킬 피해의 EnemyDamaged 들 다음에 한 번. 이때 SkillCooldown 은 아직 0
     }
 
     public static class CombatLayout
@@ -214,6 +254,12 @@ namespace PlumSword.Core.Combat
 
         // 체력 바가 찬 비율. (double)health / maxHealth 를 0.0 ~ 1.0 으로 잘라낸다. maxHealth <= 0 이면 0.0.
         public static double HealthRatio(long health, long maxHealth);
+
+        public const double SkillSlashSeconds = 0.25;   // 검기 띠가 보이는 시간(초)
+
+        // 검기 띠의 불투명도. 0.6 * (1 - elapsedSeconds / 0.25) 를 0.0 ~ 0.6 으로 잘라낸다.
+        // 예: 0 -> 0.6, 0.125 -> 0.3, 0.25 이상 -> 0.0. 음수 -> 0.6, NaN -> 0.0.
+        public static double SkillSlashAlpha(double elapsedSeconds);
     }
 }
 ```
@@ -223,7 +269,7 @@ namespace PlumSword.Game
 {
     public sealed class GameRoot : MonoBehaviour   // 이미 있는 클래스에 아래 하나를 더한다
     {
-        // Awake 에서 StatUpgrades 를 만든 뒤 new Battle(StatUpgrades) 로 하나 만든다.
+        // Awake 에서 Realm, StatUpgrades 를 만든 뒤 new Battle(StatUpgrades, Realm, true) 로 하나 만든다 (스킬 켜짐).
         public PlumSword.Core.Combat.Battle Battle { get; }   // private set
     }
 }
@@ -287,7 +333,7 @@ namespace PlumSword.Game.Combat
 
 - `TempEncounter`는 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
 
-- 누가 만들고 누가 들고 있는지: `GameRoot.Awake`가 `StatUpgrades`를 만든 뒤 `Battle`을 하나 만들어 `GameRoot.Battle`로 들고 있는다. 게임에 `Battle`은 하나뿐이다. `GameRoot`가 `StatUpgrades`를 만드는 줄의 숫자 `10, 100, 1.0`은 `Battle.DiscipleBaseAttack, Battle.DiscipleBaseMaxHealth, Battle.DiscipleBaseAttackInterval`로 바꾼다 (값은 같다).
+- 누가 만들고 누가 들고 있는지: `GameRoot.Awake`가 `StatUpgrades`를 만든 뒤 `Battle`을 하나 만들어 `GameRoot.Battle`로 들고 있는다. 게임에 `Battle`은 하나뿐이다. `GameRoot`는 `StatUpgrades`를 만들 때 시작 능력치로 `Battle.DiscipleBaseAttack, Battle.DiscipleBaseMaxHealth`를 넣고, `Battle`은 `new Battle(StatUpgrades, Realm, true)`로 만든다 (`Realm`을 먼저 만든다).
 - `Tick`을 부르는 것은 `CombatView` 하나뿐이다. 다른 기능은 `Tick`과 `Step`을 부르지 않는다.
 - 스테이지 기능이 쓰는 방법:
   - 스테이지 시작·재도전: 화면이 가려진 동안 `Reset()` 뒤 `AddEnemy(EnemyKind.Normal, 스테이지 번호, 좌표)`를 10번.
@@ -300,10 +346,11 @@ namespace PlumSword.Game.Combat
 
 ### 필요한 것
 
-- `PlumSword.Core.StatUpgrade.StatUpgrades` (`docs/spec/stat_upgrade.md`): `Attack`, `MaxHealth`, `AttackInterval`, `Upgraded`.
-- `PlumSword.Core.StatUpgrade.StatType.Health` (`docs/spec/stat_upgrade.md`).
-- `PlumSword.Game.GameRoot.StatUpgrades` (`docs/spec/stat_upgrade.md`). 강화 기능이 먼저 구현되어 있어야 한다.
-- 적을 배치하는 스테이지 기능은 아직 사양이 없다. 그때까지 `TempEncounter`가 임시로 대신한다.
+- `PlumSword.Core.StatUpgrade.StatUpgrades` (`docs/spec/stat_upgrade.md`): `Attack`, `MaxHealth`, `GetLevel(StatType.InnerPower)`, `Upgraded`. 구현되어 있다.
+- `PlumSword.Core.StatUpgrade.StatType.Health`, `StatType.InnerPower` (`docs/spec/stat_upgrade.md`).
+- `PlumSword.Core.Realm.RealmProgress.BrokeThrough` (`docs/spec/realm.md`). 구현되어 있다.
+- `PlumSword.Game.GameRoot.StatUpgrades`, `GameRoot.Realm`.
+- 적 배치는 스테이지 기능(`docs/spec/stage.md`)이 한다.
 
 ## 화면
 
@@ -321,14 +368,19 @@ namespace PlumSword.Game.Combat
   - 몸 스프라이트는 발 피벗을 유지하며 Root 자리에서 1.5배로 표시한다. 제자 체력 바의 세로 가운데는 발에서 `53/32 × 1.5 + 0.2` 유닛(대기 그림의 머리 끝 + 간격)에 고정한다. 동작마다 움직이지 않는다.
   - 피격 번쩍임: 스프라이트는 색을 곱하므로 흰색 대신 RGB (1.0, 0.45, 0.45)로 0.1초 물들인다 (임시). 대체 표시는 지금처럼 흰색.
 - **제자 애니메이션** (`DiscipleAnimator`, Core): `CombatView.Update`가 `Tick` 앞뒤의 값을 비교해 매 프레임 부르고, `Motion`·`Frame`의 스프라이트를 보여 준다. `Battle.Reset`(`ResetCompleted`) 때 `Reset()`.
-  - 입력: `moved` = 이번 프레임에 `DisciplePosition`이 `MoveThreshold`보다 많이 커졌다. `attacked` = 이번 프레임의 `Tick` 안에서 `EnemyDamaged`를 받았다 (`EnemyDamaged`는 제자의 공격만 보낸다. 간격은 0.5초 이상이라 한 `Tick`에 공격은 많아야 한 번이다. 대기가 늘었는지로는 가리지 않는다: 달려와 멈춘 칸에도 앞 동작 대기로 는다). `engaged` = 멈춤이 아니고 패배가 아니고, 적 중 하나라도 `적 좌표 − 제자 좌표 ≤ 1.0 + 1e-9`.
+  - 입력: `moved` = 이번 프레임에 `DisciplePosition`이 `MoveThreshold`보다 많이 커졌다. `attacked` = 이번 프레임의 `Tick` 안에서 `EnemyDamaged`를 받았다 (`EnemyDamaged`는 제자의 공격(기본 공격과 스킬)만 보낸다. 간격은 1.0초라 한 `Tick`에 공격은 많아야 한 번이다. 대기가 늘었는지로는 가리지 않는다: 달려와 멈춘 칸에도 앞 동작 대기로 는다). `engaged` = 멈춤이 아니고 패배가 아니고, 적 중 하나라도 `적 좌표 − 제자 좌표 ≤ 1.0 + 1e-9`.
   - 우선순위: ① 공격 마무리 중이면 공격 ② `engaged`이고 움직이지 않았고 남은 대기가 타격 앞 동작 시간 이내면 공격 앞 동작 ③ 달리는 중이면 달리기 ④ 대기.
-  - 공격 재생 속도는 `17 / 공격 간격` fps (간격 1.0초 → 17 fps, 0.5초 → 34 fps). 계속 공격하면 마무리가 끝나는 순간 다음 앞 동작이 시작되어 끊김 없이 이어진다.
+  - 공격 재생 속도는 `17 / 공격 간격` fps (간격 1.0초 → 17 fps). 계속 공격하면 마무리가 끝나는 순간 다음 앞 동작이 시작되어 끊김 없이 이어진다.
   - 앞 동작: 남은 대기를 프레임으로 바꾼 값 `cooldown × fps`가 7 이하이면 `7 − ceil(cooldown × fps)` 프레임(0~6)을 보여 준다. 그래서 **대기가 0이 되어 피해가 들어가는 칸에 타격 프레임(7, 검기가 처음 보이는 프레임)이 보인다.**
   - 공격한 프레임: `공격 간격 − 남은 대기`(공격 뒤 흐른 시간)부터 세어 7번에서 16번까지 재생한다. 마무리 중에 다시 움직이면(적을 쓰러뜨려 달리기 시작) 검기 프레임 7~9까지만 보여 주고 달리기로 바꾼다.
   - **달려와 멈춘 칸**: `Battle`이 대기를 `공격 간격 × 7/17`로 올리므로("동작"의 2-1), 그 칸부터 앞 동작 0번이 시작되고 피해는 7번 프레임에 들어간다. 앞 동작은 `engaged`이면 그 칸에 움직였어도 보여 준다. 대기 없이 공격이 일어나는 경우(제자가 서 있는 채 범위 안에 적이 생겼을 때)에는 타격 프레임 7부터 재생한다.
   - 달리기 20 fps, 대기 10 fps로 반복한다 (임시). 제자 이동 속도는 초당 6.48 유닛이다 ("수치"). `Battle`은 0.02초 칸으로 움직여 화면 프레임(예: 60 fps)에 움직임이 없는 프레임이 끼므로, 움직임이 `RunGraceSeconds`(0.1초) 동안 없어야 달리기를 멈춘다. 다른 동작에서 달리기·대기로 들어가면 처음부터 센다.
   - 패배·멈춤 상태는 `engaged`가 아니므로 대기 동작을 보여 준다 (진행 중이던 공격 마무리는 끝까지 재생한다).
+- **스킬 (이십사수매화검법)**: 제자는 기본 공격과 같은 공격 애니메이션을 보여 준다 (스킬도 `EnemyDamaged`를 보내므로 `attacked`가 된다. `DiscipleAnimator`는 바꾸지 않는다). 그에 더해 `SkillUsed`를 받으면 **검기 띠**를 하나 보인다 (모두 임시).
+  - 모양: 1×1 흰색 스프라이트를 가로 2.0 × 세로 0.4로 늘린 사각형, 색 RGB (1.0, 0.55, 0.75).
+  - 위치: 쏜 순간의 제자 표시 위치 기준으로 왼쪽 끝이 발의 x, 세로 가운데가 발 위 0.75 유닛이다. 곧 가운데 `(DisciplePosition − 2.25 + 1.0, −1.5 + 0.75)`에 고정되고 제자를 따라가지 않는다. 그리는 순서는 20000 (캐릭터 위, 체력 바 아래).
+  - 불투명도: 쏜 뒤 흐른 시간 `t`(`Time.deltaTime`으로 센다)로 `CombatLayout.SkillSlashAlpha(t)`이고, `CombatLayout.SkillSlashSeconds`(0.25초)가 지나면 숨긴다. 보이는 중에 또 `SkillUsed`가 오면 새 위치에서 처음부터 센다. `ResetCompleted`에서 숨긴다.
+  - 스킬 버튼과 재사용 대기 표시는 없다.
 - **일반 몬스터**: 1스테이지에는 종남 남녀 제자 스프라이트를 인덱스 짝수·홀수 순서로 번갈아 표시한다. 대기와 걷기는 각각 10·12fps, 공격은 24프레임을 공격 간격에 맞춰 재생하며 대략 10번 프레임을 피해 시점에 맞춘다. 첫 공격은 기존 전투가 즉시 피해를 주므로 앞 동작이 생략될 수 있다. 이미지가 없거나 다른 스테이지면 1.5×1.5 주황색 사각형을 쓴다. 전투 위치 `(Position, CombatLayout.EnemyOffsetY(Index))`, 몸 그리기 순서는 `10 + min(Index, 9989)`로 고정해 겹친 적들의 앞뒤가 프레임마다 바뀌지 않는다. 원본 크기와 피벗은 `docs/dev/assets.md`의 종남 표를 따른다.
 - **보스**: 3.0×4.5 사각형, RGB (0.55, 0.20, 0.60), 전투 위치 `(Position, 0)`, 몸 그리기 순서는 일반 몬스터와 같은 인덱스 기준 (모두 임시). 일반 몬스터와 보스는 공통 화면 오프셋에 더해 오른쪽 0.4유닛을 추가로 옮겨 제자와 조금 떨어져 보이게 한다. 체력 바도 함께 이동하며 전투 좌표·사거리·피해 판정은 바꾸지 않는다.
 - **머리 위 체력 바**: 제자와 일반 몬스터에만 둔다. 보스에는 두지 않는다 (보스 체력은 스테이지 기능의 위쪽 바가 보여 준다). 캐릭터의 자식으로, 머리 위 0.2 유닛에 가로 1.0 × 세로 0.12의 바탕 사각형(RGB (0.15, 0.15, 0.15))과 그 위의 채움 사각형을 둔다. 채움의 가로 길이는 `1.0 × CombatLayout.HealthRatio(체력, 최대 체력)`이고 왼쪽 끝이 고정된다. 채움 색은 제자 초록 RGB (0.20, 0.80, 0.30), 일반 몬스터 빨강 RGB (0.85, 0.20, 0.20). 그리는 순서는 바탕 30000, 채움 30001 (모두 임시).
@@ -343,7 +395,7 @@ namespace PlumSword.Game.Combat
 - **누르는 것**: 없다. 전투 화면은 입력을 받지 않는다.
 - **임시 적 배치 (`TempEncounter`)**: `Initialize`에서 바로, 그리고 다시 놓을 때마다 `Reset()`을 부른 뒤 `AddEnemy(Normal, 1, 6.0)`, `AddEnemy(Normal, 1, 9.0)`, `AddEnemy(Normal, 1, 9.3)`, `AddEnemy(Boss, 1, 15.0)`을 순서대로 부른다 (임시). `DiscipleDefeated`를 받았거나, `EnemyDefeated`를 받았을 때 `battle.Enemies.Count`가 0이면 1.0초(임시, `Time.deltaTime`으로 센다) 기다린 뒤 다시 놓는다. 금화는 주지 않는다.
   - 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
-- 겹침 어긋남과 체력 바 비율의 판단은 Core의 `CombatLayout`에, 제자 동작·프레임 선택은 `DiscipleAnimator`에 있고 에딧 모드 테스트로 판정한다. 제자 스프라이트가 실제로 불러와지는지는 플레이 모드 테스트 `DiscipleSpriteTests`가 본다. 그 밖의 `CombatView`, `GameRoot` 조립은 사람이 실행해 확인한다.
+- 겹침 어긋남, 체력 바 비율, 검기 띠 불투명도의 판단은 Core의 `CombatLayout`에, 제자 동작·프레임 선택은 `DiscipleAnimator`에 있고 에딧 모드 테스트로 판정한다. 제자 스프라이트가 실제로 불러와지는지는 플레이 모드 테스트 `DiscipleSpriteTests`가 본다. 그 밖의 `CombatView`, `GameRoot` 조립은 사람이 실행해 확인한다.
 
 ## 저장
 
@@ -352,6 +404,7 @@ namespace PlumSword.Game.Combat
 | (없음) | | | 전투는 저장할 값이 없다 |
 
 - 제자의 현재 체력, 좌표, 공격 대기 시간, 적의 상태는 저장하지 않는다. 2단계 기획도 "남은 체력과 처치 진행도는 복원하지 않고, 저장된 스테이지의 시작 지점에서 체력을 전부 회복하고 시작한다"로 정했다.
+- 스킬 재사용 대기도 저장하지 않는다. 게임을 다시 켜면(`new Battle`) 준비된 상태로 시작한다. 경지와 내공 단계의 저장은 저장 기능이 한다.
 - 되살리기: 따로 없다. `new Battle(upgrades)`의 시작 상태가 곧 스테이지 시작 상태다. 불러온 뒤에는 스테이지 기능이 `Reset()`과 `AddEnemy`로 시작한다.
 - 잘못된 저장 값: 해당 없음 (저장하는 값이 없다).
 - 오프라인 보상: 꺼져 있는 동안 전투는 진행되지 않는다. 오프라인 보상 금액 계산에도 전투 상태는 쓰이지 않는다.
@@ -364,99 +417,92 @@ namespace PlumSword.Game.Combat
 - 진행 바, 보스 체력 바와 보스 이름, 스테이지 번호 표시, 페이드, 페이드 중 전투 멈춤과 강화 잠금: 스테이지 기능이 정한다. `SetPaused`를 쓴다.
 - 강화 단계와 비용, 최종 능력치 계산: 강화 기능(`docs/spec/stat_upgrade.md`)이 정한다.
 - 저장·불러오기, 오프라인 보상: 2단계에서 한다.
-- 경지 돌파 보너스, 자동 발동 스킬과 내공 강화, 공격 속도 강화 제거: 3단계에서 한다. 그때 이 사양을 고친다.
+- 스킬 애니메이션: 사람이 새로 만들어 넣을 예정이다. 들어오면 따로 기획한다 (그때 `DiscipleAnimator`에 스킬 동작을 더할지 정한다). 지금은 기본 공격 애니메이션과 임시 검기 띠다.
+- 스킬 버튼, 재사용 대기 표시, 스킬 습득·여러 스킬, 스킬 소리: 하지 않는다.
+- 경지·내공 단계의 저장과 저장 판 번호: 저장 기능이 한다.
+- 내공 강화 단계·비용과 경지 보너스 계산은 강화 기능(`docs/spec/stat_upgrade.md`), 경지 단계·돌파 비용·보너스 %는 경지 기능(`docs/spec/realm.md`)이 정한다.
+- 스킬·내공·경지 수치의 밸런스: 4단계에서 한다.
 - 원거리 몬스터, 움직이는 보스, 제한 시간: 없다.
 - 종남 일반 상대와 1스테이지 배경 시안은 적용했다 ("화면"). 다른 테마의 실제 상대·보스와 배경, 제자의 피격·쓰러짐 애니메이션, 피해 숫자, 효과음, 시차 스크롤은 아직 적용하지 않았다.
 - 체력·공격력이 `long` 범위를 넘칠 만큼 큰 경우: 다루지 않는다.
 
 ## 완료 조건 초안
 
-아래에서 따로 적지 않으면 지갑은 `new Wallet(1000)`, 강화는 `new StatUpgrades(wallet, 10, 100, 1.0)`, 전투는 `new Battle(upgrades)`로 만든 것이다. "n칸 뒤"는 `Step()`을 n번 부른 뒤다. 좌표·시간은 오차 1e-6 안에서 비교한다.
+아래에서 따로 적지 않으면 지갑은 `new Wallet(1000)`, 강화는 `new StatUpgrades(wallet, 10, 100)`이다. "스킬 전투"는 `new Battle(upgrades, null, true)`, "기본 전투"는 `new Battle(upgrades)`다. "경지 전투"는 `realm = new RealmProgress(wallet)`, `upgrades = new StatUpgrades(wallet, 10, 100, 0, 0, 0, realm)`, `new Battle(upgrades, realm)`이다. "n칸 뒤"는 처음부터 `Step()`을 모두 n번 부른 뒤다. 좌표·시간은 오차 1e-6 안에서 비교한다.
 
-몬스터 능력치 (`EnemyStatsTests`)
+이미 구현되고 바뀌지 않은 완료 조건(1~45)은 기록 파일로 옮겼다. 번호는 그대로 두고, 새 조건은 46번부터 붙인다. 옮긴 조건은 지금도 기본 전투(`new Battle(upgrades)`)로 그대로 성립한다.
 
-1. `EnemyStats.MaxHealth(Normal, stage)`는 1·2·3스테이지에서 30·40·50, `EnemyStats.Attack(Normal, stage)`는 5·7·9다.
-2. `EnemyStats.MaxHealth(Boss, stage)`는 1·2·3스테이지에서 100·130·160, `EnemyStats.Attack(Boss, stage)`는 10·14·18이다.
-3. `EnemyStats.AttackInterval`은 `Normal`·`Boss` 모두 2.0, `EnemyStats.AttackRange`는 `Normal` 0.8, `Boss` 1.0이다.
-4. `EnemyStats.MaxHealth(Normal, 0)`, `EnemyStats.Attack(Boss, 0)`, `EnemyStats.MaxHealth((EnemyKind)99, 1)`, `EnemyStats.AttackRange((EnemyKind)99)`는 각각 `ArgumentOutOfRangeException`을 던진다.
+스킬 피해 계산 (`BattleSkillTests`)
 
-전투 (`BattleTests`)
+46. `Battle.CalculateSkillDamage`는 (10, 0) → 20, (10, 1) → 21, (13, 2) → 28, (11, 0) → 22, (0, 5) → 0, (10, `int.MaxValue`) → 2147483667을 돌려주고, (−1, 0)과 (10, −1)은 각각 `ArgumentOutOfRangeException`을 던진다.
+47. 스킬 전투를 새로 만들면 `SkillEnabled`는 `true`, `SkillCooldown`은 0, `IsSkillReady`는 `true`, `SkillDamage`는 20이다. 기본 전투는 `SkillEnabled` `false`, `SkillCooldown` 0, `IsSkillReady` `false`다.
+48. 스킬 전투에서 `upgrades.TryUpgrade(StatType.InnerPower)` 뒤 `SkillDamage`는 21이고, 이어서 `upgrades.TryUpgrade(StatType.Attack)` 뒤 25다 (공격력 12 × 210% = 25.2 → 25).
 
-5. 새로 만들면 `DisciplePosition`은 0, `DiscipleHealth`는 100, `DiscipleMaxHealth`는 100, `DiscipleAttackCooldown`은 0, `IsDiscipleDefeated`는 `false`, `Paused`는 `false`, `Enemies.Count`는 0이다.
-6. `new Battle(null)`은 `ArgumentNullException`을 던진다.
-7. 적이 없을 때 50칸 뒤 `DisciplePosition`은 6.48이다.
-8. `AddEnemy(Normal, 2, 5.0)`이 돌려준 적은 `Kind`가 `Normal`, `Index` 0, `Position` 5.0, `MaxHealth`와 `Health` 40, `Attack` 7, `AttackInterval` 2.0, `AttackCooldown` 0, `IsDead` `false`이고, `EnemyAdded`가 그 적을 담아 1번 오며 `Enemies.Count`는 1이다. 이어서 `AddEnemy(Boss, 1, 8.0)`의 `Index`는 1이다.
-9. `AddEnemy(Normal, 0, 5.0)`, `AddEnemy((EnemyKind)99, 1, 5.0)`, `AddEnemy(Normal, 1, double.NaN)`, `AddEnemy(Normal, 1, double.PositiveInfinity)`, `AddEnemy(Normal, 1, -0.1)`은 각각 `ArgumentOutOfRangeException`을 던지고 `Enemies.Count`는 0, `EnemyAdded`는 0번 온다. `AddEnemy(Normal, 1, 0.0)`은 예외 없이 추가된다.
-10. `AddEnemy(Normal, 1, 10.0)` 뒤 1칸 뒤에 그 적의 `Position`은 10.0이고 `DisciplePosition`은 0.1296이다 (반응 거리 밖의 몬스터는 기다린다).
-11. `AddEnemy(Normal, 1, 5.0)` 뒤: 15칸 뒤 적의 `Position`은 5.0, 16칸 뒤 4.98이다 (제자가 3 유닛 안으로 오면 다가온다).
-12. 11번에 이어: 29칸 뒤 적의 `Health`는 30이고 `DisciplePosition`은 3.74, 적의 `Position`은 4.72, `DiscipleAttackCooldown`은 7/17이다 (제자는 거리 1.0에서 멈추고 앞 동작 대기를 시작한다). 49칸 뒤 30, 50칸 뒤 20이고 적의 `Position`은 4.54다.
-13. 12번에 이어: 37칸 뒤 `DiscipleHealth`는 100, 38칸 뒤 95이고 적의 `Position`은 4.54다 (몬스터는 거리 0.8에서 멈춰 바로 공격한다).
-14. 13번에 이어: 100칸 뒤 적의 `Health`는 10, 149칸 뒤 10, 150칸 뒤 0이고 `EnemyDefeated`가 그 적을 담아 1번 오며, 적의 `IsDead`는 `true`, `Enemies.Count`는 0, `DiscipleHealth`는 90이다 (적은 38·138칸에 공격했다. 처치해도 체력은 회복하지 않는다). 151칸 뒤 `DisciplePosition`은 3.8696이다.
-15. `AddEnemy(Normal, 1, 0.8)`을 3번 부른 뒤 1칸 뒤: 세 적의 `Health`는 모두 20, `DiscipleHealth`는 85, `EnemyDamaged`는 3번(`Index` 0, 1, 2 순서), `DiscipleDamaged`는 3번 온다.
-16. 15번에 이어: 51칸 뒤 세 적의 `Health`는 모두 10이다. 101칸 뒤 `Enemies.Count`는 0, `EnemyDefeated`는 3번(`Index` 0, 1, 2 순서) 오고, `DiscipleHealth`는 70, `IsDiscipleDefeated`는 `false`다 (같은 칸에 쓰러진 몬스터도 그 칸의 공격을 한다).
-17. `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 1.5)` 뒤 1칸 뒤: 일반 몬스터의 `Health`는 20, 보스의 `Health`는 100이고 `EnemyDamaged`는 1번 온다 (범위 밖의 적은 맞지 않는다).
-18. `AddEnemy(Boss, 1, 1.0)` 뒤: 1칸 뒤 보스의 `Health`는 90, `DiscipleHealth`는 90이다. 450칸 뒤 보스의 `Health`는 10, 451칸 뒤 0이고 `EnemyDefeated`가 1번 오며 `DiscipleHealth`는 50이다.
-19. `AddEnemy(Boss, 1, 5.0)` 뒤: 30칸 뒤 `DiscipleHealth`는 100, 31칸 뒤 90이고 보스의 `Health`는 100, `DisciplePosition`은 4.0, 보스의 `Position`은 5.0이다 (보스는 움직이지 않고 도착하자마자 공격한다). 51칸 뒤 보스의 `Health`는 100, 52칸 뒤 90이다 (제자는 앞 동작 21칸 뒤).
-20. `new StatUpgrades(wallet, 30, 100, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 2.0)` 뒤: 1칸 뒤 `Enemies.Count`는 1, `DiscipleHealth`는 95다. 26칸 뒤 `DisciplePosition`은 1.0, 보스의 `Health`는 100, `DiscipleAttackCooldown`은 0.5, `DiscipleHealth`는 85다. 50칸 뒤 보스의 `Health`는 100, 51칸 뒤 70이다 (이동 중에도 대기가 흐르고, 남은 시간만큼 기다린다).
-21. `new StatUpgrades(wallet, 30, 100, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 8.0)` 뒤: 76칸 뒤 보스의 `Health`는 100, 77칸 뒤 70이다 (56칸째 도착했을 때 대기가 끝나 있어도 앞 동작 대기를 둔다).
-21-1. `new StatUpgrades(wallet, 10, 100, 0.5)`으로 `AddEnemy(Boss, 1, 5.0)` 뒤: 31칸 뒤 `DisciplePosition`은 4.0, `DiscipleAttackCooldown`은 `0.5 × 7/17`이다.
-21-2. `AddEnemy(Boss, 1, 1.0)` 뒤(제자가 전진하지 않고 처음부터 범위 안): 1칸 뒤 보스의 `Health`는 90이다 (앞 동작 대기 없음).
-22. `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.Attack)`을 부르면, 51칸 뒤 보스의 `Health`는 78이다 (90 − 12).
-23. `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.AttackSpeed)`를 부르면, 50칸 뒤 보스의 `Health`는 90, 51칸 뒤 80, 98칸 뒤 80, 99칸 뒤 70이다 (기다리는 중인 공격은 그대로이고 다음 대기부터 0.95초다).
-24. `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고(`DiscipleHealth` 90) `upgrades.TryUpgrade(StatType.Health)`를 부르면 `DiscipleHealth`는 110, `DiscipleMaxHealth`는 120이다. `TryUpgrade(StatType.Attack)`을 불러도 `DiscipleHealth`는 110 그대로다.
-25. `new StatUpgrades(wallet, 30, 5, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤: `EnemyDefeated` 1번과 `DiscipleDefeated` 1번이 이 순서로 오고, `EnemyDefeated`를 받는 시점에 읽은 `IsDiscipleDefeated`는 `true`다. `DiscipleHealth`는 0, `Enemies.Count`는 0이다.
-26. `new StatUpgrades(wallet, 100, 10, 1.0)`으로, `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 뒤: 보스의 `EnemyDefeated`를 받는 시점에 읽은 `IsDiscipleDefeated`는 `true`이고 `DiscipleDefeated`가 1번 온다.
-27. `new StatUpgrades(wallet, 10, 5, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤: `DiscipleHealth`는 0, `IsDiscipleDefeated`는 `true`, `DiscipleDefeated`는 1번, 적의 `Health`는 20이고 `Enemies.Count`는 1이다. 이어서 `Step()` 100번과 `Tick(0.1)`을 불러도 적의 `Health`는 20, `DisciplePosition`은 0이고 알림은 더 오지 않는다.
-28. `new StatUpgrades(wallet, 10, 12, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)`을 3번 부른 뒤 1칸 뒤: `DiscipleHealth`는 0 (음수가 아니다), `DiscipleDamaged`는 3번, `DiscipleDefeated`는 1번 온다.
-29. 27번 상태(패배)에서 `upgrades.TryUpgrade(StatType.Health)`를 부르면 `DiscipleHealth`는 0 그대로다. 이어서 `Reset()`을 부르면 `DiscipleHealth`는 25다.
-30. 18번처럼 1칸 진행한 뒤 `Reset()`을 부르면 `DisciplePosition`은 0, `DiscipleHealth`는 100, `DiscipleAttackCooldown`은 0, `IsDiscipleDefeated`는 `false`, `Enemies.Count`는 0이고, `ResetCompleted`는 1번, `EnemyDefeated`는 0번 온다. 이어서 `AddEnemy(Normal, 1, 5.0)`의 `Index`는 0이다. `Reset()`을 한 번 더 부르면 `ResetCompleted`가 한 번 더 온다.
-31. `SetPaused(true)` 뒤 `Paused`는 `true`이고, `Step()` 10번과 `Tick(0.1)`을 불러도 `DisciplePosition`은 0이다. `SetPaused(false)` 뒤 1칸 뒤 `DisciplePosition`은 0.04다 (멈춘 동안의 `Tick` 시간은 버린다).
-32. `SetPaused(true)` 상태에서 `AddEnemy(Normal, 1, 5.0)`은 추가되고 `EnemyAdded`가 1번 온다. `Reset()`을 부르면 `Enemies.Count`는 0이고 `Paused`는 `true` 그대로다. `SetPaused(true)`를 한 번 더 불러도 예외가 없다.
-33. 적이 없을 때 `Tick(0.1)` 뒤 `DisciplePosition`은 0.2다 (5칸).
-34. 적이 없을 때 `Tick(0.01)` 1번 뒤 `DisciplePosition`은 0, 2번 뒤 0.04다.
-35. 적이 없을 때 `Tick(0.05)` 뒤 `DisciplePosition`은 0.08이고, 이어서 `Tick(0.01)` 뒤 0.12다 (남은 시간을 넘긴다).
-36. 적이 없을 때 `Tick(1.0)` 뒤 `DisciplePosition`은 0.48이다 (0.25초로 잘라내 12칸).
-37. `Tick(0)` 뒤 `DisciplePosition`은 0이다. `Tick(-0.1)`, `Tick(double.NaN)`, `Tick(double.PositiveInfinity)`는 각각 `ArgumentOutOfRangeException`을 던지고 `DisciplePosition`은 0 그대로다.
-38. `new StatUpgrades(wallet, 30, 100, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)` 뒤 `EnemyDefeated` 안에서 `AddEnemy(Boss, 1, DisciplePosition + 5.0)`을 부르게 하면, 1칸 뒤 예외 없이 `Enemies.Count`는 1이고 그 적의 `Kind`는 `Boss`, `Health`는 100이다.
-39. `new StatUpgrades(wallet, 30, 5, 1.0)`으로, `AddEnemy(Normal, 1, 0.8)` 뒤 `EnemyDefeated` 안에서 `Reset()`을 부르게 하면, 1칸 뒤 `DiscipleDefeated`는 0번 오고 `IsDiscipleDefeated`는 `false`, `DiscipleHealth`는 5다.
+스킬 발동 (`BattleSkillTests`)
+
+49. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 뒤: 보스의 `Health`는 80이고, `EnemyDamaged` 1번 다음에 `SkillUsed` 1번이 이 순서로 온다. `SkillCooldown`은 5.0, `IsSkillReady`는 `false`, `DiscipleAttackCooldown`은 1.0, `DiscipleHealth`는 90이다.
+50. 49번에 이어: 51칸 뒤 보스의 `Health`는 70(기본 공격)이고 `SkillUsed`는 1번 그대로, `SkillCooldown`은 4.0이다. 250칸 뒤 보스의 `Health`는 40이고 `IsSkillReady`는 `false`, 251칸 뒤 20이고 `SkillUsed`는 2번이다.
+51. 스킬 전투에서 `AddEnemy(Normal, 1, 0.8)`, `AddEnemy(Boss, 1, 1.9)`, `AddEnemy(Boss, 1, 2.5)` 뒤 1칸 뒤: 세 적의 `Health`는 10, 80, 100이고 `EnemyDamaged`는 2번(`Index` 0, 1 순서), `SkillUsed`는 1번 온다 (2.0 안의 적만 맞는다).
+52. 스킬 전투에서 `AddEnemy(Boss, 1, 1.5)` 뒤: 1칸 뒤 보스의 `Health`는 100, `SkillUsed`는 0번, `IsSkillReady`는 `true`다 (거리 1.0 밖·2.0 안이면 공격 차례가 아니다). 4칸 뒤 `DisciplePosition`은 0.5, 24칸 뒤 보스의 `Health`는 100, 25칸 뒤 80이고 `SkillUsed`는 1번이다 (달려와 멈춘 앞 동작 뒤 스킬).
+53. 스킬 전투에서 `AddEnemy(Normal, 1, 0.8)`과 `AddEnemy(Boss, 1, 8.0)` 뒤: 1칸 뒤 일반 몬스터의 `Health`는 10, 51칸 뒤 `Enemies.Count`는 1이다. 106칸 뒤 `DisciplePosition`은 7.0, 126칸 뒤 보스의 `Health`는 100, 127칸 뒤 90이다. 251칸 뒤 `IsSkillReady`는 `true`이고 보스의 `Health`는 70, 276칸 뒤 70, 277칸 뒤 50이고 `SkillUsed`는 2번이다 (스킬 준비가 끝나도 다음 공격 차례까지 기다린다).
+54. 기본 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 251칸 뒤: 보스의 `Health`는 40, `SkillUsed`는 0번, `SkillCooldown`은 0이다.
+55. 스킬 전투를 `new StatUpgrades(wallet, 15, 5)`로 만들고 `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤: `EnemyDamaged` → `SkillUsed` → `EnemyDefeated` → `DiscipleDefeated`가 이 순서로 1번씩 오고, `EnemyDefeated`를 받는 시점에 읽은 `IsDiscipleDefeated`는 `true`다 (스킬 피해 30으로 쓰러진 몬스터도 그 칸에 공격한다).
+56. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.InnerPower)`를 부르면 `SkillCooldown`은 5.0 그대로이고, 251칸 뒤 보스의 `Health`는 19다 (40 − 21).
+57. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `Reset()`을 부르면 `SkillCooldown`은 0, `IsSkillReady`는 `true`다. 이어서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 더 진행하면 새 보스의 `Health`는 80이다.
+58. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `SetPaused(true)` 뒤 `Step()` 10번과 `Tick(0.1)`을 불러도 `SkillCooldown`은 5.0이다.
+59. 스킬 전투를 `new StatUpgrades(wallet, 10, 5)`로 만들고 `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤: `IsDiscipleDefeated`는 `true`, `SkillCooldown`은 5.0이고, 이어서 `Step()` 10번 뒤에도 5.0이다.
+60. 스킬 전투에서 적이 없을 때 50칸 뒤 `SkillCooldown`은 0, `IsSkillReady`는 `true`, `DisciplePosition`은 6.48이다.
+61. 스킬 전투에서 `SkillUsed` 안에서 보스의 `Health`와 `SkillCooldown`을 읽게 하고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면, 읽은 값은 80과 0이다.
+62. 스킬 전투에서 `SkillUsed` 안에서 `Reset()`을 부르게 하고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면, 예외 없이 `SkillCooldown`은 0, `DiscipleAttackCooldown`은 0, `DiscipleHealth`는 100, `Enemies.Count`는 0이고, `ResetCompleted`는 1번, `DiscipleDamaged`는 0번 온다.
+
+경지 돌파 (`BattleRealmTests`)
+
+63. 경지 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면(`DiscipleHealth` 90) `realm.TryBreakthrough()` 뒤 `DiscipleMaxHealth`는 110, `DiscipleHealth`는 100이다. 이어서 `upgrades.TryUpgrade(StatType.Health)` 뒤 `DiscipleMaxHealth`는 132, `DiscipleHealth`는 122다.
+64. 지갑을 `new Wallet(10000)`으로 한 경지 전투에서 `realm.TryBreakthrough()`를 4번 부르면 `DiscipleMaxHealth`는 140, `DiscipleHealth`는 140이다.
+65. 경지 전투를 `new StatUpgrades(wallet, 10, 10, 0, 0, 0, realm)`로 만들고 `AddEnemy(Normal, 1, 0.8)`을 2번 부른 뒤 1칸 뒤(`IsDiscipleDefeated` `true`, `DiscipleHealth` 0) `realm.TryBreakthrough()`를 부르면 `DiscipleHealth`는 0 그대로, `DiscipleMaxHealth`는 11이다. 이어서 `Reset()` 뒤 `DiscipleHealth`는 11이다.
+66. 경지 전투의 `upgrades`로 `new Battle(upgrades)`(realm 없이)를 만들고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행한 뒤 `realm.TryBreakthrough()`를 부르면 `DiscipleHealth`는 90 그대로, `DiscipleMaxHealth`는 110이다 (돌파를 구독하지 않는다).
+67. 경지 전투에서 `SetPaused(true)` 뒤 `realm.TryBreakthrough()`를 부르면 `DiscipleHealth`는 110이다 (멈춘 동안에도 반영한다).
 
 표시 규칙 (`CombatLayoutTests`)
 
-40. `CombatLayout.EnemyOffsetY`는 0 → −0.15, 1 → 0, 2 → 0.15, 3 → −0.15, 4 → 0을 돌려주고, −1은 `ArgumentOutOfRangeException`을 던진다.
-41. `CombatLayout.HealthRatio`는 (50, 100) → 0.5, (0, 100) → 0.0, (100, 100) → 1.0, (150, 100) → 1.0, (−5, 100) → 0.0, (10, 0) → 0.0, (30, 40) → 0.75를 돌려준다.
+68. `CombatLayout.SkillSlashAlpha`는 0 → 0.6, 0.125 → 0.3, 0.25 → 0.0, 0.3 → 0.0, −0.1 → 0.6, `double.NaN` → 0.0을 돌려주고, `CombatLayout.SkillSlashSeconds`는 0.25다.
 
 화면 (자동 테스트 없음. 사람이 실행해 확인)
 
-42. 게임을 실행하면 하늘색 바탕과 땅, 나무 사각형이 보이고, 파란 제자 사각형이 오른쪽으로 전진하며 나무가 왼쪽으로 흘러간다. 제자는 화면에서 같은 자리에 보인다.
-43. 주황색 몬스터를 만나면 제자가 멈춰 싸우고, 맞은 쪽이 잠깐 하얗게 번쩍이며 머리 위 체력 바가 줄어든다. 두 마리가 붙으면 위아래로 어긋나 보인다. 쓰러진 몬스터는 사라진다.
-44. 보라색 보스까지 처치하거나 제자의 체력이 0이 되면 약 1초 뒤 처음 배치로 돌아가 다시 싸운다.
-45. 기존 테스트 `CoreAssemblyTests.Core_DoesNotReferenceUnity`가 계속 통과한다.
+69. 게임을 실행하면 제자가 처음 몬스터를 만나 공격할 때 제자 앞쪽에 연분홍 띠가 잠깐 보였다 사라지고, 그 공격은 기본 공격의 두 배 피해를 준다. 그 뒤 약 5초마다 같은 띠가 보이고, 그 사이에는 띠 없이 기본 공격을 한다.
+70. 금화를 모아 이류로 돌파하면 그 자리에서 제자 체력 바가 늘어난 최대 체력에 맞게 차오른다 (체력이 가득일 때 돌파하면 계속 가득이다).
+71. 기존 테스트 `CoreAssemblyTests.Core_DoesNotReferenceUnity`와 기존 전투 테스트(1~45의 테스트)가 고치지 않은 채 계속 통과한다.
 
 ## 결정 기록
 
-| 질문 | 답 | 방식 |
+결정 기록은 [records/combat.md](records/combat.md)의 "결정 기록"에 있다. 구현에 필요한 규칙은 위 절들에 모두 있다.
+
+## 변경 기록
+
+### 2026-11-19 — 3단계: 이십사수매화검법, 돌파 때 현재 체력 증가, 공격 속도 제거 반영 (기준 커밋: c02cb2a)
+
+| 절 | 바뀌기 전 | 바뀐 뒤 |
 | --- | --- | --- |
-| 전투 사양에 스테이지(배치, 보스 등장, 성공·실패, 재도전, 페이드)를 함께 담나 | 전투만 담고 스테이지는 따로 기획한다 | 추천 수락 |
-| 처치 금화의 계산과 지급은 어느 기능이 맡나 | 스테이지 기능. 전투는 처치만 알린다 | 추천 수락 |
-| 전투 화면에 무엇까지 넣나 | 캐릭터 대체 표시, 머리 위 체력 바, 카메라, 임시 배경 | 추천 수락 |
-| 전투 시간을 어떻게 흐르게 하나 | 0.02초 고정 간격. 실시간 자동 전투이고 턴제가 아니다. 같은 칸에서 일어난 일이 "동시"다 | 추천 수락 (턴제가 아니라는 설명 뒤) / 임시값 |
-| 같은 순간에 제자의 공격으로 체력이 0이 된 몬스터도 공격하나 | 한다. 모두 공격한 뒤 쓰러짐을 판정한다 | 추천 수락 |
-| 스테이지 기능이 생기기 전에 적은 누가 놓나 | `TempEncounter`가 임시로 놓고 반복한다. 스테이지 구현 때 지운다 | 추천 수락 |
-| 공격이 일어난 것을 화면에서 어떻게 알리나 | 맞은 쪽이 0.1초 하얗게 번쩍인다 | 추천 수락 / 임시값 |
-| 몬스터 능력치 공식은 어느 기능이 가지나 | 전투 (`EnemyStats`). 스테이지는 종류·스테이지 번호·좌표만 넘긴다 | 직접 정함 |
-| 한 칸의 처리 순서와 알림 순서 | 대기 감소 → 이동 → (2026-11-17 추가) 앞 동작 시작 → 공격 → 쓰러짐 판정. `EnemyDefeated` 다음에 `DiscipleDefeated` | 직접 정함 |
-| 제자 이동 속도 (2026-11-17) | 초당 2.0 → 3.6 유닛 (1.8배). 달리기 애니메이션(20 fps)에 비해 몸이 느려 발이 미끄러져 보였다. 애니메이션 속도는 그대로 둔다 | 사람 결정 (제자 에셋 적용) |
-| 달려와 멈춘 칸의 첫 공격 (2026-11-17) | 바로 피해를 주지 않고 공격 간격 × 7/17 뒤에 준다. 공격 애니메이션을 0번부터 재생하고 휘두르는 7번 프레임에 피해를 맞추기 위해서다. 그만큼 처치가 늦어 적에게 맞는 횟수가 늘 수 있다 | 사람 결정 (제자 에셋 적용) |
-| 이동이 사거리를 넘는 경우 | 넘지 않게 딱 맞춰 멈춘다 (제자 1.0, 몬스터 0.8) | 직접 정함 |
-| 적이 하나도 없을 때 제자 | 계속 전진한다 | 직접 정함 |
-| 소수 계산 오차 | 거리·대기 비교에 1e-9 허용 | 직접 정함 |
-| 한 번에 너무 긴 시간이 들어올 때 | 0.25초로 잘라낸다 | 직접 정함 / 임시값 |
-| 잘못된 인자(없는 종류, 스테이지 0, 제자 뒤 좌표, 음수 시간) | `ArgumentOutOfRangeException` | 직접 정함 |
-| 패배한 뒤와 페이드 중의 전투 | 패배 뒤에는 `Reset`까지 진행하지 않는다. 멈춤 스위치 `SetPaused`를 둔다 | 직접 정함 |
-| 패배한 상태에서 체력 강화 | 현재 체력은 0 그대로 | 직접 정함 |
-| 저장할 값 | 없다 (2단계 기획이 체력·진행도를 복원하지 않기로 함) | 직접 정함 |
-| 대체 표시의 크기 | 제자·일반 몬스터 1.0×1.0, 보스 2.0×3.0. 몸 크기(32px)에 맞춤 | 직접 정함 / 임시값 |
-| 보스 머리 위 체력 바 | 두지 않는다 (스테이지의 위쪽 바가 맡는다) | 직접 정함 |
-| 겹침 표시 규칙, 체력 바, 카메라 위치, 임시 배경, 임시 배치 | `Index % 3`으로 −0.15 / 0 / +0.15, 카메라는 제자 앞 4 유닛, 땅과 나무 사각형, 일반 3마리 + 보스 | 직접 정함 / 임시값 |
-| 타입·메서드 이름 | `Battle`, `Enemy`, `EnemyKind`, `EnemyStats`, `CombatLayout`, `CombatView`, `TempEncounter` | 직접 정함 |
-| 알림 안의 `Reset`을 어떻게 알아채나 (구현) | `Reset`마다 1씩 느는 내부 번호를 두고, `Step`이 알림을 하나 보낼 때마다 번호가 바뀌었으면 그 칸을 바로 끝낸다. 남은 대기 설정(제자의 다음 공격 대기, 공격한 적의 대기)도 하지 않는다 | 직접 정함 (010) |
+| 목표 | 전진·접근·공격·쓰러짐·필드 화면 | 자동 발동 스킬, 체력 강화·돌파 때 현재 체력, 스킬 검기 띠 추가. 출처에 milestone_3 |
+| 동작 | 대기 감소는 제자·적의 공격 대기 | 스킬이 켜져 있으면 스킬 대기도 줄인다 |
+| 동작 | 앞 동작 대기 `StatUpgrades.AttackInterval × 7/17`, 공격 뒤 대기 `StatUpgrades.AttackInterval` | `DiscipleBaseAttackInterval`(1.0) 기준 (공격 속도 제거, 사람이 이미 구현) |
+| 동작 | 공격 차례에 늘 기본 공격 | 스킬이 준비됐으면 기본 공격 대신 스킬: 2.0 안 모든 적에 `SkillDamage`, `EnemyDamaged`들 → `SkillUsed`, 스킬 대기 5.0, 공격 대기 1.0 |
+| 동작 | 강화 반영: 공격력·공격 속도·체력 | 공격력(경지 포함)·공격 간격 고정·내공(스킬 피해)·체력·경지 돌파(`BrokeThrough` → 현재 체력 증가) |
+| 동작 | (없음) | 스킬 켜기 `skillEnabled`, `Reset` 때 스킬 대기 0, `SkillUsed` 안의 `Reset` |
+| 경계 상황 | 스킬·돌파 줄 없음 | 스킬 준비·기다림·범위·멈춤·패배·꺼짐, 패배 중 돌파, `realm` `null`, `CalculateSkillDamage` 음수, `SkillSlashAlpha` |
+| 수치 | 시작 공격 간격을 `StatUpgrades`에 넣음, 앞 동작 0.5초 예, 제자 피해량 | 공격 간격은 전투가 직접 쓴다. 스킬 범위 2.0, 대기 5.0, 배율 200% + 10%p, 피해 공식, 검기 띠 (모두 임시) |
+| 연결 지점 | `Battle(StatUpgrades upgrades)`, `DiscipleAttackInterval` = `upgrades.AttackInterval` | `Battle(upgrades, RealmProgress realm = null, bool skillEnabled = false)`, 상수 `SkillRange`·`SkillCooldownSeconds`·`SkillBasePercent`·`SkillPercentPerInnerLevel`, `SkillEnabled`, `SkillCooldown`, `IsSkillReady`, `SkillDamage`, `CalculateSkillDamage`, `SkillUsed`, `CombatLayout.SkillSlashSeconds`·`SkillSlashAlpha`. `DiscipleAttackInterval`은 늘 1.0. `GameRoot`는 `new Battle(StatUpgrades, Realm, true)` |
+| 연결 지점 (필요한 것) | `Attack`, `MaxHealth`, `AttackInterval`, `Upgraded` | `Attack`, `MaxHealth`, `GetLevel(StatType.InnerPower)`, `Upgraded`, `RealmProgress.BrokeThrough`, `GameRoot.Realm` |
+| 화면 | 공격 간격 0.5초 예 | 1.0초 고정. 스킬 때 기본 공격 애니메이션 + 검기 띠 |
+| 저장 | 전투는 저장 값 없음 | 같음. 스킬 대기도 저장하지 않는다 |
+| 범위 밖 | 경지·스킬·내공·공격 속도 제거는 3단계에서 | 스킬 애니메이션(사람이 나중에), 스킬 버튼·표시, 경지·내공 저장(저장 기능), 밸런스(4단계) |
+| 완료 조건 | 1~45 | 1~45는 기록 파일로 옮김. 새로 46~71 |
+
+- 완료 조건 초안: 새로 46~71 / 바뀜 없음 / 1~45는 기록 파일로 옮김 (이미 구현됨. 21-1·23은 공격 속도 제거로 없어짐).
+- 바뀌는 연결 지점: `Battle` 생성자 끝에 `RealmProgress realm = null, bool skillEnabled = false` 추가 (기존 호출은 그대로). 위 표의 상수·속성·메서드·이벤트 추가. `CombatLayout`에 `SkillSlashSeconds`, `SkillSlashAlpha` 추가. `GameRoot`의 `Battle` 생성이 `new Battle(StatUpgrades, Realm, true)`로.
+- 고쳐야 할 기존 코드: `Assets/Scripts/Core/Combat/Battle.cs` — 스킬과 돌파 구독. `Assets/Scripts/Core/Combat/CombatLayout.cs` — 검기 띠 불투명도. `Assets/Scripts/Game/Combat/CombatView.cs` — 검기 띠 표시. `Assets/Scripts/Game/GameRoot.cs` — `Battle` 생성 인자.
+- 기존 테스트:
+
+| 테스트 | 지금 | 바뀐 뒤 | 처리 |
+| --- | --- | --- | --- |
+| 없음 | | | `skillEnabled` 기본값 `false`, `realm` 기본값 `null`이라 기존 전투·스테이지·저장 테스트와 `GameBootTests`는 그대로 통과한다 |
