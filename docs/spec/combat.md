@@ -395,7 +395,7 @@ namespace PlumSword.Game.Combat
 - **누르는 것**: 없다. 전투 화면은 입력을 받지 않는다.
 - **임시 적 배치 (`TempEncounter`)**: `Initialize`에서 바로, 그리고 다시 놓을 때마다 `Reset()`을 부른 뒤 `AddEnemy(Normal, 1, 6.0)`, `AddEnemy(Normal, 1, 9.0)`, `AddEnemy(Normal, 1, 9.3)`, `AddEnemy(Boss, 1, 15.0)`을 순서대로 부른다 (임시). `DiscipleDefeated`를 받았거나, `EnemyDefeated`를 받았을 때 `battle.Enemies.Count`가 0이면 1.0초(임시, `Time.deltaTime`으로 센다) 기다린 뒤 다시 놓는다. 금화는 주지 않는다.
   - 스테이지 기능 구현(019_stage_view)으로 지워졌다. 적 배치는 `StageProgress`가 한다 (`docs/spec/stage.md`).
-- 겹침 어긋남, 체력 바 비율, 검기 띠 불투명도의 판단은 Core의 `CombatLayout`에, 제자 동작·프레임 선택은 `DiscipleAnimator`에 있고 에딧 모드 테스트로 판정한다. 제자 스프라이트가 실제로 불러와지는지는 플레이 모드 테스트 `DiscipleSpriteTests`가 본다. 그 밖의 `CombatView`, `GameRoot` 조립은 사람이 실행해 확인한다.
+- 겹침 어긋남, 체력 바 비율, 검기 띠 불투명도의 판단은 Core의 `CombatLayout`에, 제자 동작·프레임 선택은 `DiscipleAnimator`에 있고 에딧 모드 테스트로 판정한다. 제자 스프라이트는 플레이 모드 테스트 `DiscipleSpriteTests`가, 스킬 활성화와 검기 띠의 초기 상태·표시·소멸·초기화는 `CombatSkillTests`가 확인한다. 실제 게임에서 보이는 연출과 돌파 시 체력 바는 사람이 실행해 확인한다.
 
 ## 저장
 

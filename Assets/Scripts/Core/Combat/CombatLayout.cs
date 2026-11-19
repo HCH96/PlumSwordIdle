@@ -8,6 +8,15 @@ namespace PlumSword.Core.Combat
     /// </summary>
     public static class CombatLayout
     {
+        public const double SkillSlashSeconds = 0.25;
+
+        public static double SkillSlashAlpha(double elapsedSeconds)
+        {
+            if (double.IsNaN(elapsedSeconds) || elapsedSeconds >= SkillSlashSeconds) return 0.0;
+            if (elapsedSeconds <= 0.0) return 0.6;
+            return 0.6 * (1.0 - elapsedSeconds / SkillSlashSeconds);
+        }
+
         private const double EnemyOffsetStep = 0.15;
 
         /// <summary>

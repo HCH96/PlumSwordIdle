@@ -45,6 +45,7 @@ namespace PlumSword.Game.Combat
         private const int HealthBarFillOrder = 30001;
 
         private const float FlashSeconds = 0.1f;
+        private static readonly Color SkillSlashColor = new Color(1f, 0.55f, 0.75f, 0.6f);
 
         private static readonly Vector2 GroundSize = new Vector2(40f, 6f);
         private static readonly Color GroundColor = new Color(0.35f, 0.30f, 0.25f);
@@ -71,6 +72,8 @@ namespace PlumSword.Game.Combat
         private float _previewWidth;
         private GameRoot _gameRoot;
         private GameObject _petals;
+        private SpriteRenderer _skillSlash;
+        private double _skillSlashElapsed;
 
         // 제자 스프라이트. 불러오지 못하면 null 이고 단색 사각형을 쓴다.
         private static readonly Color DiscipleSpriteFlashColor = new Color(1.0f, 0.45f, 0.45f);
@@ -117,6 +120,8 @@ namespace PlumSword.Game.Combat
             _jongnamFemale = JongnamSprites.TryLoad(true);
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
             ApplyDiscipleSprites();
+            _skillSlash = CreateRect("[SkillSlash]", transform, new Vector2(2f, 0.4f), SkillSlashColor, 20000);
+            _skillSlash.enabled = false;
 
             foreach (var enemy in _battle.Enemies)
             {
@@ -128,6 +133,7 @@ namespace PlumSword.Game.Combat
             _battle.DiscipleDamaged += OnDiscipleDamaged;
             _battle.EnemyDefeated += OnEnemyDefeated;
             _battle.ResetCompleted += OnResetCompleted;
+            _battle.SkillUsed += OnSkillUsed;
 
             Refresh(0f);
         }
@@ -140,6 +146,7 @@ namespace PlumSword.Game.Combat
             double previousPosition = _battle.DisciplePosition;
             _discipleAttackedThisTick = false;
             _battle.Tick(deltaTime);
+            UpdateSkillSlash(deltaTime);
             AnimateDisciple(deltaTime, previousPosition);
             Refresh(deltaTime);
         }
@@ -153,6 +160,7 @@ namespace PlumSword.Game.Combat
                 _battle.DiscipleDamaged -= OnDiscipleDamaged;
                 _battle.EnemyDefeated -= OnEnemyDefeated;
                 _battle.ResetCompleted -= OnResetCompleted;
+                _battle.SkillUsed -= OnSkillUsed;
             }
 
             if (_sprite != null) Destroy(_sprite);
@@ -291,6 +299,7 @@ namespace PlumSword.Game.Combat
 
         private void OnResetCompleted()
         {
+            _skillSlash.enabled = false;
             foreach (var actor in _enemies.Values)
             {
                 Destroy(actor.Root);
@@ -308,6 +317,25 @@ namespace PlumSword.Game.Combat
         }
 
         // ---- 매 프레임 맞추기 ----
+
+        private void OnSkillUsed()
+        {
+            _skillSlash.transform.localPosition = new Vector3(
+                (float)_battle.DisciplePosition + ActorDisplayOffset.x + 1f, ActorDisplayOffset.y + 0.75f, 0f);
+            _skillSlashElapsed = 0.0;
+            _skillSlash.color = SkillSlashColor;
+            _skillSlash.enabled = true;
+        }
+
+        private void UpdateSkillSlash(float deltaTime)
+        {
+            if (!_skillSlash.enabled) return;
+            _skillSlashElapsed += deltaTime;
+            var color = _skillSlash.color;
+            color.a = (float)CombatLayout.SkillSlashAlpha(_skillSlashElapsed);
+            _skillSlash.color = color;
+            if (_skillSlashElapsed >= CombatLayout.SkillSlashSeconds) _skillSlash.enabled = false;
+        }
 
         private void Refresh(float deltaTime)
         {

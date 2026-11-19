@@ -85,7 +85,7 @@ namespace PlumSword.Game
                 data != null ? data.AttackLevel : 0,
                 data != null ? data.HealthLevel : 0, 0, Realm);
             StatUpgrades.LockedChanged += locked => Realm.SetLocked(locked);
-            Battle = new PlumSword.Core.Combat.Battle(StatUpgrades);
+            Battle = new PlumSword.Core.Combat.Battle(StatUpgrades, Realm, true);
 
             // 공용 UI 뿌리
             UiCanvas = CreateUiCanvas();
