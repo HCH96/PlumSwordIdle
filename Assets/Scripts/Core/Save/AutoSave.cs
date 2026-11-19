@@ -1,5 +1,6 @@
 using System;
 using PlumSword.Core.Currency;
+using PlumSword.Core.Realm;
 using PlumSword.Core.Stage;
 using PlumSword.Core.StatUpgrade;
 
@@ -11,14 +12,16 @@ namespace PlumSword.Core.Save
         private readonly ISaveStore store;
         private readonly Wallet wallet;
         private readonly StatUpgrades upgrades;
+        private readonly RealmProgress realm;
         private readonly StageProgress stage;
         private double retryRemaining;
 
-        public AutoSave(ISaveStore store, Wallet wallet, StatUpgrades upgrades, StageProgress stage, bool enabled = true)
+        public AutoSave(ISaveStore store, Wallet wallet, StatUpgrades upgrades, RealmProgress realm, StageProgress stage, bool enabled = true)
         {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             this.upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
+            this.realm = realm ?? throw new ArgumentNullException(nameof(realm));
             this.stage = stage ?? throw new ArgumentNullException(nameof(stage));
             Enabled = enabled;
             wallet.BalanceChanged += OnBalanceChanged;
@@ -47,7 +50,7 @@ namespace PlumSword.Core.Save
 
         private bool Write(long nowUtcTicks)
         {
-            var text = SaveCodec.Encode(SaveData.Capture(wallet, upgrades, stage, nowUtcTicks));
+            var text = SaveCodec.Encode(SaveData.Capture(wallet, upgrades, realm, stage, nowUtcTicks));
             bool succeeded;
             try { succeeded = store.TryWrite(text); }
             catch (Exception) { succeeded = false; }

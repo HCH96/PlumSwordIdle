@@ -56,14 +56,15 @@ namespace PlumSword.Game.Tests.Save
             var store = new FileSaveStore(directory);
             Assert.That(store.TryWrite("abc"), Is.True);
             Assert.That(store.Load().Status, Is.EqualTo(SaveLoadStatus.Corrupt));
-            var data = new SaveData(1234, 3, 2, 10, 7, 5, 638000000000000000L);
+            var data = new SaveData(1234, 3, 2, 4, 2, 7, 5, 638000000000000000L);
             Assert.That(store.TryWrite(SaveCodec.Encode(data)), Is.True);
             var result = store.Load();
             Assert.That(result.Status, Is.EqualTo(SaveLoadStatus.Loaded));
             Assert.That(result.Data.Gold, Is.EqualTo(1234));
             Assert.That(result.Data.AttackLevel, Is.EqualTo(3));
             Assert.That(result.Data.HealthLevel, Is.EqualTo(2));
-            Assert.That(result.Data.AttackSpeedLevel, Is.EqualTo(10));
+            Assert.That(result.Data.InnerPowerLevel, Is.EqualTo(4));
+            Assert.That(result.Data.RealmLevel, Is.EqualTo(2));
             Assert.That(result.Data.StageNumber, Is.EqualTo(7));
             Assert.That(result.Data.SeenIntroStage, Is.EqualTo(5));
             Assert.That(result.Data.SavedAtUtcTicks, Is.EqualTo(638000000000000000L));

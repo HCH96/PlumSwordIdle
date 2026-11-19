@@ -26,7 +26,7 @@ namespace PlumSword.Core.Tests.OfflineReward
             var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0), 1, 1);
             store = new FakeSaveStore();
-            autoSave = new AutoSave(store, wallet, upgrades, stage, enabled: false);
+            autoSave = new AutoSave(store, wallet, upgrades, new PlumSword.Core.Realm.RealmProgress(wallet), stage, enabled: false);
             reward = OfflineRewardCalculator.Calculate(T0, T0 + 6000000000L, 1);
             claim = new OfflineRewardClaim(wallet, autoSave, reward);
         }

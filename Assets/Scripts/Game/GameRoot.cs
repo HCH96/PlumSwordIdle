@@ -77,13 +77,13 @@ namespace PlumSword.Game
             // 저장된 값이 있으면 복원하고, 없으면 처음 값으로 Core 객체를 만든다.
             var data = LoadResult.Data;
             Wallet = new Wallet(data != null ? data.Gold : 0);
-            Realm = new PlumSword.Core.Realm.RealmProgress(Wallet);
+            Realm = new PlumSword.Core.Realm.RealmProgress(Wallet, data != null ? data.RealmLevel : 0);
             StatUpgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(
                 Wallet,
                 PlumSword.Core.Combat.Battle.DiscipleBaseAttack,
                 PlumSword.Core.Combat.Battle.DiscipleBaseMaxHealth,
                 data != null ? data.AttackLevel : 0,
-                data != null ? data.HealthLevel : 0, 0, Realm);
+                data != null ? data.HealthLevel : 0, data != null ? data.InnerPowerLevel : 0, Realm);
             StatUpgrades.LockedChanged += locked => Realm.SetLocked(locked);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades, Realm, true);
 
@@ -102,7 +102,7 @@ namespace PlumSword.Game
             if (LoadResult.Status == SaveLoadStatus.Loaded && StartMenuRules.CalculatesOfflineReward(Entry))
                 OfflineReward = OfflineRewardCalculator.Calculate(data.SavedAtUtcTicks, System.DateTime.UtcNow.Ticks, StageProgress.StageNumber);
 
-            AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, StageProgress,
+            AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, Realm, StageProgress,
                 enabled: StartMenuRules.AutoSaveStartsEnabled(LoadResult.Status, OfflineReward != null && OfflineReward.HasReward));
             var saveViewObject = new GameObject("[SaveView]");
             saveViewObject.transform.SetParent(transform, false);
