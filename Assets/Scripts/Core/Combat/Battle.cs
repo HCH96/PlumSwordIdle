@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PlumSword.Core.Realm;
 using PlumSword.Core.StatUpgrade;
 
 namespace PlumSword.Core.Combat
@@ -41,7 +42,7 @@ namespace PlumSword.Core.Combat
         private double _accumulatedSeconds;
         private int _nextIndex;
 
-        // 체력 강화의 늘어난 양을 구하려고 기억해 두는 직전 최대 체력. 생성자와 Reset 에서 upgrades.MaxHealth 로 맞춘다.
+        // 체력 강화·돌파의 늘어난 양을 구하려고 기억해 두는 직전 최대 체력.
         private long _lastMaxHealth;
 
         // Reset 마다 1 씩 는다. 한 칸 진행 중 알림을 보낸 뒤 값이 바뀌었으면 알림 안에서 Reset 이 불린 것이므로 그 칸을 그만둔다.
@@ -51,10 +52,11 @@ namespace PlumSword.Core.Combat
         private bool _wasEngaged;
 
         /// <summary>
-        /// upgrades: 제자의 공격력·최대 체력·공격 간격을 읽을 곳. null 이면 ArgumentNullException.
+        /// upgrades: 제자의 공격력·최대 체력을 읽을 곳. null 이면 ArgumentNullException.
+        /// realm: 돌파 알림을 받을 곳. null 이면 구독하지 않는다.
         /// 시작 상태: 제자 좌표 0, 체력 = upgrades.MaxHealth, 공격 대기 0, 적 없음, 멈추지 않음, 패배 아님.
         /// </summary>
-        public Battle(StatUpgrades upgrades)
+        public Battle(StatUpgrades upgrades, RealmProgress realm = null)
         {
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
             DisciplePosition = 0.0;
@@ -66,6 +68,10 @@ namespace PlumSword.Core.Combat
 
             // Battle 과 StatUpgrades 는 게임에 하나씩이고 수명이 같아 구독을 끊지 않는다.
             _upgrades.Upgraded += OnUpgraded;
+            if (realm != null)
+            {
+                realm.BrokeThrough += OnBrokeThrough;
+            }
         }
 
         public event Action<Enemy> EnemyAdded;
@@ -415,7 +421,7 @@ namespace PlumSword.Core.Combat
             }
         }
 
-        // 체력 강화: 늘어난 최대 체력만큼 현재 체력을 늘린다. 패배한 상태면 기억만 바꾼다. 멈춘 동안에도 반영하고 알림은 없다.
+        // 체력 강화와 돌파는 멈춘 동안에도 반영하고 알림을 보내지 않는다.
         private void OnUpgraded(StatType stat)
         {
             if (stat != StatType.Health)
@@ -423,6 +429,17 @@ namespace PlumSword.Core.Combat
                 return;
             }
 
+            ApplyMaxHealthIncrease();
+        }
+
+        private void OnBrokeThrough(RealmLevel level)
+        {
+            ApplyMaxHealthIncrease();
+        }
+
+        // 패배한 상태면 직전 최대 체력의 기억만 바꾼다.
+        private void ApplyMaxHealthIncrease()
+        {
             long maxHealth = _upgrades.MaxHealth;
             long increase = maxHealth - _lastMaxHealth;
             _lastMaxHealth = maxHealth;
