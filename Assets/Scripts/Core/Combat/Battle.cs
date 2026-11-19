@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using PlumSword.Core.Realm;
 using PlumSword.Core.StatUpgrade;
 
 namespace PlumSword.Core.Combat
 {
     /// <summary>
-    /// 제자와 적이 한 줄 위에서 싸우는 전투 로직. 0.02 초 칸 단위로 진행한다.
+    /// 제자와 적이 한 줄 위에서 싸우는 전투 로직. 0.02 초 칸 단위로 진행하며 skillEnabled로 스킬을 켠다.
     /// docs/spec/combat.md "동작", "연결 지점".
     /// </summary>
     public sealed class Battle
@@ -29,6 +30,11 @@ namespace PlumSword.Core.Combat
         /// <summary>제자 공격 범위 (앞쪽 유닛, 임시).</summary>
         public const double DiscipleAttackRange = 1.0;
 
+        public const double SkillRange = 2.0;
+        public const double SkillCooldownSeconds = 5.0;
+        public const int SkillBasePercent = 200;
+        public const int SkillPercentPerInnerLevel = 10;
+
         /// <summary>
         /// 앞 동작 비율 (임시). 제자가 전진해 범위 안에 적이 없다가 생긴 칸(달려와 멈춘 칸)에는 바로 공격하지 않고,
         /// 공격 대기를 적어도 공격 간격 × 이 값으로 올린다. 공격 애니메이션 17 프레임 중 타격 프레임이 7번이라 7/17 이다.
@@ -41,7 +47,7 @@ namespace PlumSword.Core.Combat
         private double _accumulatedSeconds;
         private int _nextIndex;
 
-        // 체력 강화의 늘어난 양을 구하려고 기억해 두는 직전 최대 체력. 생성자와 Reset 에서 upgrades.MaxHealth 로 맞춘다.
+        // 체력 강화·돌파의 늘어난 양을 구하려고 기억해 두는 직전 최대 체력.
         private long _lastMaxHealth;
 
         // Reset 마다 1 씩 는다. 한 칸 진행 중 알림을 보낸 뒤 값이 바뀌었으면 알림 안에서 Reset 이 불린 것이므로 그 칸을 그만둔다.
@@ -51,21 +57,29 @@ namespace PlumSword.Core.Combat
         private bool _wasEngaged;
 
         /// <summary>
-        /// upgrades: 제자의 공격력·최대 체력·공격 간격을 읽을 곳. null 이면 ArgumentNullException.
+        /// upgrades: 제자의 공격력·최대 체력을 읽을 곳. null 이면 ArgumentNullException.
+        /// realm: 돌파 알림을 받을 곳. null 이면 구독하지 않는다.
+        /// skillEnabled: 스킬을 켤지 여부. 기본값은 false.
         /// 시작 상태: 제자 좌표 0, 체력 = upgrades.MaxHealth, 공격 대기 0, 적 없음, 멈추지 않음, 패배 아님.
         /// </summary>
-        public Battle(StatUpgrades upgrades)
+        public Battle(StatUpgrades upgrades, RealmProgress realm = null, bool skillEnabled = false)
         {
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
             DisciplePosition = 0.0;
             DiscipleHealth = _upgrades.MaxHealth;
             DiscipleAttackCooldown = 0.0;
+            SkillEnabled = skillEnabled;
+            SkillCooldown = 0.0;
             IsDiscipleDefeated = false;
             Paused = false;
             _lastMaxHealth = _upgrades.MaxHealth;
 
             // Battle 과 StatUpgrades 는 게임에 하나씩이고 수명이 같아 구독을 끊지 않는다.
             _upgrades.Upgraded += OnUpgraded;
+            if (realm != null)
+            {
+                realm.BrokeThrough += OnBrokeThrough;
+            }
         }
 
         public event Action<Enemy> EnemyAdded;
@@ -88,6 +102,26 @@ namespace PlumSword.Core.Combat
 
         /// <summary>DiscipleBaseAttackInterval 그대로 (고정 1초, 임시). 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
         public double DiscipleAttackInterval => DiscipleBaseAttackInterval;
+
+        public bool SkillEnabled { get; }
+        public double SkillCooldown { get; private set; }
+        public bool IsSkillReady => SkillEnabled && SkillCooldown <= Epsilon;
+        public long SkillDamage => CalculateSkillDamage(_upgrades.Attack, _upgrades.GetLevel(StatType.InnerPower));
+
+        public static long CalculateSkillDamage(long attack, int innerPowerLevel)
+        {
+            if (attack < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(attack));
+            }
+
+            if (innerPowerLevel < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(innerPowerLevel));
+            }
+
+            return attack * (SkillBasePercent + SkillPercentPerInnerLevel * (long)innerPowerLevel) / 100;
+        }
 
         public bool IsDiscipleDefeated { get; private set; }
 
@@ -204,6 +238,7 @@ namespace PlumSword.Core.Combat
             DisciplePosition = 0.0;
             DiscipleHealth = _upgrades.MaxHealth;
             DiscipleAttackCooldown = 0.0;
+            SkillCooldown = 0.0;
             IsDiscipleDefeated = false;
             _enemies.Clear();
             _nextIndex = 0;
@@ -415,7 +450,7 @@ namespace PlumSword.Core.Combat
             }
         }
 
-        // 체력 강화: 늘어난 최대 체력만큼 현재 체력을 늘린다. 패배한 상태면 기억만 바꾼다. 멈춘 동안에도 반영하고 알림은 없다.
+        // 체력 강화와 돌파는 멈춘 동안에도 반영하고 알림을 보내지 않는다.
         private void OnUpgraded(StatType stat)
         {
             if (stat != StatType.Health)
@@ -423,6 +458,17 @@ namespace PlumSword.Core.Combat
                 return;
             }
 
+            ApplyMaxHealthIncrease();
+        }
+
+        private void OnBrokeThrough(RealmLevel level)
+        {
+            ApplyMaxHealthIncrease();
+        }
+
+        // 패배한 상태면 직전 최대 체력의 기억만 바꾼다.
+        private void ApplyMaxHealthIncrease()
+        {
             long maxHealth = _upgrades.MaxHealth;
             long increase = maxHealth - _lastMaxHealth;
             _lastMaxHealth = maxHealth;
