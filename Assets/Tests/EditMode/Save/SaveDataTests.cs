@@ -55,6 +55,23 @@ namespace PlumSword.Core.Tests.Save
         }
 
         [Test]
+        public void Restore_RealmAndUpgradeLevels_AppliesRealmBonus()
+        {
+            var data = new SaveData(1234, 3, 2, 4, 2, 1, 5, 100);
+            var wallet = new Wallet(data.Gold);
+            var realm = new RealmProgress(wallet, data.RealmLevel);
+            var upgrades = new StatUpgrades(wallet, 10, 100, data.AttackLevel, data.HealthLevel, data.InnerPowerLevel, realm);
+
+            Assert.That(wallet.Balance, Is.EqualTo(1234));
+            Assert.That(realm.Current, Is.EqualTo(RealmLevel.FirstRate));
+            Assert.That(upgrades.GetLevel(StatType.Attack), Is.EqualTo(3));
+            Assert.That(upgrades.GetLevel(StatType.Health), Is.EqualTo(2));
+            Assert.That(upgrades.GetLevel(StatType.InnerPower), Is.EqualTo(4));
+            Assert.That(upgrades.Attack, Is.EqualTo(19));
+            Assert.That(upgrades.MaxHealth, Is.EqualTo(168));
+        }
+
+        [Test]
         public void Capture_BeforeBegin_CopiesValuesWithoutChangesOrEvents()
         {
             var wallet = new Wallet(500);
