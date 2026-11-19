@@ -2,6 +2,7 @@ using System;
 using NUnit.Framework;
 using PlumSword.Core.Combat;
 using PlumSword.Core.Currency;
+using PlumSword.Core.Realm;
 using PlumSword.Core.Save;
 using PlumSword.Core.Stage;
 using PlumSword.Core.StatUpgrade;
@@ -12,16 +13,18 @@ namespace PlumSword.Core.Tests.Save
     {
         private Wallet wallet;
         private StatUpgrades upgrades;
+        private RealmProgress realm;
         private StageProgress stage;
         private FakeSaveStore store;
 
         private AutoSave Create(long gold = 0, bool enabled = true, int seenIntroStage = 5)
         {
             wallet = new Wallet(gold);
+            realm = new RealmProgress(wallet);
             upgrades = new StatUpgrades(wallet, 10, 100);
             stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0), 1, seenIntroStage);
             store = new FakeSaveStore();
-            return new AutoSave(store, wallet, upgrades, stage, enabled);
+            return new AutoSave(store, wallet, upgrades, realm, stage, enabled);
         }
 
         private SaveData ReadLast()
@@ -35,10 +38,11 @@ namespace PlumSword.Core.Tests.Save
         public void Constructor_NullDependency_ThrowsArgumentNull()
         {
             Create();
-            Assert.Throws<ArgumentNullException>(() => new AutoSave(null, wallet, upgrades, stage));
-            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, null, upgrades, stage));
-            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, wallet, null, stage));
-            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, wallet, upgrades, null));
+            Assert.Throws<ArgumentNullException>(() => new AutoSave(null, wallet, upgrades, realm, stage));
+            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, null, upgrades, realm, stage));
+            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, wallet, null, realm, stage));
+            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, wallet, upgrades, null, stage));
+            Assert.Throws<ArgumentNullException>(() => new AutoSave(store, wallet, upgrades, realm, null));
         }
 
         [Test]

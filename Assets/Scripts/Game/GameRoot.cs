@@ -102,7 +102,7 @@ namespace PlumSword.Game
             if (LoadResult.Status == SaveLoadStatus.Loaded && StartMenuRules.CalculatesOfflineReward(Entry))
                 OfflineReward = OfflineRewardCalculator.Calculate(data.SavedAtUtcTicks, System.DateTime.UtcNow.Ticks, StageProgress.StageNumber);
 
-            AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, StageProgress,
+            AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, Realm, StageProgress,
                 enabled: StartMenuRules.AutoSaveStartsEnabled(LoadResult.Status, OfflineReward != null && OfflineReward.HasReward));
             var saveViewObject = new GameObject("[SaveView]");
             saveViewObject.transform.SetParent(transform, false);

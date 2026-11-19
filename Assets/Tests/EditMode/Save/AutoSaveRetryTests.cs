@@ -23,7 +23,7 @@ namespace PlumSword.Core.Tests.Save
             var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0));
             store = new FakeSaveStore();
-            autoSave = new AutoSave(store, wallet, upgrades, stage);
+            autoSave = new AutoSave(store, wallet, upgrades, new PlumSword.Core.Realm.RealmProgress(wallet), stage);
             changes = new List<bool>();
             autoSave.FailedChanged += value =>
             {

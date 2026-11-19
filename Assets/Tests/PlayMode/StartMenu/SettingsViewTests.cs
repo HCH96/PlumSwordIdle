@@ -39,7 +39,7 @@ namespace PlumSword.Game.Tests.StartMenu
             var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new System.Random(0), 1, 1);
             store = new FakeStore();
-            leave = new LeaveGame(new AutoSave(store, wallet, upgrades, stage, enabled: true));
+            leave = new LeaveGame(new AutoSave(store, wallet, upgrades, new PlumSword.Core.Realm.RealmProgress(wallet), stage, enabled: true));
             volume = new VolumeSettings();
             titleCalls = quitCalls = saveCalls = 0;
         }

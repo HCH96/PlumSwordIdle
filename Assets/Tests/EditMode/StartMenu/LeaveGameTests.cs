@@ -22,7 +22,7 @@ namespace PlumSword.Core.Tests.StartMenu
             var upgrades = new StatUpgrades(wallet, 10, 100);
             var stage = new StageProgress(wallet, upgrades, new Battle(upgrades), new Random(0), 1, 1);
             store = new FakeSaveStore();
-            autoSave = new AutoSave(store, wallet, upgrades, stage, enabled);
+            autoSave = new AutoSave(store, wallet, upgrades, new PlumSword.Core.Realm.RealmProgress(wallet), stage, enabled);
             return new LeaveGame(autoSave);
         }
 

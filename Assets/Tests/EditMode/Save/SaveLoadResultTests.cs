@@ -15,7 +15,7 @@ namespace PlumSword.Core.Tests.Save
         [Test]
         public void Constructor_EmptyWithData_ThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException>(() => new SaveLoadResult(SaveLoadStatus.Empty, new SaveData(0, 0, 0, 0, 1, 0, 0)));
+            Assert.Throws<ArgumentException>(() => new SaveLoadResult(SaveLoadStatus.Empty, new SaveData(0, 0, 0, 0, 0, 1, 0, 0)));
         }
 
         [Test]
@@ -30,7 +30,7 @@ namespace PlumSword.Core.Tests.Save
         [Test]
         public void Constructor_LoadedWithData_ReturnsSameData()
         {
-            var data = new SaveData(0, 0, 0, 0, 1, 0, 0);
+            var data = new SaveData(0, 0, 0, 0, 0, 1, 0, 0);
             var result = new SaveLoadResult(SaveLoadStatus.Loaded, data);
             Assert.That(result.Status, Is.EqualTo(SaveLoadStatus.Loaded));
             Assert.That(result.Data, Is.SameAs(data));

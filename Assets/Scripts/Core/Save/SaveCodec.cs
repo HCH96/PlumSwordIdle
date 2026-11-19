@@ -14,7 +14,8 @@ namespace PlumSword.Core.Save
                 "gold=" + data.Gold.ToString(culture) + "\n" +
                 "attackLevel=" + data.AttackLevel.ToString(culture) + "\n" +
                 "healthLevel=" + data.HealthLevel.ToString(culture) + "\n" +
-                "attackSpeedLevel=" + data.AttackSpeedLevel.ToString(culture) + "\n" +
+                "innerPowerLevel=" + data.InnerPowerLevel.ToString(culture) + "\n" +
+                "realmLevel=" + data.RealmLevel.ToString(culture) + "\n" +
                 "stageNumber=" + data.StageNumber.ToString(culture) + "\n" +
                 "seenIntroStage=" + data.SeenIntroStage.ToString(culture) + "\n" +
                 "savedAtUtcTicks=" + data.SavedAtUtcTicks.ToString(culture) + "\n";
@@ -42,12 +43,13 @@ namespace PlumSword.Core.Save
             if (!TryLong(fields, "gold", out long gold) ||
                 !TryInt(fields, "attackLevel", out int attack) ||
                 !TryInt(fields, "healthLevel", out int health) ||
-                !TryInt(fields, "attackSpeedLevel", out int speed) ||
+                !TryInt(fields, "innerPowerLevel", out int innerPower) ||
+                !TryInt(fields, "realmLevel", out int realm) ||
                 !TryInt(fields, "stageNumber", out int stage) ||
                 !TryInt(fields, "seenIntroStage", out int seen) ||
                 !TryLong(fields, "savedAtUtcTicks", out long ticks))
                 return new SaveLoadResult(SaveLoadStatus.Corrupt, null);
-            return new SaveLoadResult(SaveLoadStatus.Loaded, new SaveData(gold, attack, health, speed, stage, seen, ticks));
+            return new SaveLoadResult(SaveLoadStatus.Loaded, new SaveData(gold, attack, health, innerPower, realm, stage, seen, ticks));
         }
 
         private static bool TryInt(Dictionary<string, string> fields, string name, out int value)
