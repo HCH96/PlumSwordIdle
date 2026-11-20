@@ -152,6 +152,97 @@ namespace PlumSword.Core.Tests.Realm
             Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.ShakePixels(Invalid, 0));
         }
 
+        [TestCase(0.4, 0)]
+        [TestCase(0.5, 1)]
+        [TestCase(0.9, 0.5)]
+        [TestCase(1.3, 0)]
+        [TestCase(-1, 0)]
+        [TestCase(double.PositiveInfinity, 0)]
+        public void BurstFade_Time_ReturnsExpected(double seconds, double expected) =>
+            Assert.That(BreakthroughEffect.BurstFade(seconds), Is.EqualTo(expected).Within(Tolerance));
+
+        [TestCase(0.4, 0)]
+        [TestCase(0.5, 0.45)]
+        [TestCase(0.9, 0.975)]
+        [TestCase(1.3, 0)]
+        public void RingRadius_FirstRate_ReturnsExpected(double seconds, double expected) =>
+            Assert.That(BreakthroughEffect.RingRadius(RealmLevel.FirstRate, seconds),
+                Is.EqualTo(expected).Within(Tolerance));
+
+        [Test]
+        public void RingRadius_SecondRateWithoutRing_IsZero() =>
+            Assert.That(BreakthroughEffect.RingRadius(RealmLevel.SecondRate, 0.9), Is.EqualTo(0));
+
+        [TestCase(0.4, 0)]
+        [TestCase(0.5, 1.2)]
+        [TestCase(0.9, 0.78)]
+        [TestCase(1.3, 0)]
+        public void PillarWidthAt_Time_ReturnsExpected(double seconds, double expected) =>
+            Assert.That(BreakthroughEffect.PillarWidthAt(seconds), Is.EqualTo(expected).Within(Tolerance));
+
+        [TestCase(0.5, 0)]
+        [TestCase(0.7, 2.5)]
+        [TestCase(0.9, 0)]
+        public void ShockwaveRadius_Transcendent_ReturnsExpected(double seconds, double expected) =>
+            Assert.That(BreakthroughEffect.ShockwaveRadius(RealmLevel.Transcendent, seconds),
+                Is.EqualTo(expected).Within(Tolerance));
+
+        [TestCase(0.5, 1)]
+        [TestCase(0.7, 0.5)]
+        [TestCase(0.9, 0)]
+        public void ShockwaveAlpha_Transcendent_ReturnsExpected(double seconds, double expected) =>
+            Assert.That(BreakthroughEffect.ShockwaveAlpha(RealmLevel.Transcendent, seconds),
+                Is.EqualTo(expected).Within(Tolerance));
+
+        [Test]
+        public void Shockwave_PeakWithoutShockwave_IsZero()
+        {
+            Assert.That(BreakthroughEffect.ShockwaveRadius(RealmLevel.Peak, 0.7), Is.EqualTo(0));
+            Assert.That(BreakthroughEffect.ShockwaveAlpha(RealmLevel.Peak, 0.7), Is.EqualTo(0));
+        }
+
+        [TestCase(0, 0, 3, 0, 1, 0)]
+        [TestCase(0, 0.25, 1.5, 0, 1, 0.5)]
+        [TestCase(0, 1.0, 1.5, -0.375, 1, 0.6153846153846154)]
+        [TestCase(0, 1.8, 0, 0, 0, 0)]
+        [TestCase(3, 1.0, 0, 2.25, 1, 0.6153846153846154)]
+        public void BurstPetal_SecondRate_ReturnsExpected(int index, double seconds,
+            double x, double y, double scale, double alpha)
+        {
+            var point = BreakthroughEffect.BurstPetal(RealmLevel.SecondRate, index, seconds);
+            Assert.That(point.X, Is.EqualTo(x).Within(Tolerance));
+            Assert.That(point.Y, Is.EqualTo(y).Within(Tolerance));
+            Assert.That(point.Scale, Is.EqualTo(scale).Within(Tolerance));
+            Assert.That(point.Alpha, Is.EqualTo(alpha).Within(Tolerance));
+        }
+
+        [TestCase(RealmLevel.SecondRate, 12)]
+        [TestCase(RealmLevel.SecondRate, -1)]
+        [TestCase(RealmLevel.ThirdRate, 0)]
+        public void BurstPetal_IndexOutOfRange_Throws(RealmLevel realm, int index) =>
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.BurstPetal(realm, index, 0));
+
+        [Test]
+        public void PartFunctions_NaN_Throw()
+        {
+            var realm = RealmLevel.Transcendent;
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.BurstFade(double.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.RingRadius(realm, double.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.PillarWidthAt(double.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.ShockwaveRadius(realm, double.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.ShockwaveAlpha(realm, double.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.BurstPetal(realm, 0, double.NaN));
+        }
+
+        [Test]
+        public void PartFunctions_InvalidLevel_Throw()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.RingRadius(Invalid, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.ShockwaveRadius(Invalid, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.ShockwaveAlpha(Invalid, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BreakthroughEffect.BurstPetal(Invalid, 0, 0));
+        }
+
         [Test]
         public void EffectPoint_Constructor_StoresValuesWithoutValidation()
         {

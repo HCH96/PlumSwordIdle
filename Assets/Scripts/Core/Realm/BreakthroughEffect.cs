@@ -22,6 +22,11 @@ namespace PlumSword.Core.Realm
         private const double BloomRatio = 0.5;
         private const double DimMaskInner = 1.5;
         private const double DimMaskWidth = 2.5;
+        private const double ShockwaveEndSeconds = BurstSeconds + ShockwaveSeconds;
+        private const double RingStartRatio = 0.3;
+        private const double PillarStartRatio = 0.3;
+        private const double PetalBaseSpeed = 3.0;
+        private const double PetalGravity = 1.5;
 
         public static BreakthroughStyle Style(RealmLevel realm)
         {
@@ -101,6 +106,75 @@ namespace PlumSword.Core.Realm
             double t = Normalize(seconds);
             if (t < BurstSeconds || t >= ShakeEndSeconds) return 0;
             return pixels;
+        }
+
+        public static double BurstFade(double seconds)
+        {
+            double t = Normalize(seconds);
+            if (t < BurstSeconds || t >= AfterglowEndSeconds) return 0;
+            return (AfterglowEndSeconds - t) / (AfterglowEndSeconds - BurstSeconds);
+        }
+
+        public static double RingRadius(RealmLevel realm, double seconds)
+        {
+            var style = Style(realm);
+            double t = Normalize(seconds);
+            if (!style.HasRing || t < BurstSeconds || t >= AfterglowEndSeconds) return 0;
+            double progress = (t - BurstSeconds) / (AfterglowEndSeconds - BurstSeconds);
+            return style.RingRadius * (RingStartRatio + (1 - RingStartRatio) * progress);
+        }
+
+        public static double PillarWidthAt(double seconds)
+        {
+            double fade = BurstFade(seconds);
+            if (fade <= 0) return 0;
+            return PillarWidth * (PillarStartRatio + (1 - PillarStartRatio) * fade);
+        }
+
+        public static double ShockwaveRadius(RealmLevel realm, double seconds)
+        {
+            var style = Style(realm);
+            double t = Normalize(seconds);
+            if (!style.HasShockwave || t < BurstSeconds || t >= ShockwaveEndSeconds) return 0;
+            return 2 * style.RingRadius * ShockwaveProgress(t);
+        }
+
+        public static double ShockwaveAlpha(RealmLevel realm, double seconds)
+        {
+            var style = Style(realm);
+            double t = Normalize(seconds);
+            if (!style.HasShockwave || t < BurstSeconds || t >= ShockwaveEndSeconds) return 0;
+            return 1 - ShockwaveProgress(t);
+        }
+
+        // 검사 순서: 경지 → 시간(NaN) → index.
+        public static EffectPoint BurstPetal(RealmLevel realm, int index, double seconds)
+        {
+            int n = Style(realm).BurstPetals;
+            double t = Normalize(seconds);
+            if (index < 0 || index >= n)
+                throw new ArgumentOutOfRangeException(nameof(index));
+
+            double a = 2 * Math.PI * index / n;
+            if (t < BurstSeconds)
+            {
+                double radius = GatherRadius * (1 - t / BurstSeconds);
+                return new EffectPoint(Math.Cos(a) * radius, Math.Sin(a) * radius, 1, t / BurstSeconds);
+            }
+            if (t < TotalSeconds)
+            {
+                double u = t - BurstSeconds;
+                double speed = PetalBaseSpeed + PetalBaseSpeed * ((index * 7) % n) / (double)n;
+                double x = Math.Cos(a) * speed * u;
+                double y = Math.Sin(a) * speed * u - PetalGravity * u * u;
+                return new EffectPoint(x, y, 1, 1 - u / (TotalSeconds - BurstSeconds));
+            }
+            return new EffectPoint(0, 0, 0, 0);
+        }
+
+        private static double ShockwaveProgress(double t)
+        {
+            return (t - BurstSeconds) / ShockwaveSeconds;
         }
 
         // NaN 은 예외, 음수·음의 무한대는 0, 양의 무한대는 그대로(끝난 뒤).
