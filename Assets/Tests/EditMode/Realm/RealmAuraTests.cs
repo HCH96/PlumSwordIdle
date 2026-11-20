@@ -90,26 +90,35 @@ namespace PlumSword.Core.Tests.Realm
         public void BurstColor_InvalidLevel_Throws() =>
             Assert.Throws<ArgumentOutOfRangeException>(() => RealmAura.BurstColor((RealmLevel)99));
 
-        private static void AssertPoint(EffectPoint point, double x, double y, double scale, double alpha)
+        [Test]
+        public void Wisp_SecondRateFirstAtZero_ReturnsExpectedPoint()
         {
-            Assert.That(point.X, Is.EqualTo(x).Within(1e-9));
-            Assert.That(point.Y, Is.EqualTo(y).Within(1e-9));
-            Assert.That(point.Scale, Is.EqualTo(scale).Within(1e-9));
-            Assert.That(point.Alpha, Is.EqualTo(alpha).Within(1e-9));
+            var point = RealmAura.Wisp(RealmLevel.SecondRate, 0, 0);
+            Assert.That(point.X, Is.EqualTo(-0.225).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(0).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(1).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(0.525).Within(1e-9));
         }
 
         [Test]
-        public void Wisp_SecondRateFirstAtZero_ReturnsExpectedPoint() =>
-            AssertPoint(RealmAura.Wisp(RealmLevel.SecondRate, 0, 0), -0.225, 0, 1, 0.525);
+        public void Wisp_SecondRateSecondAtZero_ReturnsExpectedPoint()
+        {
+            var point = RealmAura.Wisp(RealmLevel.SecondRate, 1, 0);
+            Assert.That(point.X, Is.EqualTo(0.225).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(0).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(1).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(0.7).Within(1e-9));
+        }
 
         [Test]
-        public void Wisp_SecondRateSecondAtZero_ReturnsExpectedPoint() =>
-            AssertPoint(RealmAura.Wisp(RealmLevel.SecondRate, 1, 0), 0.225, 0, 1, 0.7);
-
-        [Test]
-        public void Wisp_SecondRateFirstAtPointThree_ReturnsExpectedPoint() =>
-            AssertPoint(RealmAura.Wisp(RealmLevel.SecondRate, 0, 0.3), -0.105, 0, 1.1299038105676658,
-                0.7 * (0.75 + 0.25 * Math.Sin(2 * Math.PI * 0.3 / 1.6)));
+        public void Wisp_SecondRateFirstAtPointThree_ReturnsExpectedPoint()
+        {
+            var point = RealmAura.Wisp(RealmLevel.SecondRate, 0, 0.3);
+            Assert.That(point.X, Is.EqualTo(-0.105).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(0).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(1.1299038105676658).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(0.7 * (0.75 + 0.25 * Math.Sin(2 * Math.PI * 0.3 / 1.6))).Within(1e-9));
+        }
 
         [TestCase(RealmLevel.SecondRate, 2, 0)]
         [TestCase(RealmLevel.SecondRate, -1, 0)]
@@ -121,17 +130,34 @@ namespace PlumSword.Core.Tests.Realm
             Assert.Throws<ArgumentOutOfRangeException>(() => RealmAura.Wisp(level, index, seconds));
 
         [Test]
-        public void FloatingPetal_FirstRateFirstAtZero_ReturnsExpectedPoint() =>
-            AssertPoint(RealmAura.FloatingPetal(RealmLevel.FirstRate, 0, 0), 0, -1.05, 1, 0);
+        public void FloatingPetal_FirstRateFirstAtZero_ReturnsExpectedPoint()
+        {
+            var point = RealmAura.FloatingPetal(RealmLevel.FirstRate, 0, 0);
+            Assert.That(point.X, Is.EqualTo(0).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(-1.05).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(1).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(0).Within(1e-9));
+        }
 
         [Test]
-        public void FloatingPetal_FirstRateFirstAtOneAndHalf_ReturnsExpectedPoint() =>
-            AssertPoint(RealmAura.FloatingPetal(RealmLevel.FirstRate, 0, 1.5), -0.8, 0.15, 1, 1);
+        public void FloatingPetal_FirstRateFirstAtOneAndHalf_ReturnsExpectedPoint()
+        {
+            var point = RealmAura.FloatingPetal(RealmLevel.FirstRate, 0, 1.5);
+            Assert.That(point.X, Is.EqualTo(-0.8).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(0.15).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(1).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(1).Within(1e-9));
+        }
 
         [Test]
-        public void FloatingPetal_FirstRateSecondAtZero_ReturnsExpectedPoint() =>
-            AssertPoint(RealmAura.FloatingPetal(RealmLevel.FirstRate, 1, 0),
-                0.8 * Math.Sin(1.5 * Math.PI + 1), 0.15, 1, 1);
+        public void FloatingPetal_FirstRateSecondAtZero_ReturnsExpectedPoint()
+        {
+            var point = RealmAura.FloatingPetal(RealmLevel.FirstRate, 1, 0);
+            Assert.That(point.X, Is.EqualTo(0.8 * Math.Sin(1.5 * Math.PI + 1)).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(0.15).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(1).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(1).Within(1e-9));
+        }
 
         [TestCase(RealmLevel.SecondRate, 0, 0)]
         [TestCase(RealmLevel.FirstRate, 2, 0)]
