@@ -7,10 +7,10 @@ namespace PlumSword.Core.Tests.Realm
     public class RealmAuraTests
     {
         [TestCase(RealmLevel.ThirdRate, false, 0, 0, 0, 0)]
-        [TestCase(RealmLevel.SecondRate, true, 0.55, 0.85, 1.0, 0.35)]
-        [TestCase(RealmLevel.FirstRate, true, 0.35, 0.55, 1.0, 0.40)]
-        [TestCase(RealmLevel.Peak, true, 0.70, 0.40, 1.0, 0.45)]
-        [TestCase(RealmLevel.Transcendent, true, 1.0, 0.55, 0.75, 0.50)]
+        [TestCase(RealmLevel.SecondRate, true, 1.0, 0.72, 0.82, 0.35)]
+        [TestCase(RealmLevel.FirstRate, true, 1.0, 0.55, 0.75, 0.40)]
+        [TestCase(RealmLevel.Peak, true, 0.95, 0.35, 0.65, 0.45)]
+        [TestCase(RealmLevel.Transcendent, true, 1.0, 0.40, 0.70, 0.50)]
         public void Aura_ValidLevel_ReturnsPresenceAndColor(RealmLevel level, bool hasAura, double r, double g, double b, double a)
         {
             Assert.That(RealmAura.HasAura(level), Is.EqualTo(hasAura));
@@ -71,5 +71,73 @@ namespace PlumSword.Core.Tests.Realm
             Assert.That(double.IsNaN(color.B), Is.True);
             Assert.That(color.A, Is.EqualTo(double.PositiveInfinity));
         }
+
+        [TestCase(RealmLevel.ThirdRate, 0, 0, 0, 0)]
+        [TestCase(RealmLevel.SecondRate, 1.0, 0.72, 0.82, 1.0)]
+        [TestCase(RealmLevel.FirstRate, 1.0, 0.55, 0.75, 1.0)]
+        [TestCase(RealmLevel.Peak, 0.95, 0.35, 0.65, 1.0)]
+        [TestCase(RealmLevel.Transcendent, 1.0, 0.95, 0.97, 1.0)]
+        public void BurstColor_ValidLevel_ReturnsColor(RealmLevel level, double r, double g, double b, double a)
+        {
+            var color = RealmAura.BurstColor(level);
+            Assert.That(color.R, Is.EqualTo(r).Within(1e-9));
+            Assert.That(color.G, Is.EqualTo(g).Within(1e-9));
+            Assert.That(color.B, Is.EqualTo(b).Within(1e-9));
+            Assert.That(color.A, Is.EqualTo(a).Within(1e-9));
+        }
+
+        [Test]
+        public void BurstColor_InvalidLevel_Throws() =>
+            Assert.Throws<ArgumentOutOfRangeException>(() => RealmAura.BurstColor((RealmLevel)99));
+
+        private static void AssertPoint(EffectPoint point, double x, double y, double scale, double alpha)
+        {
+            Assert.That(point.X, Is.EqualTo(x).Within(1e-9));
+            Assert.That(point.Y, Is.EqualTo(y).Within(1e-9));
+            Assert.That(point.Scale, Is.EqualTo(scale).Within(1e-9));
+            Assert.That(point.Alpha, Is.EqualTo(alpha).Within(1e-9));
+        }
+
+        [Test]
+        public void Wisp_SecondRateFirstAtZero_ReturnsExpectedPoint() =>
+            AssertPoint(RealmAura.Wisp(RealmLevel.SecondRate, 0, 0), -0.225, 0, 1, 0.525);
+
+        [Test]
+        public void Wisp_SecondRateSecondAtZero_ReturnsExpectedPoint() =>
+            AssertPoint(RealmAura.Wisp(RealmLevel.SecondRate, 1, 0), 0.225, 0, 1, 0.7);
+
+        [Test]
+        public void Wisp_SecondRateFirstAtPointThree_ReturnsExpectedPoint() =>
+            AssertPoint(RealmAura.Wisp(RealmLevel.SecondRate, 0, 0.3), -0.105, 0, 1.1299038105676658,
+                0.7 * (0.75 + 0.25 * Math.Sin(2 * Math.PI * 0.3 / 1.6)));
+
+        [TestCase(RealmLevel.SecondRate, 2, 0)]
+        [TestCase(RealmLevel.SecondRate, -1, 0)]
+        [TestCase(RealmLevel.ThirdRate, 0, 0)]
+        [TestCase(RealmLevel.SecondRate, 0, double.NaN)]
+        [TestCase(RealmLevel.SecondRate, 0, double.PositiveInfinity)]
+        [TestCase((RealmLevel)99, 0, 0)]
+        public void Wisp_InvalidInput_Throws(RealmLevel level, int index, double seconds) =>
+            Assert.Throws<ArgumentOutOfRangeException>(() => RealmAura.Wisp(level, index, seconds));
+
+        [Test]
+        public void FloatingPetal_FirstRateFirstAtZero_ReturnsExpectedPoint() =>
+            AssertPoint(RealmAura.FloatingPetal(RealmLevel.FirstRate, 0, 0), 0, -1.05, 1, 0);
+
+        [Test]
+        public void FloatingPetal_FirstRateFirstAtOneAndHalf_ReturnsExpectedPoint() =>
+            AssertPoint(RealmAura.FloatingPetal(RealmLevel.FirstRate, 0, 1.5), -0.8, 0.15, 1, 1);
+
+        [Test]
+        public void FloatingPetal_FirstRateSecondAtZero_ReturnsExpectedPoint() =>
+            AssertPoint(RealmAura.FloatingPetal(RealmLevel.FirstRate, 1, 0),
+                0.8 * Math.Sin(1.5 * Math.PI + 1), 0.15, 1, 1);
+
+        [TestCase(RealmLevel.SecondRate, 0, 0)]
+        [TestCase(RealmLevel.FirstRate, 2, 0)]
+        [TestCase(RealmLevel.FirstRate, 0, double.NaN)]
+        [TestCase((RealmLevel)99, 0, 0)]
+        public void FloatingPetal_InvalidInput_Throws(RealmLevel level, int index, double seconds) =>
+            Assert.Throws<ArgumentOutOfRangeException>(() => RealmAura.FloatingPetal(level, index, seconds));
     }
 }
