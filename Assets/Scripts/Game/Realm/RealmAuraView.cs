@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using PlumSword.Core.Combat;
 using PlumSword.Core.Realm;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace PlumSword.Game.Realm
 {
@@ -11,8 +13,12 @@ namespace PlumSword.Game.Realm
     {
         private const int MaxWisps = 4;
         private const int MaxPetals = 5;
+        private const int MaxBurstPetals = 36;
         private const float CenterAboveFeet = 1.25f;
         private const float WispFps = 10f;
+        private const float FeetOffsetX = -2.25f;
+        private const float FeetY = -1.5f;
+        private const float PartsPpu = 32f;
 
         private RealmProgress realm;
         private Battle battle;
@@ -46,6 +52,26 @@ namespace PlumSword.Game.Realm
         private Texture2D petalFallbackTexture;
         private Sprite petalFallbackSprite;
 
+        // 돌파 연출 부품 (062)
+        private SpriteRenderer dimRenderer;
+        private SpriteRenderer ringRenderer;
+        private SpriteRenderer pillarRenderer;
+        private SpriteRenderer shockwaveRenderer;
+        private SpriteRenderer flashRenderer;
+        private readonly SpriteRenderer[] burstPetalRenderers = new SpriteRenderer[MaxBurstPetals];
+        private Sprite ringFallbackSprite;
+        private Sprite pillarFallbackSprite;
+        private Sprite[] ringFrames;
+        private Sprite[] pillarFrames;
+        private Sprite[] shockwaveFrames;
+        private Light2D pointLight;
+        private Light2D ownGlobalLight;
+        private Bloom bloom;
+        private bool partsShown;
+        private UniversalAdditionalCameraData savedCameraData;
+        private bool savedPostProcessing;
+        private bool hasSavedPostProcessing;
+
         private readonly List<UnityEngine.Object> createdObjects = new List<UnityEngine.Object>();
 
         public void Initialize(RealmProgress realm, Battle battle)
@@ -65,6 +91,7 @@ namespace PlumSword.Game.Realm
 
             LoadWispSprites();
             LoadPetalSprites();
+            CreateBreakthroughParts();
 
             realm.BrokeThrough += OnBrokeThrough;
             UpdateDisplay();
@@ -216,7 +243,9 @@ namespace PlumSword.Game.Realm
 
         private void LateUpdate()
         {
-            if (initialized) UpdateDisplay();
+            if (!initialized) return;
+            UpdateDisplay();
+            ApplyShake();
         }
 
         private void UpdateDisplay()
@@ -241,6 +270,9 @@ namespace PlumSword.Game.Realm
             UpdateBaseLight(level, visible, center, playing, t, now);
             UpdateWisps(level, visible ? style.AuraWisps : 0, center, c, now);
             UpdatePetals(level, visible ? style.AuraPetals : 0, center, c, now);
+
+            var feet = new Vector3((float)battle.DisciplePosition + FeetOffsetX, FeetY, 0f);
+            UpdateBreakthroughParts(center, feet, t);
         }
 
         private void UpdateBaseLight(RealmLevel level, bool visible, Vector3 center, bool isPlaying, float t, float now)
@@ -326,12 +358,309 @@ namespace PlumSword.Game.Realm
             }
         }
 
+        // ---------- 돌파 연출 부품 (062) ----------
+
+        private void CreateBreakthroughParts()
+        {
+            dimRenderer = CreateRenderer("BreakthroughDim", 9980);
+            ringRenderer = CreateRenderer("BreakthroughRing", 9992);
+            pillarRenderer = CreateRenderer("BreakthroughPillar", 9993);
+            shockwaveRenderer = CreateRenderer("BreakthroughShockwave", 9994);
+            for (int i = 0; i < MaxBurstPetals; i++)
+                burstPetalRenderers[i] = CreateRenderer("BurstPetal" + i, 10003);
+            flashRenderer = CreateRenderer("BreakthroughFlash", 29990);
+
+            // 어둡게: 128×64, PPU 2 (1 픽셀 = 0.5 유닛), Bilinear.
+            var dimTexture = Track(NewTexture(128, 64));
+            dimTexture.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < 64; y++)
+            for (int x = 0; x < 128; x++)
+            {
+                double dx = (x + .5 - 64.0) * .5;
+                double dy = (y + .5 - 32.0) * .5;
+                float alpha = (float)BreakthroughEffect.DimMask(Math.Sqrt(dx * dx + dy * dy));
+                dimTexture.SetPixel(x, y, new Color(0f, 0f, 0f, alpha));
+            }
+            dimTexture.Apply();
+            dimRenderer.sprite = Track(Sprite.Create(dimTexture, new Rect(0, 0, 128, 64), new Vector2(.5f, .5f), 2f));
+
+            // 고리·충격파 대체: 64×16 타원 테두리.
+            var ringTexture = Track(NewTexture(64, 16));
+            for (int y = 0; y < 16; y++)
+            for (int x = 0; x < 64; x++)
+            {
+                float u = (x + .5f - 32f) / 32f;
+                float v = (y + .5f - 8f) / 8f;
+                float d = Mathf.Sqrt(u * u + v * v);
+                float alpha = Mathf.Max(0f, 1f - Mathf.Abs(d - .85f) / .15f);
+                ringTexture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+            ringTexture.Apply();
+            ringFallbackSprite = Track(Sprite.Create(ringTexture, new Rect(0, 0, 64, 16), new Vector2(.5f, .5f), PartsPpu));
+
+            // 기둥 대체: 16×64, 피벗 아래 가운데.
+            var pillarTexture = Track(NewTexture(16, 64));
+            for (int y = 0; y < 64; y++)
+            for (int x = 0; x < 16; x++)
+            {
+                float dx = x + .5f - 8f;
+                float a = 1f - Mathf.Abs(dx) / 8f;
+                float alpha = Mathf.Clamp01(a * a * Mathf.Min(1f, (63.5f - y) / 16f));
+                pillarTexture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+            pillarTexture.Apply();
+            pillarFallbackSprite = Track(Sprite.Create(pillarTexture, new Rect(0, 0, 16, 64), new Vector2(.5f, 0f), PartsPpu));
+
+            // 번쩍임: 1×1 흰색 (1 유닛).
+            var flashTexture = Track(NewTexture(1, 1));
+            flashTexture.SetPixel(0, 0, Color.white);
+            flashTexture.Apply();
+            flashRenderer.sprite = Track(Sprite.Create(flashTexture, new Rect(0, 0, 1, 1), new Vector2(.5f, .5f), 1f));
+            flashRenderer.transform.localScale = new Vector3(30f, 12f, 1f);
+
+            ringFrames = LoadPartSheet("Art/Effects/breakthrough_ring", 160, 48, new Vector2(.5f, .5f));
+            pillarFrames = LoadPartSheet("Art/Effects/breakthrough_pillar", 64, 192, new Vector2(.5f, 0f));
+            shockwaveFrames = LoadPartSheet("Art/Effects/breakthrough_shockwave", 192, 64, new Vector2(.5f, .5f));
+
+            CreateLights();
+            CreateBloom();
+        }
+
+        private Sprite[] LoadPartSheet(string path, int frameWidth, int frameHeight, Vector2 pivot)
+        {
+            var texture = Resources.Load<Texture2D>(path);
+            if (texture == null) return null;
+            if (texture.width == 0 || texture.width % frameWidth != 0 || texture.height != frameHeight)
+            {
+                Debug.LogWarning("Invalid breakthrough sprite sheet dimensions: " + path);
+                return null;
+            }
+
+            var sheet = new Sprite[texture.width / frameWidth];
+            for (int i = 0; i < sheet.Length; i++)
+                sheet[i] = Track(Sprite.Create(texture, new Rect(i * frameWidth, 0, frameWidth, frameHeight), pivot, PartsPpu));
+            return sheet;
+        }
+
+        private void CreateLights()
+        {
+            var layers = SortingLayer.layers;
+            var layerIds = new int[layers.Length];
+            for (int i = 0; i < layers.Length; i++) layerIds[i] = layers[i].id;
+
+            var pointObject = new GameObject("BreakthroughLight");
+            pointObject.transform.SetParent(transform, false);
+            pointLight = pointObject.AddComponent<Light2D>();
+            pointLight.lightType = Light2D.LightType.Point;
+            pointLight.pointLightInnerRadius = .5f;
+            pointLight.pointLightOuterRadius = 5f;
+            pointLight.color = Color.white;
+            pointLight.intensity = 0f;
+            pointLight.targetSortingLayers = layerIds;
+            pointLight.enabled = false;
+
+            if (OtherGlobalLightExists()) return;
+
+            // 꺼 둔 채로 전역으로 바꾼다 (켜질 때만 전역 광원 중복 검사를 하므로).
+            // [Game] 은 씬을 넘어 살아 있어서, 켜 두면 나중에 불러온 씬의 전역 광원과 겹쳐 URP 가 오류를 남긴다.
+            // 그래서 점광원이 켜지는 연출 중에만, 그때도 다른 전역 광원이 없을 때만 켠다.
+            var globalObject = new GameObject("GlobalLight2D");
+            globalObject.transform.SetParent(transform, false);
+            ownGlobalLight = globalObject.AddComponent<Light2D>();
+            ownGlobalLight.enabled = false;
+            ownGlobalLight.lightType = Light2D.LightType.Global;
+            ownGlobalLight.color = Color.white;
+            ownGlobalLight.intensity = 1f;
+            ownGlobalLight.targetSortingLayers = layerIds;
+        }
+
+        private bool OtherGlobalLightExists()
+        {
+            foreach (var light in FindObjectsByType<Light2D>())
+                if (light != ownGlobalLight && light.isActiveAndEnabled && light.lightType == Light2D.LightType.Global)
+                    return true;
+            return false;
+        }
+
+        private void CreateBloom()
+        {
+            var volumeObject = new GameObject("BreakthroughBloom");
+            volumeObject.transform.SetParent(transform, false);
+            var volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 100f;
+            volume.weight = 1f;
+
+            var profile = Track(ScriptableObject.CreateInstance<VolumeProfile>());
+            bloom = Track(profile.Add<Bloom>());
+            bloom.threshold.Override(.8f);
+            bloom.scatter.Override(.7f);
+            bloom.intensity.Override(0f);
+            volume.sharedProfile = profile;
+        }
+
+        private void UpdateBreakthroughParts(Vector3 center, Vector3 feet, float t)
+        {
+            if (!playing)
+            {
+                if (partsShown) HideBreakthroughParts();
+                return;
+            }
+            partsShown = true;
+
+            RealmLevel r = effectRealm;
+            var style = BreakthroughEffect.Style(r);
+            var color = RealmAura.Color(r);
+            var burstColor = RealmAura.BurstColor(r);
+
+            dimRenderer.enabled = true;
+            dimRenderer.transform.position = center;
+            dimRenderer.color = new Color(0f, 0f, 0f, (float)BreakthroughEffect.DimAlpha(r, t));
+
+            pointLight.enabled = true;
+            pointLight.transform.position = center;
+            pointLight.color = new Color((float)color.R, (float)color.G, (float)color.B, 1f);
+            pointLight.intensity = (float)BreakthroughEffect.LightIntensity(r, t);
+
+            bloom.intensity.value = (float)BreakthroughEffect.BloomIntensity(r, t);
+
+            float fade = (float)BreakthroughEffect.BurstFade(t);
+            float ringRadius = (float)BreakthroughEffect.RingRadius(r, t);
+            UpdateSheetPart(ringRenderer, style.HasRing, ringFrames, ringFallbackSprite, feet,
+                2f * ringRadius, .6f * ringRadius, false, fade, (t - .5f) / .8f, burstColor);
+
+            UpdateSheetPart(pillarRenderer, style.HasPillar, pillarFrames, pillarFallbackSprite, feet,
+                (float)BreakthroughEffect.PillarWidthAt(t), (float)style.PillarHeight, true, fade, (t - .5f) / .8f, burstColor);
+
+            float shockRadius = (float)BreakthroughEffect.ShockwaveRadius(r, t);
+            UpdateSheetPart(shockwaveRenderer, style.HasShockwave, shockwaveFrames, ringFallbackSprite, feet,
+                2f * shockRadius, .6f * shockRadius, false, (float)BreakthroughEffect.ShockwaveAlpha(r, t),
+                (t - .5f) / .4f, burstColor);
+
+            UpdateBurstPetals(r, style.BurstPetals, center, color, t);
+
+            var cam = Camera.main;
+            flashRenderer.enabled = style.HasFlash && cam != null;
+            if (flashRenderer.enabled)
+            {
+                var p = cam.transform.position;
+                flashRenderer.transform.position = new Vector3(p.x, p.y, 0f);
+                flashRenderer.color = new Color(1f, 1f, 1f, (float)BreakthroughEffect.FlashAlpha(r, t));
+            }
+        }
+
+        // 고리·기둥·충격파. width 가 0 이면 숨긴다. 그림은 fitHeight 에 따라 세로 또는 가로를 맞추고 비율 유지, 흰색.
+        private static void UpdateSheetPart(SpriteRenderer renderer, bool styleEnabled, Sprite[] sheet, Sprite fallback,
+            Vector3 position, float width, float height, bool fitHeight, float alpha, float progress, AuraColor color)
+        {
+            if (!styleEnabled || width <= 0f || height <= 0f)
+            {
+                renderer.enabled = false;
+                return;
+            }
+
+            renderer.enabled = true;
+            renderer.transform.position = position;
+            if (sheet != null)
+            {
+                int frame = Mathf.Clamp(Mathf.FloorToInt(progress * sheet.Length), 0, sheet.Length - 1);
+                var sprite = sheet[frame];
+                renderer.sprite = sprite;
+                Vector2 size = sprite.rect.size / sprite.pixelsPerUnit;
+                float s = fitHeight ? height / size.y : width / size.x;
+                renderer.transform.localScale = new Vector3(s, s, 1f);
+                renderer.color = new Color(1f, 1f, 1f, alpha);
+            }
+            else
+            {
+                renderer.sprite = fallback;
+                Vector2 size = fallback.rect.size / fallback.pixelsPerUnit;
+                renderer.transform.localScale = new Vector3(width / size.x, height / size.y, 1f);
+                renderer.color = new Color((float)color.R, (float)color.G, (float)color.B, alpha);
+            }
+        }
+
+        private void UpdateBurstPetals(RealmLevel r, int count, Vector3 center, AuraColor color, float t)
+        {
+            for (int i = 0; i < MaxBurstPetals; i++)
+            {
+                var renderer = burstPetalRenderers[i];
+                if (i >= count)
+                {
+                    renderer.enabled = false;
+                    continue;
+                }
+
+                var p = BreakthroughEffect.BurstPetal(r, i, t);
+                float s = 1.5f * (float)p.Scale;
+                renderer.enabled = true;
+                renderer.sprite = PetalSprite(i);
+                renderer.transform.position = center + new Vector3((float)p.X, (float)p.Y, 0f);
+                renderer.transform.localScale = new Vector3(s, s, 1f);
+                renderer.color = petalSprites != null
+                    ? new Color(1f, 1f, 1f, (float)p.Alpha)
+                    : new Color((float)color.R, (float)color.G, (float)color.B, (float)p.Alpha);
+            }
+        }
+
+        private void HideBreakthroughParts()
+        {
+            partsShown = false;
+            dimRenderer.enabled = false;
+            ringRenderer.enabled = false;
+            pillarRenderer.enabled = false;
+            shockwaveRenderer.enabled = false;
+            flashRenderer.enabled = false;
+            foreach (var renderer in burstPetalRenderers) renderer.enabled = false;
+            pointLight.intensity = 0f;
+            pointLight.enabled = false;
+            if (ownGlobalLight != null) ownGlobalLight.enabled = false;
+            bloom.intensity.value = 0f;
+            RestorePostProcessing();
+        }
+
+        // 처음 연출이 시작될 때의 값을 기억한다. 연출 중 다시 돌파해도 기억한 값은 그대로다.
+        private void BeginPostProcessing()
+        {
+            if (!hasSavedPostProcessing)
+            {
+                var cam = Camera.main;
+                if (cam == null || !cam.TryGetComponent(out UniversalAdditionalCameraData data)) return;
+                savedCameraData = data;
+                savedPostProcessing = data.renderPostProcessing;
+                hasSavedPostProcessing = true;
+            }
+            if (savedCameraData != null) savedCameraData.renderPostProcessing = true;
+        }
+
+        private void RestorePostProcessing()
+        {
+            if (hasSavedPostProcessing && savedCameraData != null)
+                savedCameraData.renderPostProcessing = savedPostProcessing;
+            hasSavedPostProcessing = false;
+            savedCameraData = null;
+        }
+
+        private void ApplyShake()
+        {
+            if (!playing) return;
+            int pixels = BreakthroughEffect.ShakePixels(effectRealm, Time.time - effectStart);
+            if (pixels <= 0) return;
+            var cam = Camera.main;
+            if (cam == null) return;
+            float unit = pixels / 32f;
+            cam.transform.position += new Vector3(UnityEngine.Random.Range(-1, 2) * unit, UnityEngine.Random.Range(-1, 2) * unit, 0f);
+        }
+
         private void OnBrokeThrough(RealmLevel level)
         {
             effectStart = Time.time;
             effectRealm = level;
             previousRealm = (RealmLevel)Math.Max(0, (int)level - 1);
             playing = true;
+            BeginPostProcessing();
+            if (ownGlobalLight != null && !ownGlobalLight.enabled && !OtherGlobalLightExists())
+                ownGlobalLight.enabled = true;
             UpdateDisplay();
         }
 
@@ -345,6 +674,7 @@ namespace PlumSword.Game.Realm
         private void OnDestroy()
         {
             if (realm != null) realm.BrokeThrough -= OnBrokeThrough;
+            RestorePostProcessing();
             ClearFrames();
             if (fallbackSprite != null) Destroy(fallbackSprite);
             if (fallbackTexture != null) Destroy(fallbackTexture);
