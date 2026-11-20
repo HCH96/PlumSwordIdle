@@ -364,7 +364,7 @@ namespace PlumSword.Game.Realm
 - `PlumSword.Game.GameRoot.Wallet`, `UiCanvas`, `StatUpgrades`, `Battle`.
 - `PlumSword.Game.StatUpgrade.StatUpgradeButtonEffect` (이미 있는 화면 코드, `docs/spec/stat_upgrade.md` "화면"의 강화 연출): `Initialize(Button, RectTransform, Image, Image, TextMeshProUGUI)`, `SetEnabledAppearance(bool)`, `PlaySuccess()`를 그대로 쓴다. 이 클래스는 고치지 않는다.
 - `UnityEngine.Camera.main`: 흔들림과 번쩍임 위치. 카메라 위치는 `CombatView.Update`가 매 프레임 다시 정한다 (`CombatView`는 고치지 않는다).
-- URP 2D의 `UnityEngine.Rendering.Universal.Light2D`, `UnityEngine.Rendering.Volume`·`VolumeProfile`, `UnityEngine.Rendering.Universal.Bloom`, `UniversalAdditionalCameraData.renderPostProcessing`. `PlumSword.Game` 어셈블리는 이미 URP 2D 런타임을 참조하므로 어셈블리 정의는 바꾸지 않는다. 설정 에셋(렌더러, 볼륨 프로필)도 바꾸지 않고 모두 코드에서 만든다.
+- URP 2D의 `UnityEngine.Rendering.Universal.Light2D`, `UnityEngine.Rendering.Volume`·`VolumeProfile`, `UnityEngine.Rendering.Universal.Bloom`, `UniversalAdditionalCameraData.renderPostProcessing`. `PlumSword.Game` 어셈블리는 URP 2D 런타임(`Light2D`)만 참조하므로, `PlumSword.Game.asmdef`의 `references`에 `Unity.RenderPipelines.Core.Runtime`(`Volume`·`VolumeProfile`)과 `Unity.RenderPipelines.Universal.Runtime`(`Bloom`·`UniversalAdditionalCameraData`) 두 줄만 더한다. 다른 칸은 바꾸지 않는다. 설정 에셋(렌더러, 볼륨 프로필)은 바꾸지 않고 모두 코드에서 만든다.
 
 ## 화면
 
@@ -503,7 +503,7 @@ namespace PlumSword.Game.Realm
 
 - 완료 조건 초안: 새로 34~51 / 바뀜 26, 31 / 나머지는 기록 파일로 옮김 (이미 구현됨)
 - 바뀌는 연결 지점: 기존 멤버는 그대로 두고 위 타입·메서드만 더한다. `RealmAuraView.Initialize`의 모양과 `GameRoot` 조립은 같다.
-- 고쳐야 할 기존 코드: `Assets/Scripts/Core/Realm/RealmAura.cs` — 색 값, 새 메서드. `Assets/Scripts/Game/Realm/RealmAuraView.cs` — 상시 오오라 층과 돌파 연출 전부.
+- 고쳐야 할 기존 코드: `Assets/Scripts/Core/Realm/RealmAura.cs` — 색 값, 새 메서드. `Assets/Scripts/Game/Realm/RealmAuraView.cs` — 상시 오오라 층과 돌파 연출 전부. `Assets/Scripts/Game/PlumSword.Game.asmdef` — URP 참조 두 줄 추가 ("연결 지점"의 "필요한 것").
 - 기존 테스트:
 
 | 테스트 | 지금 | 바뀐 뒤 | 처리 |
