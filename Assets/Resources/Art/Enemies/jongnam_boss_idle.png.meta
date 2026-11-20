@@ -1,0 +1,732 @@
+fileFormatVersion: 2
+guid: 05f43bf993a5b9c489bc74cc33e269ac
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2381863118544837604
+    second: jongnam_boss_idle_0
+  - first:
+      213: 5205408422318133269
+    second: jongnam_boss_idle_1
+  - first:
+      213: -4281658152434709513
+    second: jongnam_boss_idle_2
+  - first:
+      213: -7177326881614395339
+    second: jongnam_boss_idle_3
+  - first:
+      213: -7763084829975932537
+    second: jongnam_boss_idle_4
+  - first:
+      213: 5025327713483638765
+    second: jongnam_boss_idle_5
+  - first:
+      213: 8044316635803391588
+    second: jongnam_boss_idle_6
+  - first:
+      213: -5932042323452377121
+    second: jongnam_boss_idle_7
+  - first:
+      213: 6476200427842659958
+    second: jongnam_boss_idle_8
+  - first:
+      213: -7760280693514150548
+    second: jongnam_boss_idle_9
+  - first:
+      213: 8151249655389822866
+    second: jongnam_boss_idle_10
+  - first:
+      213: -3989124690484245803
+    second: jongnam_boss_idle_11
+  - first:
+      213: -6659140759137309970
+    second: jongnam_boss_idle_12
+  - first:
+      213: 3338260696887940729
+    second: jongnam_boss_idle_13
+  - first:
+      213: -5091477417197768146
+    second: jongnam_boss_idle_14
+  - first:
+      213: 4908333704249554923
+    second: jongnam_boss_idle_15
+  - first:
+      213: -6831516457428267098
+    second: jongnam_boss_idle_16
+  - first:
+      213: -6564255631726662697
+    second: jongnam_boss_idle_17
+  - first:
+      213: -6713790071475376650
+    second: jongnam_boss_idle_18
+  - first:
+      213: 8655491769226886207
+    second: jongnam_boss_idle_19
+  - first:
+      213: -7102710205144113265
+    second: jongnam_boss_idle_20
+  - first:
+      213: 1010227308578171473
+    second: jongnam_boss_idle_21
+  - first:
+      213: 2775900442588069958
+    second: jongnam_boss_idle_22
+  - first:
+      213: -229341715921133924
+    second: jongnam_boss_idle_23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: jongnam_boss_idle_0
+      rect:
+        serializedVersion: 2
+        x: 13
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4eb187cf2e31e0120800000000000000
+      internalID: 2381863118544837604
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_1
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 510591371635d3840800000000000000
+      internalID: 5205408422318133269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_2
+      rect:
+        serializedVersion: 2
+        x: 205
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7fb4976789e7494c0800000000000000
+      internalID: -4281658152434709513
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_3
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53803807a33056c90800000000000000
+      internalID: -7177326881614395339
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_4
+      rect:
+        serializedVersion: 2
+        x: 397
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7819f0c4a7bf34490800000000000000
+      internalID: -7763084829975932537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_5
+      rect:
+        serializedVersion: 2
+        x: 493
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de74e1a1eec8db540800000000000000
+      internalID: 5025327713483638765
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_6
+      rect:
+        serializedVersion: 2
+        x: 589
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46693d11c5723af60800000000000000
+      internalID: 8044316635803391588
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_7
+      rect:
+        serializedVersion: 2
+        x: 685
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd7c906afe62dada0800000000000000
+      internalID: -5932042323452377121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_8
+      rect:
+        serializedVersion: 2
+        x: 781
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6766bcb0af510e950800000000000000
+      internalID: 6476200427842659958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_9
+      rect:
+        serializedVersion: 2
+        x: 877
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6d54c133d1fd4490800000000000000
+      internalID: -7760280693514150548
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_10
+      rect:
+        serializedVersion: 2
+        x: 973
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29f1909df5e0f1170800000000000000
+      internalID: 8151249655389822866
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_11
+      rect:
+        serializedVersion: 2
+        x: 1069
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5da42f2ba38c3a8c0800000000000000
+      internalID: -3989124690484245803
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_12
+      rect:
+        serializedVersion: 2
+        x: 1165
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eeaab4ed2caf593a0800000000000000
+      internalID: -6659140759137309970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_13
+      rect:
+        serializedVersion: 2
+        x: 1261
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 97657adba62e35e20800000000000000
+      internalID: 3338260696887940729
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_14
+      rect:
+        serializedVersion: 2
+        x: 1357
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e22f00ec3407759b0800000000000000
+      internalID: -5091477417197768146
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_15
+      rect:
+        serializedVersion: 2
+        x: 1453
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be73fd0af77ed1440800000000000000
+      internalID: 4908333704249554923
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_16
+      rect:
+        serializedVersion: 2
+        x: 1549
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6afc0c51af39131a0800000000000000
+      internalID: -6831516457428267098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_17
+      rect:
+        serializedVersion: 2
+        x: 1645
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7db2318284417e4a0800000000000000
+      internalID: -6564255631726662697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_18
+      rect:
+        serializedVersion: 2
+        x: 1741
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6fd6a2d4083d3d2a0800000000000000
+      internalID: -6713790071475376650
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_19
+      rect:
+        serializedVersion: 2
+        x: 1837
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f3cf515c7eb7e1870800000000000000
+      internalID: 8655491769226886207
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_20
+      rect:
+        serializedVersion: 2
+        x: 1933
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8fd7df33ba1e6d90800000000000000
+      internalID: -7102710205144113265
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_21
+      rect:
+        serializedVersion: 2
+        x: 2029
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15a633e726c050e00800000000000000
+      internalID: 1010227308578171473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_22
+      rect:
+        serializedVersion: 2
+        x: 2125
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 640cf44cebaf58620800000000000000
+      internalID: 2775900442588069958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_idle_23
+      rect:
+        serializedVersion: 2
+        x: 2221
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9e975aace631dcf0800000000000000
+      internalID: -229341715921133924
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable: {}
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

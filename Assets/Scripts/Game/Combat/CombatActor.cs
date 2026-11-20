@@ -22,16 +22,23 @@ namespace PlumSword.Game.Combat
         /// <summary>체력 바 채움. 체력 바가 없는 캐릭터(보스)는 null.</summary>
         public Transform HealthFill;
 
+        public bool HealthRatioInitialized;
+        public float HealthRatioShown;
+        public float HealthRatioStart;
+        public float HealthRatioTarget;
+        public float HealthAnimationElapsed;
+
         /// <summary>체력 바 세로 가운데의 높이(발 기준, 유닛).</summary>
         public float HealthBarY;
 
         /// <summary>피격 번쩍임이 남은 시간(초). 0 이하면 번쩍이지 않는다.</summary>
         public float FlashRemaining;
+        public long DisplayedHealth;
 
         public JongnamSprites Jongnam;
         public double PreviousPosition;
-        public double PreviousCooldown;
         public float WalkGrace;
         public float AnimationTime;
+        public float DownElapsed;
     }
 }

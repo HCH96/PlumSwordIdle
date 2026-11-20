@@ -45,10 +45,11 @@ namespace PlumSword.Core.Tests.StatUpgrade
 
             Assert.That(upgrades.Attack, Is.EqualTo(12));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(120));
-            Assert.That(realm.TryBreakthrough(), Is.True);
+            for (int i = 0; i < 30; i++) realm.RecordKill();
+            Assert.That(realm.Current, Is.EqualTo(RealmLevel.SecondRate));
             Assert.That(upgrades.Attack, Is.EqualTo(13));
             Assert.That(upgrades.MaxHealth, Is.EqualTo(132));
-            Assert.That(wallet.Balance, Is.EqualTo(0));
+            Assert.That(wallet.Balance, Is.EqualTo(200));
             Assert.That(notifications, Is.EqualTo(0));
         }
 

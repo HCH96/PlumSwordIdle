@@ -30,8 +30,8 @@ namespace PlumSword.Core.Tests.Save
         public void Breakthrough_FlushStoresRealmAndGold()
         {
             var save = Create(1000);
-            Assert.That(realm.TryBreakthrough(), Is.True);
-            Assert.That(wallet.Balance, Is.EqualTo(800));
+            for (int i = 0; i < 30; i++) realm.RecordKill();
+            Assert.That(wallet.Balance, Is.EqualTo(1000));
             Assert.That(realm.Current, Is.EqualTo(RealmLevel.SecondRate));
             Assert.That(save.IsDirty, Is.True);
             Assert.That(store.WriteCount, Is.Zero);
@@ -40,7 +40,7 @@ namespace PlumSword.Core.Tests.Save
             var result = SaveCodec.Decode(store.LastText);
             Assert.That(result.Status, Is.EqualTo(SaveLoadStatus.Loaded));
             Assert.That(result.Data.RealmLevel, Is.EqualTo(1));
-            Assert.That(result.Data.Gold, Is.EqualTo(800));
+            Assert.That(result.Data.Gold, Is.EqualTo(1000));
             Assert.That(result.Data.SavedAtUtcTicks, Is.EqualTo(100));
         }
 
@@ -60,13 +60,18 @@ namespace PlumSword.Core.Tests.Save
         }
 
         [Test]
-        public void Breakthrough_InsufficientGold_DoesNotWrite()
+        public void KillProgress_IsSavedAndRestored()
         {
-            var save = Create(100);
-            Assert.That(realm.TryBreakthrough(), Is.False);
-            Assert.That(save.IsDirty, Is.False);
-            Assert.That(save.Flush(100), Is.False);
-            Assert.That(store.WriteCount, Is.Zero);
+            var save = Create(0);
+            for (int i = 0; i < 29; i++) realm.RecordKill();
+            Assert.That(save.IsDirty, Is.True);
+            Assert.That(save.Flush(100), Is.True);
+            var data = SaveCodec.Decode(store.LastText).Data;
+            Assert.That(data.RealmKills, Is.EqualTo(29));
+            var restored = new RealmProgress(wallet, data.RealmLevel, data.RealmKills);
+            restored.RecordKill();
+            Assert.That(restored.Current, Is.EqualTo(RealmLevel.SecondRate));
+            Assert.That(restored.Kills, Is.Zero);
         }
     }
 }

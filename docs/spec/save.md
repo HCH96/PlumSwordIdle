@@ -14,21 +14,21 @@
 
 ## 동작
 
-- **저장 값** (판 2): 보유 금화(`Wallet.Balance`), 공격력·체력·내공 강화 단계(`StatUpgrades.GetLevel(StatType.Attack / Health / InnerPower)`), 현재 경지(`(int)RealmProgress.Current`, 0~4), 전체 진행 번호(`StageProgress.StageNumber`), 본 소개 번호(`StageProgress.SeenIntroStage`), 마지막 저장 시각(`savedAtUtcTicks`, 저장할 때 Game 이 넘긴 현재 UTC 시각의 `DateTime.Ticks`). 작은 스테이지 번호, 처치 수, 남은 체력, 보스, 단계(`Phase`), 무리 구성, 강화·돌파 잠금, 기본 공격 대기, 이십사수매화검법의 재사용 대기는 저장하지 않는다. 불러오면 저장된 큰 스테이지의 1구간부터 다시 시작하고, 스킬은 사용할 수 있는 상태로 시작한다 (전투 기능의 규칙). 천마 뒤 1스테이지 테마로 돌아가도 금화·강화·경지는 그대로이므로 저장 값도 그대로 이어진다.
+- **저장 값** (판 2): 보유 금화(`Wallet.Balance`), 공격력·체력·내공 강화 단계(`StatUpgrades.GetLevel(StatType.Attack / Health / InnerPower)`), 현재 경지(`(int)RealmProgress.Current`, 0~4), 그 경지에서의 처치 수(`RealmProgress.Kills`), 전체 진행 번호(`StageProgress.StageNumber`), 본 소개 번호(`StageProgress.SeenIntroStage`), 마지막 저장 시각(`savedAtUtcTicks`, 저장할 때 Game 이 넘긴 현재 UTC 시각의 `DateTime.Ticks`). 작은 스테이지 번호, 스테이지별 처치 수, 남은 체력, 보스, 단계(`Phase`), 무리 구성, 강화 잠금, 기본 공격 대기, 이십사수매화검법의 재사용 대기는 저장하지 않는다. 불러오면 저장된 큰 스테이지의 1구간부터 다시 시작하고, 스킬은 사용할 수 있는 상태로 시작한다 (전투 기능의 규칙). 천마 뒤 1스테이지 테마로 돌아가도 금화·강화·경지는 그대로이므로 저장 값도 그대로 이어진다.
 - **모으기** `SaveData.Capture(wallet, upgrades, realm, stage, savedAtUtcTicks)`: 각 기능의 지금 값을 그대로 읽어 `SaveData` 를 만든다. 아무것도 바꾸지 않는다.
-- **글자로 바꾸기** `SaveCodec.Encode(data)`: 아래 "수치"의 파일 형식대로 아홉 줄을 만든다.
+- **글자로 바꾸기** `SaveCodec.Encode(data)`: 아래 "수치"의 파일 형식대로 열 줄을 만든다.
 - **되돌리기** `SaveCodec.Decode(text)`: 아래 순서로 판정해 `SaveLoadResult` 를 돌려준다. 예외를 던지지 않는다.
   1. `text` 가 `null` (파일 없음): `Empty`.
   2. 줄로 나눈다 (`\n` 기준, 줄 끝의 `\r` 하나는 지운다). 빈 줄은 건너뛴다. 남은 줄 중 `=` 가 없는 줄이 있거나, 같은 이름이 두 번 나오면 `Corrupt`.
   3. `version` 줄이 없거나 값이 정수가 아니면 `Corrupt`. 값이 `2` 가 아니면 (2단계의 판 1, 0, 음수, 3 이상) 나머지 줄을 보지 않고 `UnsupportedVersion`.
-  4. 여덟 이름(`gold`, `attackLevel`, `healthLevel`, `innerPowerLevel`, `realmLevel`, `stageNumber`, `seenIntroStage`, `savedAtUtcTicks`) 중 하나라도 없거나, 값이 그 타입의 정수로 읽히지 않으면 (글자 섞임, 앞뒤 공백, 범위 넘침) `Corrupt`.
+  4. 여덟 필수 이름(`gold`, `attackLevel`, `healthLevel`, `innerPowerLevel`, `realmLevel`, `stageNumber`, `seenIntroStage`, `savedAtUtcTicks`) 중 하나라도 없거나, 값이 그 타입의 정수로 읽히지 않으면 (글자 섞임, 앞뒤 공백, 범위 넘침) `Corrupt`. `realmKills`는 기존 파일에서 생략 가능하며 없으면 0, 있으면 정수여야 한다.
   5. 아니면 `Loaded` 와 그 값의 `SaveData`. 모르는 이름의 줄은 무시한다 (판 2 파일에 `attackSpeedLevel` 줄이 있어도 무시). 값이 기능의 범위를 벗어나도(금화 음수, 내공 음수, 경지 7, 번호 0 등) 그대로 담는다. 잘라내기는 각 기능의 생성자가 한다.
 - **불러오기** (`GameRoot.Awake` 맨 앞): 저장소를 고르고(아래 "저장소"), 저장을 읽어 `LoadResult` 로 들고 있는다. 상태에 따라 각 기능을 만든다.
-  - `Loaded`: `new Wallet(Gold)`, `new RealmProgress(Wallet, RealmLevel)`, `new StatUpgrades(Wallet, 시작 공격력, 시작 최대 체력, AttackLevel, HealthLevel, InnerPowerLevel, Realm)`, `new StageProgress(Wallet, StatUpgrades, Battle, random, StageNumber, SeenIntroStage)`. 범위 밖 값은 각 생성자가 잘라낸다 (금화 음수 → 0, 단계 음수 → 0, 경지 0 미만 → 0·4 초과 → 4, 번호 1 미만 → 1, 본 소개 번호 0~5 밖 → 자름).
+  - `Loaded`: `new Wallet(Gold)`, `new RealmProgress(Wallet, RealmLevel, RealmKills)`, `new StatUpgrades(Wallet, 시작 공격력, 시작 최대 체력, AttackLevel, HealthLevel, InnerPowerLevel, Realm)`, `new StageProgress(Wallet, StatUpgrades, Battle, random, StageNumber, SeenIntroStage)`. 범위 밖 값은 각 생성자가 잘라낸다 (금화 음수 → 0, 단계 음수 → 0, 경지 0 미만 → 0·4 초과 → 4, 번호 1 미만 → 1, 본 소개 번호 0~5 밖 → 자름).
   - `Empty`, `UnsupportedVersion`, `Corrupt`: 처음 값으로 만든다. 금화 0, 세 단계 0, 경지 0 (삼류), `startStage: 1`, `seenIntroStage: 0`.
   - 불러온 뒤의 시작은 스테이지 기능의 `Begin()` 이 한다: 저장된 스테이지의 처음부터 체력을 전부 채우고 새 무리 구성으로 시작한다. 이미 본 소개는 다시 나오지 않는다.
-- **자동 저장** `AutoSave`: 만들 때 `wallet.BalanceChanged`, `upgrades.Upgraded`, `stage.StageStarted` 를 구독한다. `realm` 은 구독하지 않고 저장할 때 읽기만 한다 (돌파는 언제나 금화를 써서 `BalanceChanged` 가 간다). 반드시 `stage.Begin()` 보다 먼저 만든다 (새 게임의 첫 소개 기록 `SeenIntroStage` 0 → 1 을 놓치지 않기 위해).
-  - 세 알림 중 하나가 오면 켜져 있을 때(`Enabled`) `IsDirty = true` 만 한다. 바로 쓰지 않는다. 꺼져 있으면 무시한다.
+- **자동 저장** `AutoSave`: 만들 때 `wallet.BalanceChanged`, `upgrades.Upgraded`, `stage.StageStarted` 를 구독한다. `realm.ProgressChanged`도 구독해 처치 수와 돌파를 저장한다. 반드시 `stage.Begin()` 보다 먼저 만든다 (새 게임의 첫 소개 기록 `SeenIntroStage` 0 → 1 을 놓치지 않기 위해).
+  - 네 알림 중 하나가 오면 켜져 있을 때(`Enabled`) `IsDirty = true` 만 한다. 바로 쓰지 않는다. 꺼져 있으면 무시한다.
   - **프레임 끝** `Flush(nowUtcTicks)`: 켜져 있고, `IsDirty` 이고, 재시도 대기 중이 아니면 쓴다 ("쓰기"). 아니면 아무것도 하지 않고 `false`. 그래서 같은 프레임의 여러 변화(보스 처치의 금화 등)는 한 번에 저장된다.
   - **즉시** `SaveNow(nowUtcTicks)`: 켜져 있으면 `IsDirty` 와 재시도 대기에 상관없이 바로 쓴다. 꺼져 있으면 `false`. 게임을 끌 때와 앱이 백그라운드로 갈 때 쓴다.
   - **쓰기**: `SaveCodec.Encode(SaveData.Capture(wallet, upgrades, realm, stage, nowUtcTicks))` 를 `store.TryWrite` 로 넘긴다. `TryWrite` 가 예외를 던지면 `false` 로 본다 (예외를 밖으로 내보내지 않는다).
@@ -37,7 +37,7 @@
     - `HasFailed` 가 실제로 바뀐 때에만 `FailedChanged(새 값)` 를 한 번 보낸다. 계속 실패하면 처음 한 번만 간다.
   - **시간** `Tick(deltaSeconds)`: 재시도 대기에서 `deltaSeconds` 를 뺀다. `1e-9` 이하가 되면 0 이다. 대기가 0 이면 아무 일도 없다. 실패 뒤 그사이에 새 변화가 와도 대기가 끝날 때까지 쓰지 않는다 (`SaveNow` 만 예외).
   - **켜기** `Enable()`: 꺼져 있으면 켠다. 이미 켜져 있으면 아무 일도 없다. 끄는 메서드는 없다.
-- **저장하는 때** (이것이 전부다): 금화가 바뀐 프레임 끝(처치 보상, 강화 구매, 돌파, 오프라인 보상 지급 등 `BalanceChanged` 가 가는 모든 때), 강화한 프레임 끝(내공 포함), 스테이지가 배치된 프레임 끝(`Begin`, 가려진 순간의 교체. 보스 처치 뒤 다음 스테이지로 넘어갈 때와 실패 뒤 재도전이 여기 든다), 실패 뒤 재시도 대기가 끝난 프레임 끝, 게임을 끌 때, 앱이 백그라운드로 갈 때.
+- **저장하는 때** (이것이 전부다): 금화가 바뀐 프레임 끝(처치 보상, 강화 구매, 오프라인 보상 지급 등 `BalanceChanged` 가 가는 모든 때), 경지 처치 수가 바뀐 프레임 끝, 강화한 프레임 끝(내공 포함), 스테이지가 배치된 프레임 끝(`Begin`, 가려진 순간의 교체. 보스 처치 뒤 다음 스테이지로 넘어갈 때와 실패 뒤 재도전이 여기 든다), 실패 뒤 재시도 대기가 끝난 프레임 끝, 게임을 끌 때, 앱이 백그라운드로 갈 때.
 - **페이드 중에 끄면**: 보스 금화는 처치한 프레임 끝에 끝난 스테이지의 번호로 이미 저장되어 있다. 다음 번호는 가려진 순간의 교체(`StageStarted`)에서 저장된다. 그래서 그사이(페이드아웃 0.5초)에 끄고 다시 켜면 끝난 스테이지부터 다시 하고, 보스 금화는 이미 받은 채다. 이 동작을 허용한다.
 - **화면 코드의 갱신** (`SaveView`): 매 프레임 `LateUpdate` 에서 `AutoSave.Tick(Time.unscaledDeltaTime)` 다음 `AutoSave.Flush(DateTime.UtcNow.Ticks)`. `OnApplicationPause(true)` 와 `OnApplicationQuit` 에서 `AutoSave.SaveNow(DateTime.UtcNow.Ticks)`. 끌 때 실패하면 더 할 것이 없다 (기존 파일은 남는다).
 - **손상** (`LoadResult.Status == Corrupt`): `AutoSave` 를 꺼진 상태로 만들고, `Battle.SetPaused(true)` 를 하고, `Begin()` 을 부르지 않고, 손상 오류 창을 띄운다. 창이 떠 있는 동안 파일은 읽지도 쓰지도 않는다. 그동안 게임을 꺼도 아무것도 쓰지 않아서, 다시 켜면 같은 창이 다시 뜬다.
@@ -69,8 +69,8 @@
 | `Encode(null)`, `Capture` 의 네 기능 중 `null` | `ArgumentNullException` | |
 | `SaveLoadResult` 를 `Loaded` 인데 `data` 가 `null`, 또는 `Loaded` 가 아닌데 `data` 가 있음 | `ArgumentException` | |
 | `AutoSave` 생성자 인자 중 `null` | `ArgumentNullException` | |
-| 바뀌지 않은 변화 (`Add(0)`, 실패한 `TryUpgrade`, 실패한 `TryBreakthrough`, `TrySpend` 실패) | 알림이 없으므로 저장할 것 없음 | `IsDirty` 그대로 |
-| 돌파 성공 | 금화 소비의 `BalanceChanged` 로 그 프레임 끝에 저장 | 경지 칸에 새 경지 |
+| 바뀌지 않은 변화 (`Add(0)`, 실패한 `TryUpgrade`, `TrySpend` 실패) | 알림이 없으므로 저장할 것 없음 | `IsDirty` 그대로 |
+| 몬스터 처치·돌파 | `ProgressChanged`로 그 프레임 끝에 저장 | 경지와 해당 경지의 처치 수 |
 | 저장할 것 없을 때 `Flush` | 쓰지 않음, `false` | |
 | 쓰기 실패 | `false`, `HasFailed = true`, `IsDirty` 남김, 3초 뒤 다시 | 기존 파일 그대로 |
 | 재시도 대기 중 `Flush` | 쓰지 않음, `false` (저장소를 부르지도 않음) | |
@@ -111,9 +111,10 @@
 | 4 | `healthLevel` | `int` | 0 |
 | 5 | `innerPowerLevel` | `int` | 0 |
 | 6 | `realmLevel` | `int` | 0 (삼류. `(int)RealmLevel`, 0~4) |
-| 7 | `stageNumber` | `int` | 1 |
-| 8 | `seenIntroStage` | `int` | 0 |
-| 9 | `savedAtUtcTicks` | `long` | (없음. 저장할 때 넣는다) |
+| 7 | `realmKills` | `int` | 0 (기존 판 2 파일에서 생략되면 0) |
+| 8 | `stageNumber` | `int` | 1 |
+| 9 | `seenIntroStage` | `int` | 0 |
+| 10 | `savedAtUtcTicks` | `long` | (없음. 저장할 때 넣는다) |
 
 예: 금화 1234, 단계 3·2·4 (공격력·체력·내공), 경지 2 (일류), 번호 7, 본 소개 5, 시각 638000000000000000 →
 
@@ -124,6 +125,7 @@ attackLevel=3
 healthLevel=2
 innerPowerLevel=4
 realmLevel=2
+realmKills=0
 stageNumber=7
 seenIntroStage=5
 savedAtUtcTicks=638000000000000000
@@ -158,13 +160,15 @@ namespace PlumSword.Core.Save
             int realmLevel,
             int stageNumber,
             int seenIntroStage,
-            long savedAtUtcTicks);
+            long savedAtUtcTicks,
+            int realmKills = 0);
 
         public long Gold { get; }
         public int AttackLevel { get; }
         public int HealthLevel { get; }
         public int InnerPowerLevel { get; }
         public int RealmLevel { get; }      // (int)RealmLevel
+        public int RealmKills { get; }
         public int StageNumber { get; }
         public int SeenIntroStage { get; }
         public long SavedAtUtcTicks { get; }
@@ -200,7 +204,7 @@ namespace PlumSword.Core.Save
 
     public static class SaveCodec
     {
-        // "수치"의 파일 형식으로 아홉 줄. data 가 null 이면 ArgumentNullException.
+        // "수치"의 파일 형식으로 열 줄. data 가 null 이면 ArgumentNullException.
         public static string Encode(SaveData data);
 
         // null 이면 Empty. 나머지는 "동작"의 판정 순서대로. 예외를 던지지 않는다.
@@ -317,7 +321,7 @@ namespace PlumSword.Game.Save
 - 누가 만들고 누가 들고 있는지: `GameRoot` 가 저장소 하나(`MemorySaveStore` 또는 `FileSaveStore`), `LoadResult`, `AutoSave` 하나를 만들어 들고 있는다. 게임에 `AutoSave` 는 하나뿐이다. `Tick`·`Flush`·`SaveNow` 를 부르는 것은 `SaveView` 하나뿐이다.
 - **`GameRoot.Awake` 순서** (지금의 순서에서 바뀌는 곳만):
   1. 맨 앞: 저장소를 고르고 `LoadResult` 를 읽는다 (`isBatchMode` 면 `SaveCodec.Decode(null)`, 아니면 `FileSaveStore.Load()`). `Loaded` 면 `LoadResult.Data` 의 값, 아니면 처음 값을 쓴다.
-  2. `Wallet`, `Realm`, `StatUpgrades` 를 그 값으로 만든다 (`new Wallet(gold)`, `new RealmProgress(Wallet, realmLevel)`, `StatUpgrades` 생성자의 단계 인자 셋(`attackLevel`, `healthLevel`, `innerPowerLevel`)과 `Realm`). 저장이 없으면 경지와 내공 단계는 0 이다.
+  2. `Wallet`, `Realm`, `StatUpgrades` 를 그 값으로 만든다 (`new Wallet(gold)`, `new RealmProgress(Wallet, realmLevel, realmKills)`, `StatUpgrades` 생성자의 단계 인자 셋(`attackLevel`, `healthLevel`, `innerPowerLevel`)과 `Realm`). 저장이 없으면 경지와 내공 단계는 0 이다.
   3. 화면 조립(금화, 강화, 전투)은 그대로다.
   4. 스테이지: `StageProgress` 를 `startStage`, `seenIntroStage` 에 그 값을 넣어 만들고 `[StageView]` 를 붙인다. **`Begin()` 은 아직 부르지 않는다.**
   5. `AutoSave = new AutoSave(저장소, Wallet, StatUpgrades, Realm, StageProgress, enabled: …)`. `enabled` 는 지금 코드의 규칙 그대로다 (시작 화면 사양 `docs/spec/start_menu.md` 의 `StartMenuRules.AutoSaveStartsEnabled(…)`). `[Game]` 의 자식 `[SaveView]` 를 만들어 `SaveView.Initialize(AutoSave, UiCanvas)`.
@@ -329,7 +333,7 @@ namespace PlumSword.Game.Save
 
 - `PlumSword.Core.Currency.Wallet` (`docs/spec/currency.md`): `Wallet(long initialBalance)`, `Balance`, `BalanceChanged`.
 - `PlumSword.Core.StatUpgrade.StatUpgrades`, `StatType` (`docs/spec/stat_upgrade.md`): 생성자의 `attackLevel`, `healthLevel`, `innerPowerLevel`, `realm`, `GetLevel(StatType)` (`StatType.InnerPower` 포함), `TryUpgrade(StatType)`, `Upgraded`. 이미 구현되어 있다.
-- `PlumSword.Core.Realm.RealmProgress`, `RealmLevel` (`docs/spec/realm.md`): 생성자 `RealmProgress(Wallet wallet, int startLevel = 0)` (0~4 로 자름), `Current`, `BonusPercent`, `TryBreakthrough()`, `BrokeThrough`. 이미 구현되어 있다.
+- `PlumSword.Core.Realm.RealmProgress`, `RealmLevel` (`docs/spec/realm.md`): 생성자 `RealmProgress(Wallet wallet, int startLevel = 0, int kills = 0)`, `Current`, `Kills`, `BonusPercent`, `RecordKill()`, `ProgressChanged`, `BrokeThrough`. 이미 구현되어 있다.
 - `PlumSword.Core.Stage.StageProgress` (`docs/spec/stage.md`): 생성자의 `startStage`, `seenIntroStage`, `StageNumber`, `SeenIntroStage`, `StageStarted`, `Begin()`. `seenIntroStage` 와 `SeenIntroStage` 는 스테이지 사양의 변경 기록 "스테이지 소개"가 구현된 뒤에 쓸 수 있다 (고정 integration `a1d7148` 의 `StageProgress` 생성자는 아직 `startStage` 까지만 받는다).
 - `PlumSword.Core.Combat.Battle` (`docs/spec/combat.md`): `SetPaused(bool)`. 시작 능력치 `Battle.DiscipleBaseAttack`, `DiscipleBaseMaxHealth`.
 - `PlumSword.Game.GameRoot.Wallet`, `Realm`, `UiCanvas`, `StatUpgrades`, `Battle`, `StageProgress`.
@@ -357,7 +361,7 @@ namespace PlumSword.Game.Save
 | (이 기능 자신의 값 없음) | | | 저장하는 값은 각 기능의 값과 저장 시각이다 ("수치"의 파일 형식) |
 
 - `IsDirty`, `HasFailed`, 재시도 대기, `Enabled` 는 저장하지 않는다. 켤 때마다 처음 값이다.
-- 다른 기능의 값 중 강화·돌파 잠금, 기본 공격 대기, 스킬 재사용 대기도 저장하지 않는다. 켤 때 잠기지 않은 상태, 스킬은 사용할 수 있는 상태로 시작한다.
+- 다른 기능의 값 중 강화 잠금, 기본 공격 대기, 스킬 재사용 대기도 저장하지 않는다. 켤 때 잠기지 않은 상태, 스킬은 사용할 수 있는 상태로 시작한다.
 - 설정·음량은 이 파일에 넣지 않는다. 진행과 따로 저장한다 ("새로 시작"이나 손상 처리로 음량이 함께 지워지지 않게). 저장 방법은 시작 화면 기능이 정한다.
 - 오프라인 보상: 꺼져 있는 동안 저장 값(경지·내공 포함)은 바뀌지 않는다. 마지막 저장 시각(`SavedAtUtcTicks`)은 꺼지기 전 마지막으로 성공한 저장의 시각이다 (보통 끌 때나 백그라운드로 갈 때의 `SaveNow`).
 
@@ -379,7 +383,7 @@ namespace PlumSword.Game.Save
 
 이미 구현되고 바뀌지 않은 완료 조건(3, 4, 8, 9, 10, 15, 16, 18~33)은 기록 파일로 옮겼다. 번호는 그대로 두고, 새 조건은 34번부터 붙인다.
 
-1. `new SaveData(1234, 3, 2, 4, 2, 7, 5, 638000000000000000)` 을 `SaveCodec.Encode` 하면 `"version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n"` 이다.
+1. `new SaveData(1234, 3, 2, 4, 2, 7, 5, 638000000000000000)` 을 `SaveCodec.Encode` 하면 `"version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nrealmKills=0\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n"` 이다.
 2. 1번의 글자를 `Decode` 하면 `Status` 가 `Loaded`, `HasSaveData` 가 `true` 이고, `Data` 의 여덟 값(`Gold`, `AttackLevel`, `HealthLevel`, `InnerPowerLevel`, `RealmLevel`, `StageNumber`, `SeenIntroStage`, `SavedAtUtcTicks`)이 1234, 3, 2, 4, 2, 7, 5, 638000000000000000 이다.
 5. 1번 글자에서 `version=2` 줄을 뺀 글자, `version=2` 를 `version=abc` 로 바꾼 글자는 둘 다 `Corrupt` 이다.
 6. 1번 글자의 `version=2` 를 `version=1`, `version=3`, `version=0` 으로 바꾼 글자와 `"version=1\n"` 한 줄짜리 글자는 모두 `UnsupportedVersion`, `Data` `null`, `HasSaveData` `false` 이다.
@@ -392,9 +396,9 @@ namespace PlumSword.Game.Save
 34. `SaveData.CurrentVersion` 은 2 이다.
 35. 2단계 판 1 의 글자 `"version=1\ngold=1234\nattackLevel=3\nhealthLevel=2\nattackSpeedLevel=10\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n"` 를 `Decode` 하면 `UnsupportedVersion`, `Data` `null`, `HasSaveData` `false` 이다.
 36. 1번 글자 끝에 `attackSpeedLevel=10\n` 을 붙인 글자는 `Loaded` 이고 값이 2번과 같다.
-37. `new Wallet(1000)` 으로 만든 `AutoSave` 에서 `realm.TryBreakthrough()` 는 `true` (금화 800, 이류)이고, 그 뒤 `IsDirty` 가 `true`, 쓴 횟수 0 이다. `Flush(100)` 은 `true`, 쓴 횟수 1 이고, 마지막 글자를 `Decode` 하면 `RealmLevel` 1, `Gold` 800, `SavedAtUtcTicks` 100 이다.
+37. 금화 1000에서 몬스터 30마리를 처치하면 금화를 소비하지 않고 이류가 되며 `ProgressChanged`로 저장된다. 다시 불러와도 경지와 처치 수가 유지된다.
 38. `new Wallet(100)` 으로 만든 `AutoSave` 에서 `TryUpgrade(StatType.InnerPower)` (금화 80, 내공 단계 1) 뒤 `Flush(100)` 을 하면 `true`, 쓴 횟수 1 이고 마지막 글자의 `InnerPowerLevel` 1, `Gold` 80 이다.
-39. `new Wallet(100)` 으로 만든 `AutoSave` 에서 `realm.TryBreakthrough()` 는 `false` (비용 200 부족)이고 `IsDirty` 는 `false` 다. `Flush(100)` 은 `false`, 쓴 횟수 0 이다.
+39. 판 2 파일에 `realmKills`가 없으면 0으로 읽고, 값이 정수가 아니면 `Corrupt`다.
 40. 2번의 값으로 `new Wallet(1234)`, `new RealmProgress(wallet, 2)`, `new StatUpgrades(wallet, 10, 100, 3, 2, 4, realm)` 을 만들면 `Balance` 1234, `realm.Current` `RealmLevel.FirstRate`, `GetLevel` 이 공격력 3·체력 2·내공 4, `Attack` 19 (`(10 + 2 × 3) × 120 / 100 = 19.2` 내림), `MaxHealth` 168 (`(100 + 20 × 2) × 120 / 100`) 이다.
 
 `GameRoot` 가 불러온 내공·경지를 넘기는 것은 배치 모드에서 저장 파일을 읽지 않으므로 자동 테스트 대상이 아니다. 사람이 에디터에서 돌파 한 번과 내공 강화 한 번을 한 뒤 껐다 켜서, 경지 표시와 `INNER` 단계가 그대로인지 확인한다. 2단계 저장이 남아 있는 기기에서는 처음 켤 때 금화 0·1스테이지로 새로 시작하는지 확인한다.
@@ -411,7 +415,7 @@ namespace PlumSword.Game.Save
 | --- | --- | --- |
 | 목표 | 금화, 강화 단계 셋, 스테이지 번호·본 소개 번호 | 금화, 공격력·체력·내공 단계, 경지, 스테이지 번호·본 소개 번호. 판 2, 판 1 은 옮기지 않고 새로 시작 |
 | 동작 | 저장 값 판 1: 공격 속도 단계 포함. `Capture(wallet, upgrades, stage, ticks)`. 여덟 줄. `version` 이 1 이 아니면 `UnsupportedVersion`. 일곱 이름 | 판 2: 공격 속도 대신 내공 단계, 경지 추가. 잠금·공격 대기·스킬 대기는 저장 안 함. `Capture(wallet, upgrades, realm, stage, ticks)`. 아홉 줄. `version` 이 2 가 아니면(판 1 포함) `UnsupportedVersion`. 여덟 이름 |
-| 동작 | 불러오기: `StatUpgrades(…, AttackSpeedLevel)`, 공격 속도 10 초과 → 10 | `new RealmProgress(Wallet, RealmLevel)`, `StatUpgrades(…, InnerPowerLevel, Realm)`. 경지 0~4 로 자름. 처음 값에 경지 0 |
+| 동작 | 불러오기: `StatUpgrades(…, AttackSpeedLevel)`, 공격 속도 10 초과 → 10 | `new RealmProgress(Wallet, RealmLevel, RealmKills)`, `StatUpgrades(…, InnerPowerLevel, Realm)`. 경지 0~4 로 자름. 처음 값에 경지 0 |
 | 동작 | `AutoSave` 는 세 알림을 구독. 쓰기는 `Capture(wallet, upgrades, stage, now)` | 같은 세 알림. `realm` 은 구독하지 않고 읽기만. 쓰기는 `Capture(wallet, upgrades, realm, stage, now)`. 돌파도 금화 소비로 저장됨 |
 | 경계 상황 | 판 1 기준 행, 범위 밖 예 공격 속도 15 → 10, `Capture` 의 세 기능 | 판 2 기준. 판 1 파일 행, `attackSpeedLevel` 줄 무시 행, 돌파 성공 행 추가. 범위 밖 예 내공 -3 → 0, 경지 7 → 4. 네 기능. 실패한 `TryBreakthrough` |
 | 수치 | `CurrentVersion` 1, 파일 5줄 `attackSpeedLevel` | `CurrentVersion` 2, 5줄 `innerPowerLevel`, 6줄 `realmLevel`, 아홉 줄 |

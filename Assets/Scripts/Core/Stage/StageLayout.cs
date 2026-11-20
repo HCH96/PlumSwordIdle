@@ -12,9 +12,11 @@ namespace PlumSword.Core.Stage
         public const int NormalCount = 10;
         public const int MaxGroupSize = 3;
         public const double FirstGroupPosition = 6.0;
+        // 새 무리는 화면 밖에서 접근한다. FirstGroupPosition은 기존 Positions API 호환값이다.
+        public const double EncounterDistance = 24.0;
         public const double GroupSpacing = 18.0;
         public const double InGroupSpacing = 2.0;
-        public const double BossDistance = 18.0;
+        public const double BossDistance = 24.0;
         public const int NormalSubstageCount = 6;
         public const int MinSubstageEnemies = 2;
 

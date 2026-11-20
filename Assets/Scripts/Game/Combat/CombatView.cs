@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using PlumSword.Core.Combat;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -35,13 +36,13 @@ namespace PlumSword.Game.Combat
         private static readonly Color BossColor = new Color(0.55f, 0.20f, 0.60f);
         private const int EnemyOrder = 10;
 
-        private const float HealthBarWidth = 1.0f;
-        private const float HealthBarHeight = 0.12f;
+        private const float HealthBarWidth = 1f;
+        private const float HealthBarHeight = 0.125f;
+        private const float HealthBarFillCenterX = 0f;
+        private const float HealthAnimationSeconds = 0.3f;
         private const float HealthBarGap = 0.2f;                         // 머리 위 간격
-        private static readonly Color HealthBarBackColor = new Color(0.15f, 0.15f, 0.15f);
-        private static readonly Color DiscipleHealthColor = new Color(0.20f, 0.80f, 0.30f);
-        private static readonly Color EnemyHealthColor = new Color(0.85f, 0.20f, 0.20f);
-        private const int HealthBarBackOrder = 30000;
+        private static readonly Color DiscipleHealthColor = new Color(0.43f, 0.78f, 0.25f);
+        private static readonly Color EnemyHealthColor = new Color(0.88f, 0.20f, 0.20f);
         private const int HealthBarFillOrder = 30001;
 
         private const float FlashSeconds = 0.1f;
@@ -62,9 +63,17 @@ namespace PlumSword.Game.Combat
         private Camera _camera;
         private Texture2D _texture;
         private Sprite _sprite;
+        private Texture2D _discipleHealthFrameTexture;
+        private Texture2D _enemyHealthFrameTexture;
+        private Sprite _discipleHealthFrame;
+        private Sprite _enemyHealthFrame;
+        private Texture2D _bossProjectileTexture;
+        private Sprite _bossProjectileSprite;
+        private readonly Dictionary<BossProjectile, GameObject> _bossProjectiles = new Dictionary<BossProjectile, GameObject>();
 
         private CombatActor _disciple;
         private readonly Dictionary<Enemy, CombatActor> _enemies = new Dictionary<Enemy, CombatActor>();
+        private readonly List<CombatActor> _defeatedEnemies = new List<CombatActor>();
         private Transform _ground;
         private Transform[] _trees;
         // 사용자가 플레이하며 검토하는 임시 1스테이지 배경. 파일이 없으면 기존 대체 표시를 쓴다.
@@ -74,13 +83,17 @@ namespace PlumSword.Game.Combat
         private GameObject _petals;
         private SpriteRenderer _skillSlash;
         private double _skillSlashElapsed;
+        private Sprite[] _damageDigits;
+        private readonly List<(GameObject Root, float Elapsed)> _damageNumbers = new List<(GameObject, float)>();
 
         // 제자 스프라이트. 불러오지 못하면 null 이고 단색 사각형을 쓴다.
         private static readonly Color DiscipleSpriteFlashColor = new Color(1.0f, 0.45f, 0.45f);
         private DiscipleSprites _discipleSprites;
         private JongnamSprites _jongnamMale;
         private JongnamSprites _jongnamFemale;
+        private JongnamSprites _jongnamBoss;
         private bool _discipleAttackedThisTick;
+        private float _discipleDownElapsed;
         private readonly DiscipleAnimator _discipleAnimator = new DiscipleAnimator();
 
         /// <summary>
@@ -113,12 +126,22 @@ namespace PlumSword.Game.Combat
             _texture.Apply();
             _sprite = Sprite.Create(_texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
             _sprite.name = "CombatWhite";
+            _discipleHealthFrame = Resources.Load<Sprite>("Art/UI/health_frame_disciple");
+            _enemyHealthFrame = Resources.Load<Sprite>("Art/UI/health_frame_enemy");
+            if (_discipleHealthFrame == null) _discipleHealthFrame = CreateHealthFrame(true, out _discipleHealthFrameTexture);
+            if (_enemyHealthFrame == null) _enemyHealthFrame = CreateHealthFrame(false, out _enemyHealthFrameTexture);
+            CreateBossProjectileSprite();
+            CreateDamageDigits();
 
             CreateBackground();
             CreatePetals();
             _jongnamMale = JongnamSprites.TryLoad(false);
             _jongnamFemale = JongnamSprites.TryLoad(true);
+            _jongnamBoss = JongnamSprites.TryLoadBoss();
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
+            _disciple.DisplayedHealth = _battle.DiscipleHealth;
+            _disciple.HealthRatioInitialized = false;
+            SetHealth(_disciple, _battle.DiscipleHealth, _battle.DiscipleMaxHealth, 0f);
             ApplyDiscipleSprites();
             _skillSlash = CreateRect("[SkillSlash]", transform, new Vector2(2f, 0.4f), SkillSlashColor, 20000);
             _skillSlash.enabled = false;
@@ -143,6 +166,9 @@ namespace PlumSword.Game.Combat
             if (_battle == null) return;
 
             float deltaTime = Time.deltaTime;
+            if (!_battle.Paused) UpdateDamageNumbers(deltaTime);
+            _disciple.DisplayedHealth = _battle.DiscipleHealth;
+            foreach (var pair in _enemies) pair.Value.DisplayedHealth = pair.Key.Health;
             double previousPosition = _battle.DisciplePosition;
             _discipleAttackedThisTick = false;
             _battle.Tick(deltaTime);
@@ -165,6 +191,13 @@ namespace PlumSword.Game.Combat
 
             if (_sprite != null) Destroy(_sprite);
             if (_texture != null) Destroy(_texture);
+            if (_discipleHealthFrameTexture != null && _discipleHealthFrame != null) Destroy(_discipleHealthFrame);
+            if (_enemyHealthFrameTexture != null && _enemyHealthFrame != null) Destroy(_enemyHealthFrame);
+            if (_discipleHealthFrameTexture != null) Destroy(_discipleHealthFrameTexture);
+            if (_enemyHealthFrameTexture != null) Destroy(_enemyHealthFrameTexture);
+            if (_bossProjectileSprite != null) Destroy(_bossProjectileSprite);
+            if (_bossProjectileTexture != null) Destroy(_bossProjectileTexture);
+            if (_damageDigits != null) foreach (var digit in _damageDigits) if (digit != null) Destroy(digit);
             _sprite = null;
             _texture = null;
 
@@ -172,8 +205,10 @@ namespace PlumSword.Game.Combat
             _discipleSprites = null;
             _jongnamMale?.Dispose();
             _jongnamFemale?.Dispose();
+            _jongnamBoss?.Dispose();
             _jongnamMale = null;
             _jongnamFemale = null;
+            _jongnamBoss = null;
             if (_petals != null) Destroy(_petals);
         }
 
@@ -204,6 +239,14 @@ namespace PlumSword.Game.Combat
         private void AnimateDisciple(float deltaTime, double previousPosition)
         {
             if (_discipleSprites == null) return;
+
+            if (_battle.IsDiscipleDefeated)
+            {
+                int frame = Mathf.Min((int)(_discipleDownElapsed / DiscipleSprites.DownFrameSeconds), DiscipleSprites.DownFrameCount - 1);
+                _disciple.Body.sprite = _discipleSprites.GetDown(frame);
+                _discipleDownElapsed += deltaTime;
+                return;
+            }
 
             bool moved = _battle.DisciplePosition - previousPosition > DiscipleAnimator.MoveThreshold;
             // EnemyDamaged 는 제자의 공격만 보낸다. (대기 시간이 늘어난 것으로는 가릴 수 없다: 달려와 멈춘 칸에도 앞 동작 대기로 늘어난다.)
@@ -256,10 +299,12 @@ namespace PlumSword.Game.Combat
                 : CreateActor("[Enemy]", NormalSize, NormalColor, EnemyOrder, EnemyHealthColor);
             // 프레임마다 스프라이트의 중심이 달라져도 적들의 앞뒤 순서는 바뀌지 않는다.
             actor.Body.sortingOrder = EnemyOrder + Math.Min(enemy.Index, 9989);
-            bool jongnam = enemy.Kind == EnemyKind.Normal && _gameRoot != null
+            bool jongnam = _gameRoot != null
                 && _gameRoot.StageProgress != null && _gameRoot.StageProgress.DisplayStageNumber == 1;
-            actor.Jongnam = jongnam ? (enemy.Index % 2 == 0 ? _jongnamMale : _jongnamFemale) : null;
+            actor.Jongnam = !jongnam ? null : enemy.Kind == EnemyKind.Boss
+                ? _jongnamBoss : (enemy.Index % 2 == 0 ? _jongnamMale : _jongnamFemale);
             actor.PreviousPosition = enemy.Position;
+            actor.DisplayedHealth = enemy.Health;
             if (actor.Jongnam != null)
             {
                 actor.Body.sprite = actor.Jongnam.Idle[0];
@@ -268,8 +313,11 @@ namespace PlumSword.Game.Combat
                 actor.BodyColor = Color.white;
                 actor.FlashColor = DiscipleSpriteFlashColor;
                 actor.Body.color = Color.white;
-                actor.HealthBarY = DiscipleSprites.HeadHeight * ActorDisplayScale + HealthBarGap;
-                actor.HealthBack.localPosition = new Vector3(0f, actor.HealthBarY, 0f);
+                if (actor.HealthBack != null)
+                {
+                    actor.HealthBarY = DiscipleSprites.HeadHeight * ActorDisplayScale + HealthBarGap;
+                    actor.HealthBack.localPosition = new Vector3(0f, actor.HealthBarY, 0f);
+                }
             }
             _enemies.Add(enemy, actor);
             UpdateEnemy(enemy, actor);
@@ -281,12 +329,21 @@ namespace PlumSword.Game.Combat
             if (enemy != null && _enemies.TryGetValue(enemy, out var actor))
             {
                 StartFlash(actor);
+                long damage = Math.Max(0, actor.DisplayedHealth - enemy.Health);
+                actor.DisplayedHealth = enemy.Health;
+                float y = enemy.Kind == EnemyKind.Boss ? 0f : (float)CombatLayout.EnemyOffsetY(enemy.Index);
+                ShowDamageNumber(damage, new Vector3((float)enemy.Position + ActorDisplayOffset.x + EnemyDisplaySeparation,
+                    ActorDisplayOffset.y + y + (enemy.Kind == EnemyKind.Boss ? 2.3f : 1.8f), 0f));
             }
         }
 
         private void OnDiscipleDamaged()
         {
             StartFlash(_disciple);
+            long damage = Math.Max(0, _disciple.DisplayedHealth - _battle.DiscipleHealth);
+            _disciple.DisplayedHealth = _battle.DiscipleHealth;
+            ShowDamageNumber(damage, new Vector3((float)_battle.DisciplePosition + ActorDisplayOffset.x,
+                ActorDisplayOffset.y + 1.8f, 0f));
         }
 
         private void OnEnemyDefeated(Enemy enemy)
@@ -294,17 +351,36 @@ namespace PlumSword.Game.Combat
             if (enemy == null || !_enemies.TryGetValue(enemy, out var actor)) return;
 
             _enemies.Remove(enemy);
-            Destroy(actor.Root);
+            if (actor.Jongnam == null || actor.Jongnam.Down == null)
+            {
+                Destroy(actor.Root);
+                return;
+            }
+            actor.Body.color = Color.white;
+            actor.Body.sprite = actor.Jongnam.Down[0];
+            if (actor.HealthBack != null) actor.HealthBack.gameObject.SetActive(false);
+            if (actor.HealthFill != null) actor.HealthFill.gameObject.SetActive(false);
+            _defeatedEnemies.Add(actor);
         }
 
         private void OnResetCompleted()
         {
+            _discipleDownElapsed = 0f;
             _skillSlash.enabled = false;
+            foreach (var number in _damageNumbers) if (number.Root != null) Destroy(number.Root);
+            _damageNumbers.Clear();
+            _disciple.DisplayedHealth = _battle.DiscipleHealth;
+            _disciple.HealthRatioInitialized = false;
+            SetHealth(_disciple, _battle.DiscipleHealth, _battle.DiscipleMaxHealth, 0f);
+            foreach (var projectile in _bossProjectiles.Values) Destroy(projectile);
+            _bossProjectiles.Clear();
             foreach (var actor in _enemies.Values)
             {
                 Destroy(actor.Root);
             }
             _enemies.Clear();
+            foreach (var actor in _defeatedEnemies) Destroy(actor.Root);
+            _defeatedEnemies.Clear();
 
             _disciple.FlashRemaining = 0f;
             _disciple.Body.color = _disciple.BodyColor;
@@ -342,16 +418,29 @@ namespace PlumSword.Game.Combat
             // 제자
             _disciple.Root.transform.localPosition = new Vector3(
                 (float)_battle.DisciplePosition + ActorDisplayOffset.x, ActorDisplayOffset.y, 0f);
-            SetHealth(_disciple, _battle.DiscipleHealth, _battle.DiscipleMaxHealth);
+            SetHealth(_disciple, _battle.DiscipleHealth, _battle.DiscipleMaxHealth, deltaTime);
             UpdateFlash(_disciple, deltaTime);
 
             // 적
             foreach (var pair in _enemies)
             {
-                UpdateEnemy(pair.Key, pair.Value);
+                UpdateEnemy(pair.Key, pair.Value, deltaTime);
                 AnimateEnemy(pair.Key, pair.Value, deltaTime);
                 UpdateFlash(pair.Value, deltaTime);
             }
+            for (int i = _defeatedEnemies.Count - 1; i >= 0; i--)
+            {
+                var actor = _defeatedEnemies[i];
+                actor.DownElapsed += deltaTime;
+                int frame = Mathf.Min((int)(actor.DownElapsed / JongnamSprites.DownFrameSeconds), JongnamSprites.DownFrameCount - 1);
+                actor.Body.sprite = actor.Jongnam.Down[frame];
+                if (actor.DownElapsed >= JongnamSprites.DownDuration + 0.5f)
+                {
+                    Destroy(actor.Root);
+                    _defeatedEnemies.RemoveAt(i);
+                }
+            }
+            RefreshBossProjectiles();
 
             // 카메라
             double cameraX = _battle.DisciplePosition + CameraOffsetX;
@@ -383,17 +472,18 @@ namespace PlumSword.Game.Combat
             }
         }
 
-        private void UpdateEnemy(Enemy enemy, CombatActor actor)
+        private void UpdateEnemy(Enemy enemy, CombatActor actor, float deltaTime = 0f)
         {
             float y = enemy.Kind == EnemyKind.Boss ? 0f : (float)CombatLayout.EnemyOffsetY(enemy.Index);
             actor.Root.transform.localPosition = new Vector3(
                 (float)enemy.Position + ActorDisplayOffset.x + EnemyDisplaySeparation, y + ActorDisplayOffset.y, 0f);
-            SetHealth(actor, enemy.Health, enemy.MaxHealth);
+            SetHealth(actor, enemy.Health, enemy.MaxHealth, deltaTime);
         }
 
         private void AnimateEnemy(Enemy enemy, CombatActor actor, float deltaTime)
         {
             if (actor.Jongnam == null) return;
+            if (_battle.Paused) return;
             if (!_battle.Paused)
             {
                 actor.AnimationTime += deltaTime;
@@ -403,20 +493,24 @@ namespace PlumSword.Game.Combat
             actor.PreviousPosition = enemy.Position;
 
             // 피해가 이미 처리된 순간을 검격 프레임에 맞춘다. 다음 피해 전에는 앞 동작을 보여 준다.
-            const int hitFrame = 10;
+            bool isBoss = actor.Jongnam.Skill != null;
+            bool currentSkill = isBoss && enemy.AttackCount > 0 && enemy.AttackCount % 3 == 0;
+            bool nextSkill = isBoss && (enemy.AttackCount + 1) % 3 == 0;
+            int currentHitFrame = isBoss ? (currentSkill ? 14 : 13) : 10;
+            int nextHitFrame = isBoss ? (nextSkill ? 14 : 13) : 10;
             const int attackFrames = 24;
             float fps = attackFrames / (float)enemy.AttackInterval;
             double cooldown = enemy.AttackCooldown;
             double sinceHit = enemy.AttackInterval - cooldown;
-            if (cooldown > 0 && sinceHit * fps < attackFrames - hitFrame)
+            if (cooldown > 0 && sinceHit * fps < attackFrames - currentHitFrame)
             {
-                int frame = Mathf.Clamp(hitFrame + (int)(sinceHit * fps), 0, attackFrames - 1);
-                actor.Body.sprite = actor.Jongnam.Attack[frame];
+                int frame = Mathf.Clamp(currentHitFrame + (int)(sinceHit * fps), 0, attackFrames - 1);
+                actor.Body.sprite = (currentSkill ? actor.Jongnam.Skill : actor.Jongnam.Attack)[frame];
             }
-            else if (cooldown > 0 && cooldown * fps <= hitFrame)
+            else if (cooldown > 0 && cooldown * fps <= nextHitFrame)
             {
-                int frame = Mathf.Clamp(hitFrame - (int)Math.Ceiling(cooldown * fps), 0, hitFrame - 1);
-                actor.Body.sprite = actor.Jongnam.Attack[frame];
+                int frame = Mathf.Clamp(nextHitFrame - (int)Math.Ceiling(cooldown * fps), 0, nextHitFrame - 1);
+                actor.Body.sprite = (nextSkill ? actor.Jongnam.Skill : actor.Jongnam.Attack)[frame];
             }
             else
             {
@@ -426,14 +520,137 @@ namespace PlumSword.Game.Combat
             }
         }
 
-        private static void SetHealth(CombatActor actor, long health, long maxHealth)
+        private void CreateBossProjectileSprite()
+        {
+            const int size = 16;
+            _bossProjectileTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, name = "JongnamSnowProjectile" };
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = x - 7.5f, dy = y - 7.5f;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                Color color = Color.clear;
+                if (d < 6.8f && d > 4.5f) color = new Color(0.35f, 0.68f, 0.94f, 0.9f);
+                if (d < 3.2f || (d < 6f && (Mathf.Abs(dx) < 0.8f || Mathf.Abs(dy) < 0.8f)))
+                    color = new Color(0.88f, 0.98f, 1f, 1f);
+                _bossProjectileTexture.SetPixel(x, y, color);
+            }
+            _bossProjectileTexture.Apply();
+            _bossProjectileSprite = Sprite.Create(_bossProjectileTexture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private void CreateDamageDigits()
+        {
+            var sheet = Resources.Load<Sprite>("Art/UI/damage_numbers");
+            if (sheet == null || sheet.texture.width != 2172 || sheet.texture.height != 724) return;
+            // 원본 시안의 글자별 수평 범위. 세로 기준선은 모든 글자에 공통이다.
+            int[] left = { 33, 232, 403, 587, 770, 957, 1150, 1342, 1518, 1705, 1904 };
+            int[] right = { 217, 383, 579, 756, 950, 1141, 1321, 1513, 1689, 1880, 1994 };
+            _damageDigits = new Sprite[left.Length];
+            for (int i = 0; i < left.Length; i++)
+                _damageDigits[i] = Sprite.Create(sheet.texture, new Rect(left[i], 214, right[i] - left[i] + 1, 300),
+                    new Vector2(0.5f, 0.5f), 32f);
+        }
+
+        private void ShowDamageNumber(long damage, Vector3 position)
+        {
+            if (damage <= 0 || _damageDigits == null) return;
+            string text = damage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+            var root = new GameObject("[DamageNumber]");
+            root.transform.SetParent(transform, false);
+            root.transform.localPosition = position + new Vector3((_damageNumbers.Count % 3 - 1) * 0.2f, 0f, 0f);
+            const float scale = 0.05f;
+            float width = 0f;
+            foreach (char c in text) width += _damageDigits[c == ',' ? 10 : c - '0'].rect.width * scale / 32f;
+            float x = -width * 0.5f;
+            foreach (char c in text)
+            {
+                var sprite = _damageDigits[c == ',' ? 10 : c - '0'];
+                float glyphWidth = sprite.rect.width * scale / 32f;
+                var obj = new GameObject(c.ToString());
+                obj.transform.SetParent(root.transform, false);
+                obj.transform.localPosition = new Vector3(x + glyphWidth * 0.5f, 0f, 0f);
+                obj.transform.localScale = Vector3.one * scale;
+                var renderer = obj.AddComponent<SpriteRenderer>();
+                renderer.sprite = sprite;
+                renderer.sortingOrder = 25000;
+                x += glyphWidth;
+            }
+            _damageNumbers.Add((root, 0f));
+        }
+
+        private void UpdateDamageNumbers(float deltaTime)
+        {
+            for (int i = _damageNumbers.Count - 1; i >= 0; i--)
+            {
+                var number = _damageNumbers[i];
+                number.Elapsed += deltaTime;
+                if (number.Root == null || number.Elapsed >= 0.8f)
+                {
+                    if (number.Root != null) Destroy(number.Root);
+                    _damageNumbers.RemoveAt(i);
+                    continue;
+                }
+                number.Root.transform.localPosition += Vector3.up * (deltaTime * 0.45f);
+                float alpha = Mathf.Clamp01((0.8f - number.Elapsed) / 0.25f);
+                foreach (var renderer in number.Root.GetComponentsInChildren<SpriteRenderer>()) renderer.color = new Color(1f, 1f, 1f, alpha);
+                _damageNumbers[i] = number;
+            }
+        }
+
+        private void RefreshBossProjectiles()
+        {
+            var removed = new List<BossProjectile>();
+            foreach (var pair in _bossProjectiles)
+                if (!_battle.BossProjectiles.Contains(pair.Key)) removed.Add(pair.Key);
+            foreach (var key in removed)
+            {
+                Destroy(_bossProjectiles[key]);
+                _bossProjectiles.Remove(key);
+            }
+            foreach (var projectile in _battle.BossProjectiles)
+            {
+                if (!_bossProjectiles.TryGetValue(projectile, out var obj))
+                {
+                    obj = new GameObject("[JongnamSnowProjectile]");
+                    obj.transform.SetParent(transform, false);
+                    obj.transform.localScale = new Vector3(ActorDisplayScale, ActorDisplayScale, 1f);
+                    var renderer = obj.AddComponent<SpriteRenderer>();
+                    renderer.sprite = _bossProjectileSprite;
+                    renderer.sortingOrder = 20000;
+                    _bossProjectiles.Add(projectile, obj);
+                }
+                obj.transform.localPosition = new Vector3((float)projectile.Position + ActorDisplayOffset.x + EnemyDisplaySeparation,
+                    ActorDisplayOffset.y + 0.9f, 0f);
+            }
+        }
+
+        private static void SetHealth(CombatActor actor, long health, long maxHealth, float deltaTime)
         {
             if (actor.HealthFill == null) return;
 
-            float width = HealthBarWidth * (float)CombatLayout.HealthRatio(health, maxHealth);
+            float target = (float)CombatLayout.HealthRatio(health, maxHealth);
+            if (!actor.HealthRatioInitialized)
+            {
+                actor.HealthRatioInitialized = true;
+                actor.HealthRatioShown = actor.HealthRatioStart = actor.HealthRatioTarget = target;
+                actor.HealthAnimationElapsed = HealthAnimationSeconds;
+            }
+            else if (target != actor.HealthRatioTarget)
+            {
+                actor.HealthRatioStart = actor.HealthRatioShown;
+                actor.HealthRatioTarget = target;
+                actor.HealthAnimationElapsed = 0f;
+            }
+
+            actor.HealthAnimationElapsed = Mathf.Min(HealthAnimationSeconds, actor.HealthAnimationElapsed + Mathf.Max(0f, deltaTime));
+            float progress = actor.HealthAnimationElapsed / HealthAnimationSeconds;
+            actor.HealthRatioShown = Mathf.Lerp(actor.HealthRatioStart, actor.HealthRatioTarget, Mathf.SmoothStep(0f, 1f, progress));
+            float width = HealthBarWidth * actor.HealthRatioShown;
             actor.HealthFill.localScale = new Vector3(width, HealthBarHeight, 1f);
             // 왼쪽 끝을 바탕의 왼쪽 끝에 고정한다.
-            actor.HealthFill.localPosition = new Vector3(-HealthBarWidth * 0.5f + width * 0.5f, actor.HealthBarY, 0f);
+            actor.HealthFill.localPosition = new Vector3(HealthBarFillCenterX - HealthBarWidth * 0.5f + width * 0.5f, 0f, 0f);
         }
 
         private static void StartFlash(CombatActor actor)
@@ -499,7 +716,7 @@ namespace PlumSword.Game.Combat
         }
 
         /// <summary>
-        /// 크기 없는 Root(발 아래 가운데) 아래에 몸 사각형과, healthColor 가 있으면 체력 바(바탕·채움)를 형제로 만든다.
+        /// 크기 없는 Root(발 아래 가운데) 아래에 몸과 체력 바 묶음을 만든다.
         /// </summary>
         private CombatActor CreateActor(string name, Vector2 size, Color color, int order, Color? healthColor)
         {
@@ -519,17 +736,80 @@ namespace PlumSword.Game.Combat
 
             if (healthColor.HasValue)
             {
-                var back = CreateRect("HealthBack", root.transform,
-                    new Vector2(HealthBarWidth, HealthBarHeight), HealthBarBackColor, HealthBarBackOrder);
-                back.transform.localPosition = new Vector3(0f, actor.HealthBarY, 0f);
-                actor.HealthBack = back.transform;
+                bool disciple = name == "[Disciple]";
+                var bar = new GameObject("HealthBack");
+                bar.transform.SetParent(root.transform, false);
+                bar.transform.localPosition = new Vector3(0f, actor.HealthBarY, 0f);
+                actor.HealthBack = bar.transform;
 
-                var fill = CreateRect("HealthFill", root.transform,
+                var fill = CreateRect("HealthFill", bar.transform,
                     new Vector2(HealthBarWidth, HealthBarHeight), healthColor.Value, HealthBarFillOrder);
                 actor.HealthFill = fill.transform;
+                var frameObject = new GameObject("HealthFrame");
+                frameObject.transform.SetParent(bar.transform, false);
+                var frame = frameObject.AddComponent<SpriteRenderer>();
+                frame.sprite = disciple ? _discipleHealthFrame : _enemyHealthFrame;
+                frame.sortingOrder = HealthBarFillOrder + 1;
+                if ((disciple ? _discipleHealthFrameTexture : _enemyHealthFrameTexture) == null)
+                    frameObject.transform.localScale = new Vector3(1.25f / frame.sprite.bounds.size.x, 0.55f / frame.sprite.bounds.size.y, 1f);
             }
 
             return actor;
+        }
+
+        private static Sprite CreateHealthFrame(bool disciple, out Texture2D texture)
+        {
+            // 투명한 내부와 바깥에 금속 프레임만 그린다. 제자는 왼쪽에 다섯 꽃잎 매화를 얹는다.
+            const int width = 44, height = 12;
+            texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                name = disciple ? "DiscipleHealthFrame" : "EnemyHealthFrame",
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            texture.SetPixels(new Color[width * height]);
+            Color shadow = disciple ? new Color32(100, 52, 31, 255) : new Color32(69, 55, 64, 255);
+            Color metal = disciple ? new Color32(203, 144, 67, 255) : new Color32(148, 139, 151, 255);
+            Color light = disciple ? new Color32(255, 211, 126, 255) : new Color32(219, 211, 218, 255);
+            for (int x = 4; x <= 39; x++)
+            {
+                texture.SetPixel(x, 1, shadow);
+                texture.SetPixel(x, 2, metal);
+                texture.SetPixel(x, 3, shadow);
+                texture.SetPixel(x, 8, shadow);
+                texture.SetPixel(x, 9, metal);
+                texture.SetPixel(x, 10, shadow);
+                if (x > 5 && x < 38) texture.SetPixel(x, 9, light);
+            }
+            for (int y = 3; y <= 8; y++)
+            {
+                texture.SetPixel(3, y, shadow);
+                texture.SetPixel(4, y, metal);
+                texture.SetPixel(5, y, shadow);
+                texture.SetPixel(38, y, shadow);
+                texture.SetPixel(39, y, metal);
+                texture.SetPixel(40, y, shadow);
+            }
+            // 꽃잎마다 외곽선과 밝은 면을 두어 작은 크기에서도 십자와 구분한다.
+            if (disciple)
+            {
+                string[] flower = {
+                    "...sss.....", "..sppls....", ".sphhpls...", ".sphhpls...", "ssppcppsss.",
+                    "sphpccpphps", "sphhcpphhps", ".sppcpppps.", "..spplppss.", "...sppps...", "....sss...." };
+                Color outline = new Color32(116, 42, 53, 255);
+                Color petal = new Color32(238, 105, 132, 255);
+                Color pinkLight = new Color32(255, 184, 188, 255);
+                Color gold = new Color32(255, 203, 76, 255);
+                for (int row = 0; row < flower.Length; row++)
+                    for (int x = 0; x < flower[row].Length; x++)
+                    {
+                        char c = flower[row][x];
+                        if (c == '.') continue;
+                        texture.SetPixel(x, height - 1 - row, c == 's' ? outline : c == 'h' || c == 'l' ? pinkLight : c == 'c' ? gold : petal);
+                    }
+            }
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 32f);
         }
 
         private SpriteRenderer CreateRect(string name, Transform parent, Vector2 size, Color color, int order)

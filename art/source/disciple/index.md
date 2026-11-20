@@ -15,6 +15,7 @@
 | PixelLab 원본 묶음 | [pixellab_original_export.zip](pixellab_original_export.zip) | 방향별 기본 그림, 두 공격 실험의 개별 프레임과 메타데이터가 든 원본 내보내기 |
 | 내보내기 정보 | [pixellab_metadata.json](pixellab_metadata.json) | 캐릭터 생성 문구, 크기, 방향과 프레임 파일 목록 |
 | 공격 미리보기 | [일반](../../experiments/disciple-motion/pixellab-attack-original.gif) / [빠르게](../../experiments/disciple-motion/pixellab-attack-fast.gif) | 기존 미리보기. 속도는 확정값이 아니다 |
+| 쓰러짐 | [시트](down_south-east_sheet.png) / [프레임](down_frames/) / [미리보기](down_preview.gif) | 사용자가 확정한 17프레임, 76×76px. 즉시 뒤로 넘어지고 바닥에 남는다 |
 
 ## PixelLab 기록
 
@@ -23,6 +24,7 @@
 - 2026-11-17에 새 공격 시안들 대신 위 기존 17프레임 공격을 사용자가 선택했다. 새로 생성한 공격 시안들은 선택하지 않았다.
 - 대기: `idle natural breathing 24f`, 그룹 ID `fe7528ca-8a5a-48dc-8ed5-43df4ffd40d5`.
 - 달리기: `sprint loop pose 24f`, 그룹 ID `8fd88f3e-635a-41fc-90d5-aeaca1b3ebf9`. 이전 질주 시안의 달리는 자세를 시작과 종료 목표로 사용했다.
+- 쓰러짐: `disciple immediate knockout fall draft`, 그룹 ID `159cd46a-be6e-428c-9407-a54b8e383d6c`, PixelLab PixMiniMax, 남동쪽, 17프레임(기준 1장 + 생성 16장), 캔버스 76×76. 요청: `From the first instant, the character immediately loses balance and falls rapidly backwards towards the left. Head and shoulders accelerate down and back continuously, feet come up, body rotates and lands flat on the ground. He stays down motionless after landing. One swift uninterrupted fall; no pause, no stagger, no recovery, no getting up. Only the character and sword on transparent background.` 원본 프레임을 순서대로 보관했으며 한 줄 시트는 이를 배치한 것이다.
 - 기본 그림과 공격은 모두 남동쪽 방향이다. 캐릭터 원본의 시점은 low top-down이다.
 - 재생 속도는 아직 확정하지 않았다. 게임의 공격 주기와 함께 정한다.
 - 대기와 달리기의 미리보기 속도도 임시이며 게임에 넣을 때 조절한다. 시트는 원본 프레임을 가로로 순서대로 배열한 것이다.
@@ -36,6 +38,7 @@
 | `idle_south-east_sheet.png` | `Assets/Resources/Art/Characters/disciple_idle.png` | 76×76 × 24 | (38, 12) |
 | `run_south-east_sheet.png` | `Assets/Resources/Art/Characters/disciple_run.png` | 76×80 × 24 | (38, 14) |
 | `attack_south-east_sheet.png` | `Assets/Resources/Art/Characters/disciple_attack.png` | 76×76 × 17 | (38, 12) |
+| `down_south-east_sheet.png` | `Assets/Resources/Art/Characters/disciple_down.png` | 76×76 × 17 | (38, 12) |
 
 - 대기·공격 칸은 64×64 기본 그림에 사방 6px, 달리기 칸은 가로 6px·세로 8px 여백을 더한 크기라 위 피벗이 모두 같은 발 위치다.
 - 공격의 타격 프레임은 `frame_007`(분홍 검기가 처음 보이는 칸, 7~9에 검기)이다. 게임은 이 프레임을 피해가 들어가는 순간에 맞춘다.

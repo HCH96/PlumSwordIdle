@@ -116,7 +116,7 @@ namespace PlumSword.Core.Tests.Stage
             stage.Begin();
 
             Assert.That(stage.HasBegun, Is.True);
-            AssertEnemies(30, 5.0, 7.0);
+            AssertEnemies(30, 23.0, 25.0);
             Assert.That(_events, Is.EqualTo(new[] { "StageStarted:1", "Changed" }));
             Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.False);
@@ -144,7 +144,7 @@ namespace PlumSword.Core.Tests.Stage
 
             stage.Begin();
 
-            AssertEnemies(50, 5.0, 7.0);
+            AssertEnemies(50, 23.0, 25.0);
             Assert.That(_events, Is.EqualTo(new[] { "StageStarted:3", "Changed" }));
         }
 
@@ -155,7 +155,7 @@ namespace PlumSword.Core.Tests.Stage
 
             stage.Begin();
 
-            AssertEnemies(30, 4.0, 6.0, 8.0);
+            AssertEnemies(30, 22.0, 24.0, 26.0);
         }
 
         // Tick

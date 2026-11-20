@@ -35,12 +35,15 @@ namespace PlumSword.Editor
             importer.alphaIsTransparency = true;
 
             // 24프레임 공격 시트는 너비가 2048px을 넘는다. 자동 축소를 막는다.
-            if (assetPath.StartsWith("Assets/Resources/Art/Enemies/")) importer.maxTextureSize = 4096;
+            if (assetPath.StartsWith("Assets/Resources/Art/Enemies/")
+                || assetPath == "Assets/Resources/Art/UI/damage_numbers.png") importer.maxTextureSize = 4096;
 
             if (assetPath == "Assets/Resources/Art/UI/jongnam_stage_hud.png"
                 || assetPath == "Assets/Resources/Art/UI/jongnam_title_plum_duel.png"
                 || assetPath.StartsWith("Assets/Resources/Art/UI/Settings/")
                 || assetPath.StartsWith("Assets/Resources/Art/UI/StatUpgrade/")
+                || assetPath.StartsWith("Assets/Resources/Art/UI/OfflineReward/")
+                || assetPath.StartsWith("Assets/Resources/Art/UI/RealmStatus/")
                 || assetPath.StartsWith("Assets/Resources/Art/UI/Substage/"))
             {
                 importer.filterMode = FilterMode.Trilinear;

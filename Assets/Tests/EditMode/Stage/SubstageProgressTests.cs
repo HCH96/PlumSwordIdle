@@ -43,8 +43,20 @@ namespace PlumSword.Core.Tests.Stage
                 total += battle.Enemies.Count;
                 stage.Tick(StageProgress.SubstageIntroSeconds);
                 Assert.That(battle.Paused, Is.False);
-                for (int step = 0; step < 5000 && stage.SubstageNumber == n; step++) battle.Step();
+                for (int step = 0; step < 5000 && stage.Phase == StagePhase.Playing; step++) battle.Step();
+                Assert.That(stage.Phase, Is.EqualTo(StagePhase.FadingOut));
+                Assert.That(stage.SubstageNumber, Is.EqualTo(n));
+                Assert.That(battle.Enemies, Is.Empty);
+                Assert.That(battle.Paused, Is.True);
+                Assert.That(upgrades.Locked, Is.True);
+                stage.Tick(StageProgress.FadeSeconds);
+                Assert.That(stage.Phase, Is.EqualTo(StagePhase.FadingIn));
+                Assert.That(stage.FadeAlpha, Is.EqualTo(1).Within(1e-9));
                 Assert.That(stage.SubstageNumber, Is.EqualTo(n + 1));
+                foreach (var enemy in battle.Enemies)
+                    Assert.That(enemy.Position - battle.DisciplePosition, Is.GreaterThanOrEqualTo(22 - 1e-9));
+                stage.Tick(StageProgress.FadeSeconds);
+                Assert.That(upgrades.Locked, Is.False);
                 Assert.That(wallet.Balance, Is.EqualTo(total * 10));
             }
             Assert.That(stage.IsBossActive, Is.True);

@@ -68,6 +68,6 @@
 | Compression | None |
 | Generate Mip Maps | 끔 |
 
-**예외: 시작 화면과 설정·강화 UI 그림** (`Assets/Resources/Art/StartMenu/`, `Assets/Resources/Art/UI/Settings/`, `Assets/Resources/Art/UI/StatUpgrade/`). 고해상도 AI 시안을 화면에서 정수배가 아니게 줄여 보이므로, Filter Mode = Trilinear, Generate Mip Maps = 켬으로 가져온다. Point로 줄이면 제목과 버튼 글자의 선이 깨진다. 시작 화면의 최대 크기는 2048, 설정·강화 UI는 4096이다.
+**예외: 시작 화면과 설정·강화 UI 그림** (`Assets/Resources/Art/StartMenu/`, `Assets/Resources/Art/UI/Settings/`, `Assets/Resources/Art/UI/StatUpgrade/`, `Assets/Resources/Art/UI/OfflineReward/`). 고해상도 AI 시안을 화면에서 정수배가 아니게 줄여 보이므로, Filter Mode = Trilinear, Generate Mip Maps = 켬으로 가져온다. Point로 줄이면 제목과 버튼 글자의 선이 깨진다. 시작 화면의 최대 크기는 2048, 설정·강화 UI는 4096이다.
 
 가져오기 설정은 `.meta` 파일에 저장된다. 루프 안의 에이전트는 `.meta`의 가져오기 설정을 직접 고치지 않는다. `Assets/Resources/Art/` 아래 그림은 `Assets/Editor/PixelArtTextureImporter.cs`(에셋 후처리기)가 가져올 때 위 값(시작 화면 그림은 위 예외)으로 맞춘다 (스프라이트 모드 Single, 9-slice 테두리는 건드리지 않음). 애니메이션 시트의 프레임 자르기와 피벗은 화면 코드가 한다.

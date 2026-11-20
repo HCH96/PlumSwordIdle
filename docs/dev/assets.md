@@ -2,6 +2,8 @@
 
 게임에 들어가는(또는 들어갈) 그림 에셋의 목록이다. 경로, 용도, 크기, 프레임, 기준점, 상태를 적는다. 크기·가져오기 설정은 [art.md](art.md), 제자 기준 그림체와 제작 절차는 [art_style.md](art_style.md)를 따른다. 적용된 에셋은 실제 값을, 계획 에셋은 계획값을 적는다.
 
+경지 표시 D안은 [원본 색인](../../art/source/realm_status/index.md)에 보관한다. 매화 붓터치 1장과 경지 이름 그림 5장은 각각 투명 PNG 2172×724, 정지 이미지다. 게임 리소스 `Art/UI/RealmStatus/`에 적용한다. 왼쪽 위 기준, Trilinear·밉맵·최대 크기 4096을 사용하며 원본 투명 여백을 유지한다.
+
 > **초안 (2026-11-17).** 지금 있는 사양(`docs/spec/`)의 대체 표시와, 사양이 2단계로 미뤄 둔 항목에서 뽑았다. 제자 대기·달리기·공격은 실제 적용한 값으로 고쳤다. 2단계 사양(테마 스테이지, 오프라인 보상 등)이 확정되면 그 사양을 쓰면서 이 표를 고친다. 상태가 `계획`인 줄은 아직 파일이 없다.
 
 ## 쓰는 법
@@ -15,6 +17,10 @@
 ## 작은 스테이지 UI (2026-11-18)
 
 `Art/UI/Substage/`의 정지 이미지. 1프레임, 가운데 기준점이며 방향과 fps는 해당 없다. 사용자가 시안을 승인했으며 1스테이지 진행 UI에 적용했다. `header` 1536×505, `completed` 905×910, `current` 828×857, `empty` 547×557, `boss` 921×1024px이다. [시안과 원본](../../art/source/substage_ui/index.md)을 보관한다. 금빛 박동은 코드로 그리며 각 이미지 자체는 정지 그림이다.
+
+## 오프라인 보상 UI (2026-11-20 적용)
+
+`Art/UI/OfflineReward/`의 정지 이미지. 가운데 기준점, 1프레임이며 방향과 fps는 해당 없다. `window`는 1536×1024, `reward_plaque`와 `claim_button`은 각각 2172×724px이다. 원본 캔버스의 투명 여백을 포함해 배치하고 Trilinear·밉맵을 사용한다. 금화는 `Art/UI/StatUpgrade/coin`을 재사용한다. `title_label`, `elapsed_label`, `applied_label`, `maximum_label`, `claim_label`, `retry_label`, `save_failed_label`은 한글 그림 글자이며, 시간은 글자로 표시하고 금화 숫자는 `Art/UI/damage_numbers` 그림에서 잘라 표시한다. [시안과 원본](../../art/source/offline_reward/index.md).
 
 ## 설정 UI (2026-11-18 적용)
 
@@ -41,8 +47,7 @@
 | disciple_idle | `Art/Characters/disciple_idle` | 제자 서 있기 (적 앞에서 공격 대기 중 포함) | 76×76 | 24 | 10 | (38, 12)px = 발 아래 가운데 | 남동쪽(오른쪽 앞) | 임시 |
 | disciple_run | `Art/Characters/disciple_run` | 제자 전진 (달리기, 이동 속도 초당 6.48 유닛) | 76×80 | 24 | 20 | (38, 14)px = 발 아래 가운데 | 남동쪽(오른쪽 앞) | 임시 |
 | disciple_attack | `Art/Characters/disciple_attack` | 제자 검 휘두르기 (공격 1회 = 1번 재생, 7번 프레임 = 피해 시점) | 76×76 | 17 | 17 ÷ 공격 간격 | (38, 12)px = 발 아래 가운데 | 남동쪽(오른쪽 앞) | 임시 |
-| disciple_hit | `Art/Characters/disciple_hit` | 제자 피격 | 48×48 | 2 | 10 | 발 아래 가운데 | 오른쪽 | 계획 |
-| disciple_down | `Art/Characters/disciple_down` | 제자 쓰러짐 | 48×48 | 4 | 8 | 발 아래 가운데 | 오른쪽 | 계획 |
+| disciple_down | `Art/Characters/disciple_down` | 제자 패배 시 즉시 뒤로 쓰러짐 | 76×76 | 17 | 13.33 (프레임당 0.075초) | (38, 12)px | 남동쪽 | 최종 |
 
 - **제자 대기·달리기·공격은 2026-11-17에 적용했다 (상태 `임시`).** 원본은 [제자 에셋 색인](../../art/source/disciple/index.md)의 선택된 시트를 그대로(확대·축소 없이) `Assets/Resources/Art/Characters/`에 복사했다. 원본 이름: `idle_south-east_sheet.png` → `disciple_idle.png`, `run_south-east_sheet.png` → `disciple_run.png`, `attack_south-east_sheet.png` → `disciple_attack.png`.
   - 플레이 확인을 위해 화면에서는 발 피벗을 유지한 채 제자와 적 표시를 1.5배로 키운다. 시트 원본과 PPU는 바꾸지 않는다. 비정수 확대이므로 픽셀의 균일함과 배경과의 차이는 실제 화면에서 다시 확인한다.
@@ -50,13 +55,21 @@
   - 피벗과 프레임 자르기는 Unity 가져오기 설정이 아니라 화면 코드(`DiscipleSprites`)가 한다. 시트는 Single 스프라이트로 가져오고, 가져오기 설정은 `Assets/Editor/PixelArtTextureImporter.cs`가 `Art/` 아래 그림에 [art.md](art.md)의 값(Sprite, PPU 32, Point, 압축 없음, 밉맵 끔)으로 맞춘다.
   - 원본 방향은 남동쪽(오른쪽 앞)이다. 반전하지 않고 오른쪽으로 진행하는 제자로 쓴다.
   - 재생 속도와 공격 시점 맞추기는 [전투 사양](../spec/combat.md) "화면"의 "제자 애니메이션"을 본다. 시트를 바꾸면 칸 수·칸 크기가 같아야 하고, 다르면 `DiscipleSprites`의 값과 이 표를 함께 고친다. 크기가 맞지 않으면 게임은 대체 표시(파란 사각형)로 돌아간다.
-- `disciple_hit`, `disciple_down`은 아직 없다 (`계획`, 크기는 위 적용분에 맞춰 다시 정한다).
+- 별도 피격 애니메이션은 사용하지 않는다. 쓰러짐은 사용자가 확정한 [원본·프레임·미리보기](../../art/source/disciple/index.md)를 적용했고 마지막 프레임을 유지한다.
 
 ## 몬스터와 보스
 
 일반 몬스터와 보스는 테마별로 하나씩 둔다 (테마 목록은 아래 "배경"). `<테마>` 자리에 테마 ID가 들어간다. 테마가 확정되기 전에는 `default` 한 벌만 만든다.
 
-- 종남 장로 보스는 사용자가 일러스트 시안, 기본 스프라이트와 대기·걷기·일반 공격·스킬 애니메이션을 확정해 [원본 색인](../../art/source/jongnam_boss/index.md)에 보관했다. 아직 게임에 적용하지 않았다.
+- 종남 장로 보스의 선택된 원본은 [원본 색인](../../art/source/jongnam_boss/index.md)에 보관하고 1스테이지에 적용했다. PPU 32, Point, 무압축, 최대 텍스처 크기 4096이며 제자와 같이 화면에서 1.5배로 표시한다. 접근 중 걷기를 반복하고 세 번째 공격마다 스킬 동작과 눈꽃 투사체를 사용한다.
+
+| 리소스 경로 | 칸(px) | 프레임 | 기준점(px) | 방향 | 상태 |
+| --- | --- | --- | --- | --- | --- |
+| `Art/Enemies/jongnam_boss_idle` | 96×100 | 24 | (48, 15) | 남서 | 최종 |
+| `Art/Enemies/jongnam_boss_walk` | 96×104 | 24 | (48, 18) | 남서 | 최종 |
+| `Art/Enemies/jongnam_boss_attack` | 100×100 | 24 | (50, 15) | 남서 | 최종 |
+| `Art/Enemies/jongnam_boss_skill` | 100×100 | 24 | (50, 15) | 남서 | 최종 |
+| `Art/Enemies/jongnam_boss_down` | 100×100 | 17 | (50, 15) | 남서, 화면 오른쪽으로 쓰러짐 | 최종 |
 
 - 종남파 일반 대련 상대의 남녀 일러스트·기본 그림·대기/걷기/공격은 사용자가 선택해 [원본 색인](../../art/source/jongnam/index.md)에 보관하고 1스테이지에 적용했다. 아래 공통 계획값과 달리 게임용 시트는 다음과 같다 (프레임 기준점은 칸 왼쪽 아래에서 잰 px).
 
@@ -80,17 +93,18 @@
 | boss_<테마>_attack | `Art/Bosses/<테마>_attack` | 보스 공격 | 128×128 | 6 | 10 | 발 아래 가운데 | 왼쪽 | 계획 |
 | boss_<테마>_hit | `Art/Bosses/<테마>_hit` | 보스 피격 | 128×128 | 2 | 10 | 발 아래 가운데 | 왼쪽 | 계획 |
 
-- 쓰러짐은 애니메이션 대신 지금처럼 바로 없애거나 짧게 사라지게(알파) 한다. 필요해지면 `_down`을 더한다.
+- 종남 남녀 제자와 장로는 [선택한 쓰러짐 원본](../../art/source/jongnam_fall/index.md)을 사용한다. 남녀 시트는 `Art/Enemies/jongnam_male_down`, `Art/Enemies/jongnam_female_down`, 각 76×76px 17프레임이며 피벗은 각각 (38, 11), (38, 12)px이다. 세 동작 모두 0.075초/프레임이다. 다른 테마는 쓰러질 때 대체 표시를 바로 없앤다.
 - 보스 대체 표시(2.0×3.0 유닛 = 64×96px)보다 크다. 128×128에서 몸 높이를 96px 안팎으로 그리면 지금 배치와 크게 다르지 않다.
 
 ## 배경
 
 테마당 시차 스크롤용 레이어 세 장. 높이 360, 폭 800 이상이고 가로로 이어 붙여도 이음매가 안 보이게 그린다.
 
-- 1스테이지 화산파 연무장 시안은 플레이 확인용으로만 `Assets/Resources/Art/Backgrounds/stage1_preview.png`에 임시 배치했다. 한 장을 좌우로 번갈아 반전해 반복하며 별도 시차 레이어는 없다. 사용자 선택 전 시안이므로 최종 에셋이 아니다. 이음매와 제자와의 크기·색감을 플레이하며 확인한다.
+- 1스테이지 화산파 연무장 배경은 사용자가 v3를 확인하고 확정했다. `Assets/Resources/Art/Backgrounds/stage1_preview.png`를 좌우로 번갈아 반전해 반복하며 별도 시차 레이어는 없다. [원본과 참고 자료](../../art/source/stage1_courtyard_revision/index.md)를 보관한다.
 
 | ID | 리소스 경로 | 용도 | 크기(px) | 기준점 | 상태 |
 | --- | --- | --- | --- | --- | --- |
+| stage1_preview | `Art/Backgrounds/stage1_preview` | 1스테이지 화산파 연무장 | 2172×724 | 가운데 | 최종 |
 | bg_<테마>_far | `Art/Backgrounds/<테마>_far` | 먼 산·하늘 (가장 느림) | 800×360 | 가운데 | 계획 |
 | bg_<테마>_mid | `Art/Backgrounds/<테마>_mid` | 중간 (나무, 건물) | 800×360 | 가운데 | 계획 |
 | bg_<테마>_ground | `Art/Backgrounds/<테마>_ground` | 땅·길 (카메라와 같이 움직임) | 800×192 | 위 가운데 (윗변이 땅 높이) | 계획 |
@@ -106,6 +120,8 @@
 
 ## UI
 
+- 피해 숫자: `Art/UI/damage_numbers`는 [아이보리 숫자 원본과 확정된 매화색 원본](../../art/source/damage_numbers/index.md) 중 아이보리 원본을 사용한다. 원본 2172×724, PPU 32, Point, 무압축, 최대 4096이며 화면 코드가 0~9와 쉼표를 잘라 조합한다. 매화색은 추후 스킬 피해용이며 아직 게임에 적용하지 않는다.
+
 UI 스프라이트는 작게 그리고 9-slice로 늘린다. 테두리 폭(9-slice 경계)은 가져오기 설정의 Sprite Border로 사람이 에디터에서 넣는다.
 
 - 설정 버튼과 설정 창은 사용자가 선택해 [설정 UI 원본 색인](../../art/source/settings/index.md)에 보관했고 게임에도 적용했다. 분리된 게임용 리소스 경로와 크기는 위 "설정 UI" 표를 따른다. 모두 1프레임 정지 이미지로 방향과 fps는 해당 없다.
@@ -114,6 +130,7 @@ UI 스프라이트는 작게 그리고 9-slice로 늘린다. 테두리 폭(9-sli
 | --- | --- | --- | --- | --- | --- |
 | jongnam_stage_hud | `Art/UI/jongnam_stage_hud` | 종남파 스테이지 제목·진행도 틀 | 2172×724px | 260×86.7 기준 픽셀 | 최종 (선택된 [원본](../../art/source/jongnam_ui/index.md)) |
 | jongnam_title_plum_duel | `Art/UI/jongnam_title_plum_duel` | 종남 일반 전투 제목 `매화 아래 비무` | 1917×462px | 최대 75.3×12.3 기준 픽셀, 비율 유지 | 최종 (선택 원본의 투명 여백 제거) |
+| substage_intro_plaque | `Art/UI/Substage/intro_plaque` | 작은 스테이지 시작 번호 패 | 2172×724px | 360×120 기준 픽셀 | 최종 ([원본](../../art/source/substage_intro/index.md)) |
 
 - 위 틀과 제목은 정지 이미지다. 시작 화면 그림처럼 원본 해상도를 화면에서 축소하므로 Trilinear·밉맵으로 가져온다. 진행 바는 별도 UI로 겹쳐 표시하며 처치 수 숫자는 표시하지 않는다. 틀 리소스가 없거나 종남이 아닌 스테이지는 기존 도형 틀을 쓰고, 제목 이미지가 없으면 기존 영문 제목을 쓴다.
 
@@ -125,7 +142,8 @@ UI 스프라이트는 작게 그리고 9-slice로 늘린다. 테두리 폭(9-sli
 | ui_panel | `Art/UI/panel` | 아래 강화 영역 바탕, 오프라인 보상 창 | 24×24 | 8 | 계획 |
 | ui_bar_frame | `Art/UI/bar_frame` | 진행 바·보스 체력 바 테두리 | 16×8 | 3 | 계획 |
 | ui_bar_fill | `Art/UI/bar_fill` | 바 채움 (색은 코드에서 곱한다) | 4×4 | 1 | 계획 |
-| ui_hpbar_small | `Art/UI/hpbar_small` | 머리 위 체력 바 (바탕·채움 2칸 시트) | 32×4 | 없음 | 계획 |
+| ui_hpbar_disciple | `Art/UI/health_frame_disciple` | 제자 머리 위 체력 바 금색 프레임과 매화, 투명 가운데 | 2172×724 원본 | 없음 | 임시 |
+| ui_hpbar_enemy | `Art/UI/health_frame_enemy` | 일반 몬스터 머리 위 체력 바 은색 프레임, 투명 가운데 | 2172×724 원본 | 없음 | 임시 |
 
 ## 시작 화면
 

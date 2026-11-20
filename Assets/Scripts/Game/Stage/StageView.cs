@@ -1,4 +1,5 @@
 using System;
+using PlumSword.Game.Combat;
 using PlumSword.Core.Stage;
 using TMPro;
 using UnityEngine;
@@ -45,6 +46,9 @@ namespace PlumSword.Game.Stage
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
 
         private StageProgress _stage;
+        private float _defeatAnimationRemaining;
+        private StagePhase _previousPhase;
+        private bool _failedTransition;
         private Image _fade;
         private TextMeshProUGUI _stageLabel;
         private TextMeshProUGUI _bossName;
@@ -60,7 +64,7 @@ namespace PlumSword.Game.Stage
         private TextMeshProUGUI _introLine;
         private bool _warned;
         private SubstagePreview _substagePreview;
-        private TextMeshProUGUI _substageIntro;
+        private SubstageIntroBanner _substageIntro;
 
         /// <summary>
         /// canvas 아래에 페이드 막, 스테이지 글자, 보스 이름, 진행 바, 소개 패널을 만들고 지금 상태로 바로 표시한다.
@@ -73,6 +77,9 @@ namespace PlumSword.Game.Stage
 
             Unsubscribe();
             _stage = stage;
+            _defeatAnimationRemaining = 0f;
+            _previousPhase = stage.Phase;
+            _failedTransition = false;
 
             CreateFade(canvas);
             CreateHeaderPanel(canvas);
@@ -84,20 +91,36 @@ namespace PlumSword.Game.Stage
             _substagePreview = SubstagePreview.Create(canvas);
             // 스테이지 글자·보스 이름·진행 바보다 나중에 만들어 그 위에 그린다.
             CreateIntroPanel(canvas);
-            _substageIntro = CreatePanelText((RectTransform)_introPanelObject.transform, "SubstageNumber", Vector2.zero, Vector2.one, 28f);
+            _substageIntro = SubstageIntroBanner.Create(canvas);
 
             Redraw();
             ApplyFade();
 
             _stage.Changed += OnChanged;
+            _stage.StageFailed += OnStageFailed;
         }
 
         private void Update()
         {
             if (_stage == null) return;
 
-            _stage.Tick(Time.deltaTime);
+            float deltaTime = Time.deltaTime;
+            if (_defeatAnimationRemaining > 0f)
+            {
+                float used = Mathf.Min(deltaTime, _defeatAnimationRemaining);
+                _defeatAnimationRemaining -= used;
+                deltaTime -= used;
+            }
+            _stage.Tick(deltaTime);
             ApplyFade();
+        }
+
+        private void OnStageFailed(int stageNumber)
+        {
+            _failedTransition = true;
+            // 패배 판정과 전투 정지는 즉시, 화면 전환만 쓰러짐 연출 뒤에 진행한다.
+            if (Resources.Load<Texture2D>(DiscipleSprites.DownPath) != null)
+                _defeatAnimationRemaining = DiscipleSprites.DownDuration;
         }
 
         private void CreateFade(Canvas canvas)
@@ -317,7 +340,26 @@ namespace PlumSword.Game.Stage
 
         private void OnChanged()
         {
+            if (_stage.Phase == StagePhase.FadingOut && _previousPhase == StagePhase.Playing
+                && !_failedTransition && _stage.DisplayStageNumber == 1 && HasJongnamDownSheets())
+                _defeatAnimationRemaining = JongnamSprites.DownDuration;
+            if (_stage.Phase != StagePhase.FadingOut) _failedTransition = false;
+            _previousPhase = _stage.Phase;
             Redraw();
+        }
+
+        private bool HasJongnamDownSheets()
+        {
+            if (_stage.SubstageNumber > StageLayout.NormalSubstageCount)
+                return HasDownSheet("Art/Enemies/jongnam_boss_down", 100);
+            return HasDownSheet("Art/Enemies/jongnam_male_down", 76)
+                && HasDownSheet("Art/Enemies/jongnam_female_down", 76);
+        }
+
+        private static bool HasDownSheet(string path, int size)
+        {
+            var texture = Resources.Load<Texture2D>(path);
+            return texture != null && texture.width == size * JongnamSprites.DownFrameCount && texture.height == size;
         }
 
         // 글자·보스 이름·바를 지금 상태로 다시 그린다. 비율과 보스 여부는 StageProgress 의 값을 그대로 쓴다.
@@ -407,7 +449,7 @@ namespace PlumSword.Game.Stage
         {
             if (_introPanelObject == null) return;
 
-            bool introShowing = _stage.IsIntroShowing || _stage.IsSubstageIntroShowing;
+            bool introShowing = _stage.IsIntroShowing;
             if (_introPanelObject.activeSelf != introShowing)
             {
                 _introPanelObject.SetActive(introShowing);
@@ -440,8 +482,12 @@ namespace PlumSword.Game.Stage
             }
             if (_substageIntro != null)
             {
-                _substageIntro.gameObject.SetActive(_stage.IsSubstageIntroShowing);
-                _substageIntro.text = _stage.DisplayStageNumber + "-" + _stage.SubstageNumber;
+                if (_stage.IsSubstageIntroShowing)
+                {
+                    if (!_substageIntro.gameObject.activeSelf)
+                        _substageIntro.Show(_stage.DisplayStageNumber, _stage.SubstageNumber);
+                }
+                else if (_substageIntro.gameObject.activeSelf) _substageIntro.Hide();
             }
         }
 
@@ -482,6 +528,7 @@ namespace PlumSword.Game.Stage
             if (_stage != null)
             {
                 _stage.Changed -= OnChanged;
+                _stage.StageFailed -= OnStageFailed;
             }
         }
 

@@ -26,7 +26,14 @@ namespace PlumSword.Game.Tests.Stage
                 var view = viewObject.AddComponent<StageView>();
                 view.Initialize(stage, canvasObject.GetComponent<Canvas>());
                 stage.Begin();
+                var textType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true);
                 Assert.That(canvasObject.transform.Find("StageCount"), Is.Null);
+                var intro = canvasObject.transform.Find("SubstageIntroBanner");
+                Assert.That(intro, Is.Not.Null);
+                Assert.That(intro.gameObject.activeSelf, Is.True);
+                Assert.That(intro.Find("Plaque").GetComponent<Image>().sprite, Is.Not.Null);
+                Assert.That(intro.GetComponent<CanvasGroup>().blocksRaycasts, Is.False);
+                Assert.That(textType.GetProperty("text").GetValue(intro.Find("SubstageNumber").GetComponent(textType)), Is.EqualTo("1-1"));
                 var bossName = canvasObject.transform.Find("BossName").gameObject;
                 var fill = canvasObject.transform.Find("StageBar/Fill").GetComponent<Image>();
                 var frame = canvasObject.transform.Find("JongnamStageHeader").GetComponent<Image>();
@@ -38,7 +45,6 @@ namespace PlumSword.Game.Tests.Stage
                 Assert.That(preview.Find("Marker1").GetComponent<Image>().sprite.name, Is.EqualTo("current"));
                 Assert.That(preview.Find("Marker2").GetComponent<Image>().sprite.name, Is.EqualTo("empty"));
                 Assert.That(preview.Find("BossMarker").GetComponent<Image>().sprite.name, Is.EqualTo("boss"));
-                var textType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true);
                 Assert.That(textType.GetProperty("text").GetValue(preview.Find("SubstageNumber").GetComponent(textType)), Is.EqualTo("1-1"));
                 Assert.That(frame.gameObject.activeSelf, Is.False);
                 Assert.That(title.sprite, Is.Not.Null);
@@ -58,8 +64,13 @@ namespace PlumSword.Game.Tests.Stage
                 for (int n = 1; n <= 6; n++)
                 {
                     stage.Tick(StageProgress.SubstageIntroSeconds);
-                    for (int i = 0; i < 5000 && stage.SubstageNumber == n; i++) battle.Step();
+                    Assert.That(intro.gameObject.activeSelf, Is.False);
+                    for (int i = 0; i < 5000 && stage.Phase == StagePhase.Playing; i++) battle.Step();
+                    Assert.That(stage.Phase, Is.EqualTo(StagePhase.FadingOut));
+                    stage.Tick(StageProgress.FadeSeconds * 2);
                     Assert.That(stage.SubstageNumber, Is.EqualTo(n + 1));
+                    Assert.That(intro.gameObject.activeSelf, Is.True);
+                    Assert.That(textType.GetProperty("text").GetValue(intro.Find("SubstageNumber").GetComponent(textType)), Is.EqualTo("1-" + (n + 1)));
                     Assert.That(textType.GetProperty("text").GetValue(preview.Find("SubstageNumber").GetComponent(textType)), Is.EqualTo("1-" + (n + 1)));
                     Assert.That(preview.Find("Marker" + n).GetComponent<Image>().sprite.name, Is.EqualTo("completed"));
                     for (int marker = 1; marker <= 6; marker++)

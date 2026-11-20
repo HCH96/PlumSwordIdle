@@ -1,0 +1,732 @@
+fileFormatVersion: 2
+guid: e93015c759551544495022bd40705334
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6196412890313040236
+    second: jongnam_boss_attack_0
+  - first:
+      213: -5455456392738065133
+    second: jongnam_boss_attack_1
+  - first:
+      213: -3956020010685704628
+    second: jongnam_boss_attack_2
+  - first:
+      213: -5769805910946568235
+    second: jongnam_boss_attack_3
+  - first:
+      213: -7573810389079407531
+    second: jongnam_boss_attack_4
+  - first:
+      213: -6500128720871530069
+    second: jongnam_boss_attack_5
+  - first:
+      213: -3888467843515912404
+    second: jongnam_boss_attack_6
+  - first:
+      213: -1685985191746880868
+    second: jongnam_boss_attack_7
+  - first:
+      213: 550074233587166343
+    second: jongnam_boss_attack_8
+  - first:
+      213: -4563852637282562336
+    second: jongnam_boss_attack_9
+  - first:
+      213: 9169119587811104850
+    second: jongnam_boss_attack_10
+  - first:
+      213: 7443446072627646076
+    second: jongnam_boss_attack_11
+  - first:
+      213: 9165058339833675507
+    second: jongnam_boss_attack_12
+  - first:
+      213: -8569588347276716190
+    second: jongnam_boss_attack_13
+  - first:
+      213: -3182816370760592337
+    second: jongnam_boss_attack_14
+  - first:
+      213: -7802259634687112414
+    second: jongnam_boss_attack_15
+  - first:
+      213: -4693359576757933146
+    second: jongnam_boss_attack_16
+  - first:
+      213: -7163846683708801977
+    second: jongnam_boss_attack_17
+  - first:
+      213: 526150748419991995
+    second: jongnam_boss_attack_18
+  - first:
+      213: -2997993985956038658
+    second: jongnam_boss_attack_19
+  - first:
+      213: -6238811870027456083
+    second: jongnam_boss_attack_20
+  - first:
+      213: -4484098698323474993
+    second: jongnam_boss_attack_21
+  - first:
+      213: 4409113096967141290
+    second: jongnam_boss_attack_22
+  - first:
+      213: 1589918158526561649
+    second: jongnam_boss_attack_23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: jongnam_boss_attack_0
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49e5d376e4be10aa0800000000000000
+      internalID: -6196412890313040236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_1
+      rect:
+        serializedVersion: 2
+        x: 115
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 315b637a0535a44b0800000000000000
+      internalID: -5455456392738065133
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_2
+      rect:
+        serializedVersion: 2
+        x: 215
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c46ddba92c46919c0800000000000000
+      internalID: -3956020010685704628
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_3
+      rect:
+        serializedVersion: 2
+        x: 323
+        y: 13
+        width: 56
+        height: 73
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d7a41ff7188defa0800000000000000
+      internalID: -5769805910946568235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_4
+      rect:
+        serializedVersion: 2
+        x: 435
+        y: 13
+        width: 43
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55442c2349b64e690800000000000000
+      internalID: -7573810389079407531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_5
+      rect:
+        serializedVersion: 2
+        x: 535
+        y: 14
+        width: 48
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba163261e57eac5a0800000000000000
+      internalID: -6500128720871530069
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_6
+      rect:
+        serializedVersion: 2
+        x: 636
+        y: 14
+        width: 47
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2f64ba2913690ac0800000000000000
+      internalID: -3888467843515912404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_7
+      rect:
+        serializedVersion: 2
+        x: 737
+        y: 14
+        width: 46
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9abb5d966d2a98e0800000000000000
+      internalID: -1685985191746880868
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_8
+      rect:
+        serializedVersion: 2
+        x: 837
+        y: 14
+        width: 46
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78cee0dd99142a700800000000000000
+      internalID: 550074233587166343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_9
+      rect:
+        serializedVersion: 2
+        x: 937
+        y: 14
+        width: 46
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ee0b8be430f9a0c0800000000000000
+      internalID: -4563852637282562336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_10
+      rect:
+        serializedVersion: 2
+        x: 1037
+        y: 14
+        width: 46
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2589e8e5fa14f3f70800000000000000
+      internalID: 9169119587811104850
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_11
+      rect:
+        serializedVersion: 2
+        x: 1137
+        y: 14
+        width: 46
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c7e4fb714ce6c4760800000000000000
+      internalID: 7443446072627646076
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_12
+      rect:
+        serializedVersion: 2
+        x: 1237
+        y: 14
+        width: 41
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fe74836004d03f70800000000000000
+      internalID: 9165058339833675507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_13
+      rect:
+        serializedVersion: 2
+        x: 1315
+        y: 13
+        width: 65
+        height: 75
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2679e314dc4b21980800000000000000
+      internalID: -8569588347276716190
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_14
+      rect:
+        serializedVersion: 2
+        x: 1421
+        y: 14
+        width: 55
+        height: 74
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f245483cf5d54d3d0800000000000000
+      internalID: -3182816370760592337
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_15
+      rect:
+        serializedVersion: 2
+        x: 1532
+        y: 14
+        width: 44
+        height: 73
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22b0b1d433ec8b390800000000000000
+      internalID: -7802259634687112414
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_16
+      rect:
+        serializedVersion: 2
+        x: 1632
+        y: 14
+        width: 44
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ab6a28d456dddeb0800000000000000
+      internalID: -4693359576757933146
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_17
+      rect:
+        serializedVersion: 2
+        x: 1732
+        y: 14
+        width: 44
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74c3d289567e49c90800000000000000
+      internalID: -7163846683708801977
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_18
+      rect:
+        serializedVersion: 2
+        x: 1832
+        y: 14
+        width: 44
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb921e961534d4700800000000000000
+      internalID: 526150748419991995
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_19
+      rect:
+        serializedVersion: 2
+        x: 1917
+        y: 14
+        width: 59
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef735549a5cf466d0800000000000000
+      internalID: -2997993985956038658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_20
+      rect:
+        serializedVersion: 2
+        x: 2012
+        y: 14
+        width: 66
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da1e58aa8a94b69a0800000000000000
+      internalID: -6238811870027456083
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_21
+      rect:
+        serializedVersion: 2
+        x: 2115
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc543acddf745c1c0800000000000000
+      internalID: -4484098698323474993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_22
+      rect:
+        serializedVersion: 2
+        x: 2215
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa7bf3f4001503d30800000000000000
+      internalID: 4409113096967141290
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_attack_23
+      rect:
+        serializedVersion: 2
+        x: 2315
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17d3be43426801610800000000000000
+      internalID: 1589918158526561649
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable: {}
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

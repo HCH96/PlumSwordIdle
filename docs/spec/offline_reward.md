@@ -254,17 +254,16 @@ namespace PlumSword.Game.OfflineReward
 - **조립**: 위 "`GameRoot.Awake` 순서"의 6·7번.
 - **보상 창** (`OfflineRewardView`): 캔버스의 **마지막 자식**으로 만든다 (`SetAsLastSibling`, 모든 UI 위).
   - 가림막: 캔버스를 꽉 채우는 검은색 알파 0.8 `Image` (임시). `raycastTarget = true`라 뒤의 강화 버튼이 눌리지 않는다 (창이 열린 동안 강화를 멈추는 방법).
-  - 창: 가운데, 앵커·피벗 (0.5, 0.5), 위치 (0, 0), 크기 360×170 (임시), 바탕 RGB (0.12, 0.12, 0.12) (임시).
-  - 제목 `OfflineRewardText.Title`: 위치 (0, 60), 크기 340×24, 글자 크기 18 (임시), 흰색.
-  - 지난 시간 `ElapsedLine(Reward.ElapsedTicks)`: 위치 (0, 34), 크기 340×18, 글자 크기 14 (임시), 흰색.
-  - 적용 시간 `AppliedLine(Reward.AppliedTicks)`: 위치 (0, 14), 크기 340×16, 글자 크기 12 (임시), 흰색. `Reward.IsCapped`가 `true`일 때만 보인다.
-  - 금화 `GoldLine(Reward.Gold)`: 위치 (0, −10), 크기 340×26, 글자 크기 20 (임시), 노랑 RGB (0.95, 0.80, 0.25) (임시).
-  - 실패 문구 `SaveFailedMessage`: 위치 (0, −34), 크기 340×16, 글자 크기 12 (임시), 빨강 RGB (1.0, 0.35, 0.35) (임시). `claim.State == SaveFailed`일 때만 보인다 (처음에는 숨김).
-  - 버튼: 위치 (0, −62), 크기 160×32 (임시). `Image` + `Button`, 색 RGB (0.20, 0.45, 0.25), `Button.transition = None`. 글자 `ButtonLabel(claim.State)`, 글자 크기 16 (임시), 흰색, `raycastTarget = false`.
-  - 글자는 모두 `TextMeshProUGUI`, TMP 기본 글꼴, 가운데 정렬. 위치는 창 가운데 기준이다.
+  - 창: 가운데 350×233.33. `Art/UI/OfflineReward/window` 그림을 사용하고, 없으면 어두운 단색 창을 쓴다.
+  - 제목 `오프라인 보상`, `지난 시간`, `보상 적용`, `(최대)`, `받기`, `재시도`와 저장 실패 안내는 한글 그림을 사용한다. 그림이 없으면 영문 대체 글자를 표시한다.
+  - 지난 시간과 적용 시간의 숫자를 각각 표시한다. 적용 시간은 항상 보이며, `IsCapped`일 때만 `(최대)` 그림을 덧붙인다.
+  - 금화: `reward_plaque` 그림 위에 기존 강화 UI의 `coin`과 `damage_numbers` 숫자 그림을 함께 가운데 정렬한다. 긴 금액은 아이콘과 숫자 전체를 축소한다. 숫자 그림이 없으면 숫자 글자로 대체한다.
+  - 저장 실패 안내는 실패 시에만 표시한다. 받기 버튼의 그림 글자는 저장 실패 시 재시도로 바뀐다.
+  - 버튼에는 설정 버튼과 같은 `SettingsControlEffect`를 붙여 호버·누름 때 그림과 글자의 크기를 바꾸고 입력 영역은 유지한다.
+  - 시간 숫자는 `TextMeshProUGUI`, 금화 숫자는 이미지로 표시하며 입력을 가로채지 않는다.
   - **누르면**: `TryClaim(DateTime.UtcNow.Ticks)`. `true`이면 `onClaimed`를 한 번 부르고 창 오브젝트를 없앤다. 없어지기 전에 또 눌러도 `onClaimed`는 한 번만이다. `false`이면 실패 문구를 보이고 버튼 글자를 바꾼다.
   - 창이 떠 있는 동안 뒤의 전투는 멈춰 있고 몬스터는 없다. 금화 표시는 받기 전 금화이고, 받으면 곧바로 늘어난다.
-- **연출**: 보상 창 자체의 별도 연출과 소리는 없다. 보상을 받으면 공통 금화 표시가 올라가는 연출을 한다 ([금화 사양](currency.md)).
+- **연출**: 받기 버튼은 호버·누름에 반응하며 별도 소리는 없다. 보상을 받으면 공통 금화 표시가 올라가는 연출을 한다 ([금화 사양](currency.md)).
 - **사람이 먼저 해 둘 것**: 금화 사양과 같다 (TMP Essentials). 없어도 예외로 게임이 멈추지 않아야 한다.
 - **사람이 확인하는 법**: 에디터에서 한 번 플레이해 `save.dat`을 만든다. 그다음 `savedAtUtcTicks`를 10분 전 값(지금 틱 − 6,000,000,000)으로 바꾸고 다시 플레이하면 창이 뜬다. 9시간 전으로 바꾸면 적용 시간 줄도 보인다. 백그라운드 복귀는 폰 빌드에서 확인한다.
 - 표시 글자와 언제 보일지(`IsCapped`, `State`, `ButtonLabel`)의 판단은 Core에 있고 에딧 모드 테스트로 판정한다. 배치 모드의 `GameRoot` 시작 상태는 플레이 모드 테스트로 확인한다. 보상 창과 백그라운드 복귀의 실제 동작은 사람이 확인한다.
@@ -289,7 +288,7 @@ namespace PlumSword.Game.OfflineReward
 - 회차별 보상 공식: 따로 두지 않는다. 전체 진행 번호를 그대로 `NormalGold`에 넣는다 (스테이지 기능의 공식).
 - 저장 실패 때 창의 `CONTINUE`(저장 없이 진행): 하지 않는다.
 - PC의 창 포커스 잃음(`OnApplicationFocus`) 처리: 하지 않는다. 백그라운드는 `OnApplicationPause`만 본다.
-- 한글 문구와 글꼴: 글꼴이 준비되면 `OfflineRewardText`의 글자만 바꾼다.
+- 한글 문구는 그림으로 표시한다. `OfflineRewardText`의 영문은 그림이 없을 때 대체 표시로 유지한다.
 
 ## 완료 조건 초안
 

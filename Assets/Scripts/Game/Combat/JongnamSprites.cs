@@ -9,12 +9,33 @@ namespace PlumSword.Game.Combat
         public readonly Sprite[] Idle;
         public readonly Sprite[] Walk;
         public readonly Sprite[] Attack;
+        public readonly Sprite[] Skill;
+        public readonly Sprite[] Down;
+        public const int DownFrameCount = 17;
+        public const float DownFrameSeconds = 0.075f;
+        public const float DownDuration = DownFrameCount * DownFrameSeconds;
 
-        private JongnamSprites(Sprite[] idle, Sprite[] walk, Sprite[] attack)
+        private JongnamSprites(Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] skill = null, Sprite[] down = null)
         {
             Idle = idle;
             Walk = walk;
             Attack = attack;
+            Skill = skill;
+            Down = down;
+        }
+
+        public static JongnamSprites TryLoadBoss()
+        {
+            const string prefix = "Art/Enemies/jongnam_boss_";
+            var idle = Slice(prefix + "idle", 96, 100, 24, 15);
+            var walk = Slice(prefix + "walk", 96, 104, 24, 18);
+            var attack = Slice(prefix + "attack", 100, 100, 24, 15);
+            var skill = Slice(prefix + "skill", 100, 100, 24, 15);
+            var down = Slice(prefix + "down", 100, 100, DownFrameCount, 15);
+            if (idle != null && walk != null && attack != null && skill != null)
+                return new JongnamSprites(idle, walk, attack, skill, down);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(skill); DestroyFrames(down);
+            return null;
         }
 
         public static JongnamSprites TryLoad(bool female)
@@ -23,8 +44,9 @@ namespace PlumSword.Game.Combat
             var idle = Slice(prefix + "idle", female ? 76 : 68, 76, female ? 9 : 16, female ? 12 : 11);
             var walk = Slice(prefix + "walk", 72, 84, 24, female ? 16 : 15);
             var attack = Slice(prefix + "attack", female ? 96 : 92, female ? 92 : 96, 24, female ? 20 : 21);
-            if (idle != null && walk != null && attack != null) return new JongnamSprites(idle, walk, attack);
-            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack);
+            var down = Slice(prefix + "down", 76, 76, DownFrameCount, female ? 12 : 11);
+            if (idle != null && walk != null && attack != null) return new JongnamSprites(idle, walk, attack, down: down);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(down);
             return null;
         }
 
@@ -50,7 +72,7 @@ namespace PlumSword.Game.Combat
 
         public void Dispose()
         {
-            DestroyFrames(Idle); DestroyFrames(Walk); DestroyFrames(Attack);
+            DestroyFrames(Idle); DestroyFrames(Walk); DestroyFrames(Attack); DestroyFrames(Skill); DestroyFrames(Down);
         }
     }
 }

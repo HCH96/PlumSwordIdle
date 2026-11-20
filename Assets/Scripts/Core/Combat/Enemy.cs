@@ -12,7 +12,8 @@ namespace PlumSword.Core.Combat
             double position,
             long maxHealth,
             long attack,
-            double attackInterval)
+            double attackInterval,
+            bool isJongnamBoss)
         {
             Kind = kind;
             Index = index;
@@ -23,9 +24,14 @@ namespace PlumSword.Core.Combat
             AttackInterval = attackInterval;
             AttackCooldown = 0.0;
             IsDead = false;
+            IsJongnamBoss = isJongnamBoss;
         }
 
         public EnemyKind Kind { get; }
+
+        public bool IsJongnamBoss { get; }
+
+        public int AttackCount { get; internal set; }
 
         /// <summary>Reset 뒤 0 부터, AddEnemy 마다 1 씩 는다.</summary>
         public int Index { get; }

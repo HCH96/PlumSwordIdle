@@ -217,7 +217,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void Step_Boss_DoesNotMove()
         {
-            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 5.0);
+            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 2, 5.0);
 
             Steps(100);
             Assert.AreEqual(4.0, _battle.DisciplePosition, Tolerance);
@@ -231,8 +231,8 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void Step_TwoBosses_DiscipleStopsBeforeNearest()
         {
-            _battle.AddEnemy(EnemyKind.Boss, 1, 3.0);
-            _battle.AddEnemy(EnemyKind.Boss, 1, 2.0);
+            _battle.AddEnemy(EnemyKind.Boss, 2, 3.0);
+            _battle.AddEnemy(EnemyKind.Boss, 2, 2.0);
 
             Steps(100);
             Assert.AreEqual(1.0, _battle.DisciplePosition, Tolerance);

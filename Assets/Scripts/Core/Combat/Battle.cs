@@ -34,6 +34,7 @@ namespace PlumSword.Core.Combat
         public const double SkillCooldownSeconds = 5.0;
         public const int SkillBasePercent = 200;
         public const int SkillPercentPerInnerLevel = 10;
+        public const double BossProjectileSpeed = 6.0;
 
         /// <summary>
         /// 앞 동작 비율 (임시). 제자가 전진해 범위 안에 적이 없다가 생긴 칸(달려와 멈춘 칸)에는 바로 공격하지 않고,
@@ -43,6 +44,7 @@ namespace PlumSword.Core.Combat
 
         private readonly StatUpgrades _upgrades;
         private readonly List<Enemy> _enemies = new List<Enemy>();
+        private readonly List<BossProjectile> _bossProjectiles = new List<BossProjectile>();
 
         private double _accumulatedSeconds;
         private int _nextIndex;
@@ -130,6 +132,7 @@ namespace PlumSword.Core.Combat
 
         /// <summary>살아 있는 적. 추가된 순서.</summary>
         public IReadOnlyList<Enemy> Enemies => _enemies;
+        public IReadOnlyList<BossProjectile> BossProjectiles => _bossProjectiles;
 
         private bool IsHalted => Paused || IsDiscipleDefeated;
 
@@ -191,6 +194,8 @@ namespace PlumSword.Core.Combat
             MoveEnemies(snapshot);
             BeginWindUp(snapshot, DisciplePosition > positionBeforeMove);
 
+            if (!AdvanceBossProjectiles(generation)) return;
+
             if (!AttackByDisciple(snapshot, generation))
             {
                 return;
@@ -222,7 +227,8 @@ namespace PlumSword.Core.Combat
             long attack = EnemyStats.Attack(kind, stage);
             double attackInterval = EnemyStats.AttackInterval(kind);
 
-            var enemy = new Enemy(kind, _nextIndex, position, maxHealth, attack, attackInterval);
+            bool isJongnamBoss = kind == EnemyKind.Boss && (stage - 1) % 5 == 0;
+            var enemy = new Enemy(kind, _nextIndex, position, maxHealth, attack, attackInterval, isJongnamBoss);
             _nextIndex++;
             _enemies.Add(enemy);
 
@@ -242,6 +248,7 @@ namespace PlumSword.Core.Combat
             SkillCooldown = 0.0;
             IsDiscipleDefeated = false;
             _enemies.Clear();
+            _bossProjectiles.Clear();
             _nextIndex = 0;
             _accumulatedSeconds = 0.0;
             _lastMaxHealth = _upgrades.MaxHealth;
@@ -297,7 +304,7 @@ namespace PlumSword.Core.Combat
             DisciplePosition += Math.Min(maxMove, nearest - DiscipleAttackRange);
         }
 
-        // 2-2. 적 이동: 일반 몬스터만, 추가된 순서대로, 제자가 움직인 뒤의 좌표로 계산한다. 보스는 움직이지 않는다.
+        // 2-2. 일반 상대와 종남 장로는 제자를 향해 이동한다. 다른 보스는 기존 위치를 유지한다.
         private void MoveEnemies(List<Enemy> enemies)
         {
             double normalRange = EnemyStats.AttackRange(EnemyKind.Normal);
@@ -305,17 +312,33 @@ namespace PlumSword.Core.Combat
 
             foreach (Enemy enemy in enemies)
             {
-                if (enemy.Kind != EnemyKind.Normal)
+                if (enemy.Kind != EnemyKind.Normal && !enemy.IsJongnamBoss)
                 {
                     continue;
                 }
 
                 double distance = enemy.Position - DisciplePosition;
-                if (distance <= EnemyStats.NormalReactRange + Epsilon && distance > normalRange + Epsilon)
+                double stopRange = enemy.IsJongnamBoss ? EnemyStats.AttackRange(EnemyKind.Boss) : normalRange;
+                if (distance <= EnemyStats.NormalReactRange + Epsilon && distance > stopRange + Epsilon)
                 {
-                    enemy.Position -= Math.Min(maxMove, distance - normalRange);
+                    enemy.Position -= Math.Min(maxMove, distance - stopRange);
                 }
             }
+        }
+
+        private bool AdvanceBossProjectiles(int generation)
+        {
+            for (int i = _bossProjectiles.Count - 1; i >= 0; i--)
+            {
+                var projectile = _bossProjectiles[i];
+                projectile.Position -= BossProjectileSpeed * StepSeconds;
+                if (projectile.Position > DisciplePosition + Epsilon) continue;
+                _bossProjectiles.RemoveAt(i);
+                DiscipleHealth = ReduceHealth(DiscipleHealth, projectile.Damage);
+                DiscipleDamaged?.Invoke();
+                if (generation != _resetGeneration) return false;
+            }
+            return true;
         }
 
         // 2-3. 앞 동작: 이번 칸에 제자가 전진했고, 직전 칸에는 범위 안에 적이 없다가 이번 칸에 생겼으면(달려와 멈춤)
@@ -418,11 +441,16 @@ namespace PlumSword.Core.Combat
                     continue;
                 }
 
-                DiscipleHealth = ReduceHealth(DiscipleHealth, enemy.Attack);
-                DiscipleDamaged?.Invoke();
-                if (generation != _resetGeneration)
+                enemy.AttackCount++;
+                if (enemy.IsJongnamBoss && enemy.AttackCount % 3 == 0)
                 {
-                    return false;
+                    _bossProjectiles.Add(new BossProjectile(enemy.Position, enemy.Attack));
+                }
+                else
+                {
+                    DiscipleHealth = ReduceHealth(DiscipleHealth, enemy.Attack);
+                    DiscipleDamaged?.Invoke();
+                    if (generation != _resetGeneration) return false;
                 }
 
                 enemy.AttackCooldown = enemy.AttackInterval;

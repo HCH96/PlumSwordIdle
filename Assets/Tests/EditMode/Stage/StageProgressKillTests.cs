@@ -44,7 +44,8 @@ namespace PlumSword.Core.Tests.Stage
         {
             for (int step = 0; step < 30000 && !_stage.IsBossActive; step++)
             {
-                if (_stage.IsSubstageIntroShowing) _stage.Tick(StageProgress.SubstageIntroSeconds);
+                if (_stage.Phase == StagePhase.FadingOut || _stage.Phase == StagePhase.FadingIn) _stage.Tick(StageProgress.FadeSeconds * 2);
+                else if (_stage.IsSubstageIntroShowing) _stage.Tick(StageProgress.SubstageIntroSeconds);
                 else _battle.Step();
             }
             Assert.That(_stage.IsBossActive, Is.True);
@@ -109,7 +110,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_stage.IsBossActive, Is.True);
             Assert.That(_stage.Boss, Is.Not.Null);
             Assert.That(_stage.Boss.Kind, Is.EqualTo(EnemyKind.Boss));
-            Assert.That(_stage.Boss.Position, Is.EqualTo(_battle.DisciplePosition + 18.0).Within(Tolerance));
+            Assert.That(_stage.Boss.Position, Is.EqualTo(_battle.DisciplePosition + 24.0).Within(Tolerance));
             Assert.That(_stage.Boss.MaxHealth, Is.EqualTo(100));
             Assert.That(_stage.BarRatio, Is.EqualTo(1.0).Within(Tolerance));
             Assert.That(_battle.Enemies.Count, Is.EqualTo(1));

@@ -39,6 +39,7 @@ namespace PlumSword.Core.Stage
 
         /// <summary>가려진 순간의 교체에서 한 소개 판단의 결과. 페이드인이 끝날 때 Intro 로 갈지 정한다.</summary>
         private bool _showIntroAfterFade;
+        private bool _substageTransition;
 
         /// <summary>
         /// wallet: 처치 금화를 줄 지갑. upgrades: 페이드 동안 잠글 강화. battle: 적을 놓고 알림을 받을 전투.
@@ -182,12 +183,23 @@ namespace PlumSword.Core.Stage
             // 1. 가려진 순간의 교체. 남은 시간은 페이드인으로 넘긴다.
             if (Phase == StagePhase.FadingOut && _fadeElapsed >= FadeSeconds - FadeTolerance)
             {
-                StageNumber = _nextStageNumber;
-                PlaceStage();
-                _showIntroAfterFade = ShouldShowIntro();
+                bool newStage = !_substageTransition;
+                if (_substageTransition)
+                {
+                    SubstageNumber++;
+                    PlaceSubstage();
+                    _showIntroAfterFade = false;
+                    _substageTransition = false;
+                }
+                else
+                {
+                    StageNumber = _nextStageNumber;
+                    PlaceStage();
+                    _showIntroAfterFade = ShouldShowIntro();
+                }
                 _fadeElapsed = Math.Max(0.0, _fadeElapsed - FadeSeconds);
                 Phase = StagePhase.FadingIn;
-                StageStarted?.Invoke(StageNumber);
+                if (newStage) StageStarted?.Invoke(StageNumber);
                 Changed?.Invoke();
             }
 
@@ -263,7 +275,7 @@ namespace PlumSword.Core.Stage
                 Boss = _battle.AddEnemy(EnemyKind.Boss, StageNumber, _battle.DisciplePosition + StageLayout.BossDistance);
                 return;
             }
-            var positions = StageLayout.SubstagePositions(_random, _battle.DisciplePosition + StageLayout.FirstGroupPosition);
+            var positions = StageLayout.SubstagePositions(_random, _battle.DisciplePosition + StageLayout.EncounterDistance);
             foreach (double position in positions)
                 _substageEnemies.Add(_battle.AddEnemy(EnemyKind.Normal, StageNumber, position));
         }
@@ -314,6 +326,7 @@ namespace PlumSword.Core.Stage
         /// </summary>
         private void BeginTransition(int nextStageNumber)
         {
+            _substageTransition = false;
             _nextStageNumber = nextStageNumber;
             Phase = StagePhase.FadingOut;
             _fadeElapsed = 0.0;
@@ -328,9 +341,11 @@ namespace PlumSword.Core.Stage
             DefeatedNormalCount++;
             if (_substageEnemies.Remove(enemy) && _substageEnemies.Count == 0 && !_battle.IsDiscipleDefeated)
             {
-                SubstageNumber++;
-                PlaceSubstage();
-                BeginSubstageIntro();
+                _substageTransition = true;
+                Phase = StagePhase.FadingOut;
+                _fadeElapsed = 0.0;
+                _battle.SetPaused(true);
+                _upgrades.SetLocked(true);
             }
 
             Changed?.Invoke();

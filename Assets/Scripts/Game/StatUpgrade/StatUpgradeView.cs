@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace PlumSword.Game.StatUpgrade
 {
     /// <summary>
-    /// 강화 버튼 세 개(ATK, HP, INNER)를 보여 준다. 누르면 StatUpgrades.TryUpgrade 를 부른다.
+    /// 강화 버튼 세 개(무력, 체력, 내공)를 보여 준다. 누르면 StatUpgrades.TryUpgrade 를 부른다.
     /// 글자는 StatUpgradeText.ButtonLabel, 누를 수 있는지는 StatUpgrades.CanUpgrade 그대로 쓴다.
     /// 처음 한 번, 그 뒤로 Wallet.BalanceChanged, Upgraded, LockedChanged 가 올 때마다 다시 그린다.
     /// 사양: docs/spec/stat_upgrade.md "화면".
@@ -23,7 +23,7 @@ namespace PlumSword.Game.StatUpgrade
         private static readonly Color DisabledButtonColor = new Color(0.25f, 0.25f, 0.25f);
         private static readonly Color DisabledLabelColor = new Color(0.6f, 0.6f, 0.6f);
 
-        // 왼쪽부터 ATK, HP, INNER.
+        // 왼쪽부터 무력, 체력, 내공.
         private static readonly StatType[] Stats = { StatType.Attack, StatType.Health, StatType.InnerPower };
         private static readonly Vector2[] ButtonPositions =
         {
@@ -48,6 +48,7 @@ namespace PlumSword.Game.StatUpgrade
         private Wallet _wallet;
         private StatButton[] _buttons;
         private bool _warned;
+        private static TMP_FontAsset _nameFont;
 
         /// <summary>
         /// canvas 아래에 강화 버튼 세 개를 만들고 지금 상태로 바로 표시한다.
@@ -117,13 +118,39 @@ namespace PlumSword.Game.StatUpgrade
                 statButton.Icon.gameObject.SetActive(icon != null);
                 statButton.Coin = CreateArt(visual, "Coin", coin, new Vector2(145, 15), new Vector2(17, 17));
                 statButton.NameLabel = CreateArtLabel(visual, "Name", new Vector2(48, 23), new Vector2(82, 18), 15);
+                ApplyNameFont(statButton.NameLabel);
                 statButton.LevelLabel = CreateArtLabel(visual, "Level", new Vector2(48, 8), new Vector2(82, 15), 11);
                 statButton.CostLabel = CreateArtLabel(visual, "Cost", new Vector2(164, 11), new Vector2(31, 25), 12);
                 statButton.Effect = buttonObject.AddComponent<StatUpgradeButtonEffect>();
                 statButton.Effect.Initialize(button, visual, visualImage, statButton.Icon, statButton.LevelLabel);
             }
-            else statButton.Label = CreateLabel(rect);
+            else
+            {
+                statButton.Label = CreateLabel(rect);
+                ApplyNameFont(statButton.Label);
+            }
             return statButton;
+        }
+
+        private void ApplyNameFont(TextMeshProUGUI label)
+        {
+            if (label == null) return;
+            if (_nameFont == null)
+            {
+                var font = Resources.Load<Font>("Fonts/Galmuri11");
+                if (font == null)
+                {
+                    WarnOnce(new InvalidOperationException("Galmuri11 폰트를 찾을 수 없습니다."));
+                    return;
+                }
+                _nameFont = TMP_FontAsset.CreateFontAsset(font);
+                if (_nameFont == null || !_nameFont.TryAddCharacters("무력체내공"))
+                {
+                    WarnOnce(new InvalidOperationException("Galmuri11 한글 글리프를 만들 수 없습니다."));
+                    return;
+                }
+            }
+            label.font = _nameFont;
         }
 
         private static Image CreateArt(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
@@ -262,8 +289,7 @@ namespace PlumSword.Game.StatUpgrade
             if (_warned) return;
             _warned = true;
             Debug.LogWarning(
-                "StatUpgradeView: 강화 버튼 글자를 표시하지 못했습니다. TMP Essentials 가 필요합니다 " +
-                "(Window > TextMeshPro > Import TMP Essential Resources). " + e.Message);
+                "StatUpgradeView: 강화 버튼 글꼴 또는 글자를 표시하지 못했습니다. " + e.Message);
         }
 
         private void Unsubscribe()

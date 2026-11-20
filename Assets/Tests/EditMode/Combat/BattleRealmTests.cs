@@ -22,6 +22,14 @@ namespace PlumSword.Core.Tests.Combat
             _battle = new Battle(_upgrades, _realm);
         }
 
+        private static void Breakthrough(RealmProgress realm)
+        {
+            var before = realm.Current;
+            int needed = realm.KillsRequired - realm.Kills;
+            for (int i = 0; i < needed; i++) realm.RecordKill();
+            Assert.AreEqual((int)before + 1, (int)realm.Current);
+        }
+
         private void TakeBossHit()
         {
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
@@ -44,7 +52,7 @@ namespace PlumSword.Core.Tests.Combat
         public void Breakthrough_AfterDamage_IncreasesCurrentHealthByMaxDifference()
         {
             TakeBossHit();
-            Assert.IsTrue(_realm.TryBreakthrough());
+            Breakthrough(_realm);
             Assert.AreEqual(110L, _battle.DiscipleMaxHealth);
             Assert.AreEqual(100L, _battle.DiscipleHealth);
         }
@@ -53,7 +61,7 @@ namespace PlumSword.Core.Tests.Combat
         public void HealthUpgrade_AfterBreakthrough_UsesUpdatedMaxHealth()
         {
             TakeBossHit();
-            Assert.IsTrue(_realm.TryBreakthrough());
+            Breakthrough(_realm);
             Assert.IsTrue(_upgrades.TryUpgrade(StatType.Health));
             Assert.AreEqual(132L, _battle.DiscipleMaxHealth);
             Assert.AreEqual(122L, _battle.DiscipleHealth);
@@ -68,7 +76,7 @@ namespace PlumSword.Core.Tests.Combat
             var battle = new Battle(upgrades, realm);
             for (int i = 0; i < 4; i++)
             {
-                Assert.IsTrue(realm.TryBreakthrough());
+                Breakthrough(realm);
             }
             Assert.AreEqual(140L, battle.DiscipleMaxHealth);
             Assert.AreEqual(140L, battle.DiscipleHealth);
@@ -78,7 +86,7 @@ namespace PlumSword.Core.Tests.Combat
         public void Breakthrough_WhileDefeated_LeavesCurrentHealthAtZero()
         {
             DefeatDisciple();
-            Assert.IsTrue(_realm.TryBreakthrough());
+            Breakthrough(_realm);
             Assert.AreEqual(0L, _battle.DiscipleHealth);
             Assert.AreEqual(11L, _battle.DiscipleMaxHealth);
         }
@@ -87,7 +95,7 @@ namespace PlumSword.Core.Tests.Combat
         public void Reset_AfterDefeatAndBreakthrough_RestoresNewMaximum()
         {
             DefeatDisciple();
-            Assert.IsTrue(_realm.TryBreakthrough());
+            Breakthrough(_realm);
             _battle.Reset();
             Assert.AreEqual(11L, _battle.DiscipleHealth);
         }
@@ -97,7 +105,7 @@ namespace PlumSword.Core.Tests.Combat
         {
             _battle = new Battle(_upgrades);
             TakeBossHit();
-            Assert.IsTrue(_realm.TryBreakthrough());
+            Breakthrough(_realm);
             Assert.AreEqual(90L, _battle.DiscipleHealth);
             Assert.AreEqual(110L, _battle.DiscipleMaxHealth);
         }
@@ -113,7 +121,7 @@ namespace PlumSword.Core.Tests.Combat
             _battle.DiscipleDefeated += () => notifications++;
             _battle.ResetCompleted += () => notifications++;
             _battle.SetPaused(true);
-            Assert.IsTrue(_realm.TryBreakthrough());
+            Breakthrough(_realm);
             Assert.AreEqual(110L, _battle.DiscipleHealth);
             Assert.AreEqual(0, notifications);
         }

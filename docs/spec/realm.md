@@ -4,79 +4,23 @@
 - 작성일: 2026-11-18
 - 고친 날: 2026-11-20
 
-## 목표
+## 목표와 동작
 
-금화를 모아 돌파 버튼을 눌러 제자의 경지를 `삼류 → 이류 → 일류 → 절정 → 초절정` 다섯 단계로 올리는 기능이다. 이 기능은 경지 단계, 돌파 비용과 구매(금화 소비), 경지별 공격력·최대 체력 보너스 비율(정수 %), 돌파 버튼, 전투 화면 왼쪽 위의 현재 경지 표시, 제자 주변의 경지별 오오라(기본 빛·기운·꽃잎)와 돌파 연출(1.8초. 경지가 오를수록 층이 하나씩 늘어난다)까지 맡는다.
+경지는 삼류 → 이류 → 일류 → 절정 → 초절정이다. 일반 몬스터와 보스 처치를 각각 한 마리로 세고, 각 경지에서 30·50·70·100마리를 처치하면 금화 소비나 버튼 조작 없이 다음 경지로 자동 돌파한다. 돌파할 때마다 처치 수는 0으로 돌아간다. 150은 추후 단계용으로 남겨 두며 현재 사용하지 않는다. 초절정에서는 처치를 더 세지 않는다. 스테이지 이동·실패와 재시작 후에도 진행도는 유지한다.
 
-보너스를 실제 공격력·최대 체력에 적용하는 계산(내림 포함)은 능력치 강화 기능이, 돌파 때 현재 체력을 늘리는 것은 전투 기능이 한다. 이 기능은 그쪽이 읽을 단계·비율·알림만 제공한다. 저장 데이터 형식에 경지를 넣는 것은 저장 기능이 한다.
-
-출처: `docs/design/milestone_3.md` "목표와 현재 방향", "경지 돌파", "저장과 반복 진행", "3단계 화면", "3단계 마일스톤 달성 기준".
-
-## 동작
-
-- 경지는 다섯 단계다: `RealmLevel.ThirdRate`(삼류) → `SecondRate`(이류) → `FirstRate`(일류) → `Peak`(절정) → `Transcendent`(초절정). 처음에는 삼류다. 경지는 내려가지 않는다.
-- 돌파 조건은 금화뿐이다. 스테이지 번호, 강화 단계, 전투 상태(패배, 구간 소개 중 등)는 보지 않는다.
-- **돌파** `TryBreakthrough()`: 아래 순서로 처리한다.
-  1. 잠겨 있으면(`Locked`) `false`.
-  2. 초절정(`IsMax`)이면 `false`.
-  3. `wallet.TrySpend(NextCost)`가 `false`면(금화 부족) `false`.
-  4. `Current`를 한 단계 올린다.
-  5. `BrokeThrough`를 새 경지를 담아 한 번 보내고 `true`를 돌려준다.
-- `false`를 돌려준 경우에는 금화도 경지도 바뀌지 않고 알림도 없다.
-- 알림 순서: 돌파 한 번에 `Wallet.BalanceChanged`(3번에서) → 경지 증가 → `BrokeThrough` 순서다. `BalanceChanged`를 받는 시점에는 `Current`가 아직 이전 경지다. `BrokeThrough`를 받는 쪽에서 `Current`, `BonusPercent`, `NextCost`, `IsMax`를 읽으면 새 값이다.
-- **확인** `CanBreakthrough()`: 잠겨 있지 않고, 초절정이 아니고, `wallet.CanSpend(NextCost)`가 `true`일 때만 `true`. 아무것도 바꾸지 않는다. 돌파 버튼을 누를 수 있는지는 이 값 그대로다.
-- **보너스 비율** `BonusPercent`: 지금 경지의 누적 보너스(정수 %). `RealmRules.BonusPercent(Current)`와 같다. 부를 때마다 지금 경지로 계산한다. 공격력과 최대 체력에 같은 비율이 쓰인다.
-- **잠금** `SetLocked(locked)`: 잠긴 동안에는 `TryBreakthrough`와 `CanBreakthrough`가 모두 `false`다. 값이 실제로 바뀐 때에만 `LockedChanged`를 새 값을 담아 한 번 보낸다. 처음에는 잠겨 있지 않다. 잠금은 `GameRoot`가 `StatUpgrades.LockedChanged`를 구독해 같은 값으로 `SetLocked`를 불러 맞춘다. 그래서 스테이지 전환 페이드 동안 강화와 함께 잠긴다. 스테이지 기능은 이 기능을 모른다.
-- 스테이지 성공·실패, 천마 처치 뒤 1스테이지로 돌아가는 것, 게임 재시작은 경지에 아무 영향을 주지 않는다.
-- 같은 시점에 여러 번 부르면 부른 순서대로 한 번씩, 그때의 금화와 경지로 따로 판정한다.
-- 화면은 버튼을 누르면 `TryBreakthrough`를 부르고, `Wallet.BalanceChanged`, `BrokeThrough`, `LockedChanged`를 받을 때마다 버튼과 경지 표시를 다시 그린다. 오오라는 `BrokeThrough`를 받으면 그때부터 1.8초 돌파 연출(`BreakthroughEffect`)을 하고, 0.5초(터지는 때)에 새 경지의 상시 오오라로 바꾼다. 연출은 그림만 덮는다: 전투·페이드·잠금·버튼은 평소대로 움직이고 게임을 멈추지 않는다(히트스톱 없음). 연출 중에 또 돌파하면 지금 연출을 끊고 새 경지로 0초부터 다시 한다.
-
-### 경계 상황
-
-| 경우 | 결과 | 값의 변화 |
-| --- | --- | --- |
-| 금화가 비용보다 적을 때 `TryBreakthrough` | `false` | 금화·경지 그대로, 알림 없음 |
-| 금화가 비용과 같을 때 `TryBreakthrough` | `true` | 금화 0, 경지 +1, `BalanceChanged` 1번, `BrokeThrough` 1번 |
-| 초절정에서 `TryBreakthrough` | `false` (금화가 충분해도) | 금화·경지 그대로, 알림 없음 |
-| 초절정에서 `NextCost` | 0 (예외 없음) | 변화 없음. 화면은 `MAX`를 보여 준다 |
-| 초절정에서 `CanBreakthrough` | `false` | 변화 없음 |
-| 잠긴 동안 `TryBreakthrough` | `false` | 금화·경지 그대로, 알림 없음 |
-| 잠긴 동안 `CanBreakthrough` | `false` | 변화 없음 |
-| `SetLocked`를 지금과 같은 값으로 부름 | 아무 일도 없다 | `LockedChanged` 없음 |
-| `TryBreakthrough`를 연달아 부름 | 부를 때마다 그때의 금화·경지로 따로 판정 | 예: 금화 1000에서 세 번 → `true`(200), `true`(500), `false`(1000 필요), 금화 300, 경지 일류 |
-| 생성자의 `wallet`이 `null` | `ArgumentNullException` | |
-| 생성자의 `startLevel`이 음수 | 0(삼류)으로 만든다 (예외 없음) | 알림 없음, 금화 그대로 |
-| 생성자의 `startLevel`이 4보다 큼 | 4(초절정)로 만든다 (예외 없음) | 알림 없음, 금화 그대로 |
-| 정의되지 않은 `RealmLevel` 값 (예: `(RealmLevel)99`) | `ArgumentOutOfRangeException` (`RealmRules.BonusPercent`, `RealmRules.BreakthroughCost`, `RealmText.Name`, `RealmText.Label`, `RealmText.AssetId`, `RealmText.ButtonLabel`, `RealmAura.HasAura`, `RealmAura.Color`, `RealmAura.PulseAlpha`) | 변화 없음 |
-| `RealmAura.PulseAlpha`의 `seconds`가 `NaN`이거나 무한대 | `ArgumentOutOfRangeException` | |
-| `RealmAura.BurstScale`의 `secondsSinceBreakthrough`가 `NaN` | `ArgumentOutOfRangeException` | |
-| `RealmAura.BurstScale`에 음수 | 1.5 (예외 없음) | |
-| `RealmAura.BurstScale`에 양의 무한대 | 1.0 (예외 없음) | |
-| `RealmText.Cost(음수, false)` | 그대로 표기 (예외 없음) | 예: `G -5` |
-| `BreakthroughEffect`의 시간 함수와 `RealmAura.Wisp`·`FloatingPetal`에 `NaN` | `ArgumentOutOfRangeException` | |
-| `BreakthroughEffect` 시간 함수에 음수 / 음의 무한대 / 양의 무한대 | 음수·음의 무한대는 0초로, 양의 무한대는 끝난 뒤(1.8초 이상)로 계산한다 (예외 없음) | |
-| `RealmAura.Wisp`·`FloatingPetal`의 `seconds`가 무한대 | `ArgumentOutOfRangeException` | `PulseAlpha`와 같다 |
-| `BreakthroughEffect.DimMask`에 `NaN` / 음수 | `ArgumentOutOfRangeException` / 0 | |
-| `BurstPetal`·`Wisp`·`FloatingPetal`의 `index`가 0 미만이거나 개수 이상 | `ArgumentOutOfRangeException` | 개수가 0인 경지(예: 이류의 상시 꽃잎, 삼류 전부)는 어떤 `index`든 예외 |
-| `BreakthroughEffect.Style(ThirdRate)` | 네 `Has…`가 `false`, 수치는 모두 0 (예외 없음) | 돌파로 삼류가 되는 일은 없다 |
-| 경지를 받는 새 함수에 정의되지 않은 `RealmLevel` | `ArgumentOutOfRangeException` (`Style`, `DimAlpha`, `LightIntensity`, `BloomIntensity`, `FlashAlpha`, `ShakePixels`, `RingRadius`, `ShockwaveRadius`, `ShockwaveAlpha`, `BurstPetal`, `RealmAura.BurstColor`, `RealmAura.Wisp`, `RealmAura.FloatingPetal`) | 변화 없음 |
+`GameRoot`가 `Battle.EnemyDefeated`마다 `RecordKill()`을 한 번 부른다. 동시 처치도 각 적마다 센다. 돌파 시 `Current`를 바꾸고 `BrokeThrough`를 보낸 다음 `ProgressChanged`를 보낸다. 일반 처치에서는 `ProgressChanged`만 보낸다. 기존 돌파 연출과 최대 체력 증가 알림은 그대로 사용한다. 금화와 강화 잠금은 돌파 조건이 아니다.
 
 ## 수치
 
+| 항목 | 값 |
+| --- | --- |
+| 경지별 다음 돌파 처치 수 | 삼류 30, 이류 50, 일류 70, 절정 100, 초절정 0 |
+| 누적 보너스 | 삼류 0%, 이류 10%, 일류 20%, 절정 30%, 초절정 40% |
+| 실제 화면 글자 | 삼류, 이류, 일류, 절정, 초절정 그림 글자 |
+| 에셋 ID | `third_rate`, `second_rate`, `first_rate`, `peak`, `transcendent` |
+
 | 항목 | 값 | 비고 |
 | --- | --- | --- |
-| 경지의 타입 | `enum RealmLevel` (값 0~4) | 처음 값 `ThirdRate`(0). 단계 수 `RealmRules.LevelCount = 5` |
-| 비용의 타입 | `long` | 정수. 반올림 없음 |
-| 보너스 비율의 타입 | `int` (%) | 정수. 배율 `double`은 쓰지 않는다 |
-| 돌파 비용 `RealmRules.BreakthroughCost(from)` | 삼류 → 이류 200, 이류 → 일류 500, 일류 → 절정 1,000, 절정 → 초절정 2,000, 초절정 0 (모두 임시) | `from`은 돌파하기 전 경지. 삼류에서 초절정까지 합계 3,700 |
-| 누적 보너스 `RealmRules.BonusPercent(realm)` | 삼류 0, 이류 10, 일류 20, 절정 30, 초절정 40 (모두 임시) | 공격력·최대 체력 공통 |
-| 보너스 적용 공식 (참고, 계산은 능력치 강화 기능) | `(기본값 + 일반 강화 증가량) × (100 + BonusPercent) / 100`을 `long` 정수 나눗셈으로 (= 내림) | 예: 이류에서 체력 120 → 132, 공격력 12 → 13. 100 → 110 |
-| 이름 표기 `RealmText.Name` | `THIRD RATE`, `SECOND RATE`, `FIRST RATE`, `PEAK`, `TRANSCENDENT` | 한글 글꼴이 없어 영문 |
-| 경지 표시 `RealmText.Label` | `"REALM: " + Name` | 예: `REALM: SECOND RATE` |
-| 버튼 첫 줄 `RealmText.ButtonTitle` | `BREAKTHROUGH` | 상수 |
-| 비용 표기 `RealmText.Cost` | 최대면 `MAX`, 아니면 `"G " + GoldText.FormatNumber(cost)` | 500 → `G 500`, 1000 → `G 1,000` |
-| 버튼 글자 `RealmText.ButtonLabel` | `ButtonTitle + "\n" + Name(current) + "\n" + Cost(cost, isMax)` | `BREAKTHROUGH\nSECOND RATE\nG 500` |
-| 에셋 ID `RealmText.AssetId` | `third_rate`, `second_rate`, `first_rate`, `peak`, `transcendent` | 리소스 경로에 쓴다 ("화면") |
 | 오오라가 있는 경지 `RealmAura.HasAura` | 이류·일류·절정·초절정. 삼류는 없음 | |
 | 오오라 색 `RealmAura.Color` (R, G, B, A) | 이류 (1.00, 0.72, 0.82, 0.35), 일류 (1.00, 0.55, 0.75, 0.40), 절정 (0.95, 0.35, 0.65, 0.45), 초절정 (1.00, 0.40, 0.70, 0.50), 삼류 (0, 0, 0, 0) (모두 임시) | `double` 0~1. 매화 분홍 계열, 경지가 오를수록 진하다. 기본 빛·기운·꽃잎·빛(Light2D)의 색 |
 | 돌파 부품 색 `RealmAura.BurstColor` (R, G, B, A) | 이류·일류·절정은 `Color`의 RGB에 A 1.0, 초절정은 흰 중심광 (1.00, 0.95, 0.97, 1.00), 삼류 (0, 0, 0, 0) (임시) | 고리·기둥·충격파의 색 |
@@ -151,39 +95,21 @@ namespace PlumSword.Core.Realm
         // 0, 10, 20, 30, 40 (%). 정의되지 않은 값: ArgumentOutOfRangeException.
         public static int BonusPercent(RealmLevel realm);
 
-        // from 에서 다음 경지로 가는 비용. 200, 500, 1000, 2000, Transcendent 는 0.
-        // 정의되지 않은 값: ArgumentOutOfRangeException.
-        public static long BreakthroughCost(RealmLevel from);
+        // 현재 경지에서 다음 단계까지 필요한 처치 수. 초절정은 0.
+        public static int KillsRequired(RealmLevel from);
     }
 
     public sealed class RealmProgress
     {
-        // wallet: 돌파 비용을 쓸 지갑. null 이면 ArgumentNullException.
-        // startLevel: 저장된 값으로 되살릴 때 넣는다 ((int)RealmLevel). 음수면 0, 4 보다 크면 4 (예외 없음).
-        // 생성자는 금화를 쓰지 않고 알림을 보내지 않는다. 잠기지 않은 상태로 시작한다.
-        public RealmProgress(PlumSword.Core.Currency.Wallet wallet, int startLevel = 0);
-
+        public RealmProgress(PlumSword.Core.Currency.Wallet wallet, int startLevel = 0, int kills = 0);
         public RealmLevel Current { get; }
-        public bool IsMax { get; }            // Current == Transcendent
-        public int BonusPercent { get; }      // RealmRules.BonusPercent(Current)
-        public long NextCost { get; }         // RealmRules.BreakthroughCost(Current). 초절정이면 0
-
-        // 지금 돌파할 수 있으면 true: 잠기지 않았고, 초절정이 아니고, 금화가 NextCost 이상. 아무것도 바꾸지 않는다.
-        public bool CanBreakthrough();
-
-        // 돌파한다. 성공하면 금화를 쓰고 경지를 한 단계 올린 뒤 BrokeThrough 를 보내고 true.
-        // 잠김, 초절정, 금화 부족이면 아무것도 바꾸지 않고 false (알림 없음).
-        public bool TryBreakthrough();
-
-        // 돌파가 성공해 경지가 오른 뒤에 한 번, 새 경지를 담아 보낸다. 실패하면 보내지 않는다.
+        public bool IsMax { get; }
+        public int BonusPercent { get; }
+        public int Kills { get; }
+        public int KillsRequired { get; }
+        public void RecordKill();
         public event System.Action<RealmLevel> BrokeThrough;
-
-        public bool Locked { get; }           // 처음 값 false
-
-        // 잠그거나 푼다. 값이 실제로 바뀐 때에만 LockedChanged 를 보낸다.
-        public void SetLocked(bool locked);
-
-        public event System.Action<bool> LockedChanged;
+        public event System.Action ProgressChanged;
     }
 
     public static class RealmText
@@ -329,7 +255,7 @@ namespace PlumSword.Game.Realm
 {
     public sealed class RealmView : MonoBehaviour
     {
-        // canvas 아래에 경지 표시와 돌파 버튼을 만들고 지금 상태로 바로 표시한다.
+        // canvas 아래에 입력을 받지 않는 경지 표시를 만들고 지금 상태로 바로 표시한다.
         // wallet.BalanceChanged, realm.BrokeThrough, realm.LockedChanged 를 구독하고 OnDestroy 에서 끊는다.
         // 인자 중 null 이 있으면 ArgumentNullException. 두 번 부르면 InvalidOperationException.
         public void Initialize(
@@ -350,21 +276,14 @@ namespace PlumSword.Game.Realm
 }
 ```
 
-- 누가 만들고 누가 들고 있는지: `GameRoot.Awake`가 `Wallet`을 만든 직후 `RealmProgress`를 하나 만들어 `GameRoot.Realm`으로 들고 있는다. 게임에 `RealmProgress`는 하나뿐이다. 저장 기능이 경지를 저장하게 되기 전에는 `new RealmProgress(Wallet)`(삼류)로 만든다. 그 뒤에는 `new RealmProgress(Wallet, 저장된 realmLevel)`로 만든다.
-- 능력치 강화 기능이 쓰는 방법 (능력치 강화 사양을 고칠 때 반영): `RealmProgress`를 넘겨받아 `Attack`, `MaxHealth`를 계산할 때마다 `BonusPercent`를 읽어 `(기본값 + 증가량) × (100 + BonusPercent) / 100`(`long` 정수 나눗셈)을 돌려준다.
-- 전투 기능이 쓰는 방법 (전투 사양을 고칠 때 반영): `BrokeThrough`를 받으면 체력 강화 때와 같이 `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`을 구해 기억을 바꾸고, 패배 상태가 아니면 현재 체력을 그만큼 늘린다. `BrokeThrough`를 받는 시점에 `Current`는 이미 새 경지라 `StatUpgrades.MaxHealth`는 새 값이다.
-- 저장 기능이 쓰는 방법 (저장 사양을 고칠 때 반영): 저장할 때 `(int)Current`를 읽고, 불러올 때 생성자의 `startLevel`에 넣는다. 돌파는 언제나 금화를 써서 `BalanceChanged`가 가므로, 지금의 자동 저장 규칙(그 프레임 끝에 저장)만으로 돌파 직후의 경지가 저장된다. `BrokeThrough`를 따로 구독하지 않아도 된다.
+- `GameRoot`가 저장된 경지와 처치 수로 생성하고 `Battle.EnemyDefeated`를 연결한다.
+- 능력치 강화는 `BonusPercent`를 읽고 전투는 `BrokeThrough`를 받아 현재 체력을 갱신한다.
+- 저장은 `Current`, `Kills`를 보관하고 `ProgressChanged`를 구독한다.
 
 ### 필요한 것
 
-- `PlumSword.Core.Currency.Wallet` (`docs/spec/currency.md`): `CanSpend(long)`, `TrySpend(long)`, `BalanceChanged`.
-- `PlumSword.Core.Currency.GoldText.FormatNumber(long)` (`docs/spec/currency.md`).
-- `PlumSword.Core.StatUpgrade.StatUpgrades.LockedChanged` (`docs/spec/stat_upgrade.md`): `GameRoot`가 잠금을 맞출 때 쓴다.
-- `PlumSword.Core.Combat.Battle.DisciplePosition` (`docs/spec/combat.md`): 오오라 위치.
-- `PlumSword.Game.GameRoot.Wallet`, `UiCanvas`, `StatUpgrades`, `Battle`.
-- `PlumSword.Game.StatUpgrade.StatUpgradeButtonEffect` (이미 있는 화면 코드, `docs/spec/stat_upgrade.md` "화면"의 강화 연출): `Initialize(Button, RectTransform, Image, Image, TextMeshProUGUI)`, `SetEnabledAppearance(bool)`, `PlaySuccess()`를 그대로 쓴다. 이 클래스는 고치지 않는다.
-- `UnityEngine.Camera.main`: 흔들림과 번쩍임 위치. 카메라 위치는 `CombatView.Update`가 매 프레임 다시 정한다 (`CombatView`는 고치지 않는다).
-- URP 2D의 `UnityEngine.Rendering.Universal.Light2D`, `UnityEngine.Rendering.Volume`·`VolumeProfile`, `UnityEngine.Rendering.Universal.Bloom`, `UniversalAdditionalCameraData.renderPostProcessing`. `PlumSword.Game` 어셈블리는 URP 2D 런타임(`Light2D`)만 참조하므로, `PlumSword.Game.asmdef`의 `references`에 `Unity.RenderPipelines.Core.Runtime`(`Volume`·`VolumeProfile`)과 `Unity.RenderPipelines.Universal.Runtime`(`Bloom`·`UniversalAdditionalCameraData`) 두 줄만 더한다. 다른 칸은 바꾸지 않는다. 설정 에셋(렌더러, 볼륨 프로필)은 바꾸지 않고 모두 코드에서 만든다.
+- `Battle.EnemyDefeated`와 `Wallet` (생성자 호환성).
+- 오오라를 위한 `Battle.DisciplePosition`, 카메라, URP 2D의 빛·볼륨 API.
 
 ## 화면
 
@@ -373,24 +292,9 @@ namespace PlumSword.Game.Realm
 
 ### 현재 경지 표시 (화면 왼쪽 위)
 
-- 캔버스 왼쪽 위에 앵커와 피벗 (0, 1), 위치 (8, −8).
-- 그림 `Art/UI/Realm/name_<AssetId(Current)>`(`Sprite`)가 있으면 `Image`로 보여 준다. 높이 24, 가로는 그림 비율대로(최대 160), `preserveAspect = true`, `raycastTarget = false`.
-- 없으면 `TextMeshProUGUI` 한 줄: `RealmText.Label(Current)` (예: `REALM: SECOND RATE`), 크기 200×16, 글자 크기 14, 왼쪽 정렬, 색 RGB (1.0, 0.95, 0.80), TMP 기본 글꼴, `raycastTarget = false` (모두 임시).
-- 그림은 경지마다 따로 확인한다. 이류 그림만 있으면 이류일 때만 그림이고 나머지는 글자다.
-
-### 돌파 버튼 (화면 아래쪽 가운데, HP 버튼 위)
-
-- 캔버스 왼쪽 아래에 앵커와 피벗 (0, 0), 위치 (220, 62), 크기 200×48 (임시).
-- **그림 모드**: 바탕 `Art/UI/Realm/button`이 있으면 그것을, 없으면 강화 버튼 바탕 `Art/UI/StatUpgrade/button`을 쓴다. 바탕과 금화 아이콘 `Art/UI/StatUpgrade/coin`이 모두 있을 때만 그림 모드다. 배치는 강화 버튼과 같다:
-  - 아이콘 `Art/UI/Realm/icon` (9, 8) 32×32. 없으면 아이콘 자리는 비운다 (`Image` 끔).
-  - 첫 줄 `RealmText.ButtonTitle` (48, 23) 82×18, 글자 크기 15. 자동 크기 9~15.
-  - 둘째 줄 `RealmText.Name(Current)` (48, 8) 82×15, 글자 크기 11. 자동 크기 8~11.
-  - 금화 아이콘 (145, 15) 17×17과 비용 숫자 `GoldText.FormatNumber(NextCost)` (164, 11) 31×25, 글자 크기 12, 자동 크기 8~12. 초절정이면 금화 아이콘을 숨기고 `MAX`를 쓴다.
-  - 호버·누름·성공 연출은 `StatUpgradeButtonEffect`를 붙여 강화 버튼과 똑같이 한다 (`SetEnabledAppearance(CanBreakthrough())`, 성공 때 `PlaySuccess()`). 둘째 줄 글자가 성공 때 금빛으로 변하는 글자다.
-- **대체 모드** (그림이 없을 때): `Image`(단색) + `Button`, `transition = None`. 자식 `TextMeshProUGUI` 하나에 `RealmText.ButtonLabel(Current, NextCost, IsMax)` (예: `BREAKTHROUGH` / `SECOND RATE` / `G 500`), 버튼을 꽉 채우고 가운데 정렬, 글자 크기 14, `raycastTarget = false`. 누를 수 있을 때 RGB (0.55, 0.25, 0.35)에 흰 글자, 누를 수 없을 때 RGB (0.25, 0.25, 0.25)에 RGB (0.6, 0.6, 0.6) 글자 (모두 임시). 대체 모드에는 호버·성공 연출이 없다.
-- **누를 수 있을 때**: `CanBreakthrough()`가 `true`일 때만 `Button.interactable = true`. 금화 부족·초절정·잠김을 모양으로 구분하지 않는다. 초절정은 `MAX` 글자로 알 수 있다.
-- **누르면**: `TryBreakthrough()`를 부른다. 성공하면 위의 성공 연출을 한다. 한 번 누르면 한 단계다.
-- **바뀌는 때**: `Initialize`에서 한 번, 그 뒤로 `wallet.BalanceChanged`, `realm.BrokeThrough`, `realm.LockedChanged`가 올 때마다 버튼과 경지 표시를 갱신한다.
+- `Art/UI/RealmStatus/brush_plum`과 `name_<AssetId>`를 겹쳐 D안의 매화 붓터치와 한글 그림 글자를 표시한다. 두 이미지는 입력을 받지 않는다.
+- 640×360 기준 왼쪽 위 앵커: 배경 위치 (4, -2), 140×47; 글자 위치 (24, -9), 100×33. 원본 투명 여백을 유지한다.
+- 해당 글자 그림이 없으면 `RealmText.Label(Current)` 영문 대체 표시를 사용한다. 경지가 오를 때 갱신한다. 기존 하단 돌파 버튼은 만들지 않는다.
 
 ### 오오라와 돌파 연출 (제자 주변, 월드 공간)
 
@@ -423,29 +327,12 @@ namespace PlumSword.Game.Realm
 
 ## 저장
 
-| 값 | 타입 | 처음 값 | 비고 |
-| --- | --- | --- | --- |
-| 현재 경지 `realmLevel` (`(int)RealmProgress.Current`) | `int` | 0 (삼류) | 0~4 |
-
-- 실제 저장 데이터(`SaveData`)·파일 형식(`SaveCodec`)에 넣는 것은 저장 기능이 한다. 그전까지 경지는 게임을 끄면 삼류로 돌아간다.
-- 되살리기: `new RealmProgress(wallet, 저장된 realmLevel)`. 음수는 0, 4 초과는 4로 시작한다. 잠금(`Locked`)은 저장하지 않으며 항상 풀린 상태로 시작한다. 비용과 보너스 비율은 경지에서 계산되므로 저장하지 않는다.
-- 2단계 저장 데이터와의 호환은 없다. 3단계는 저장 데이터를 지우고 새로 시작한다.
-- 오프라인 보상: 꺼져 있는 동안 경지는 바뀌지 않는다. 오프라인 보상 금액에도 영향을 주지 않는다.
-- 돌파 연출의 진행 상황은 저장하지 않는다. 연출 중에 끄고 다시 켜면 연출 없이 그 경지의 상시 오오라만 보인다.
+`realmLevel`과 현재 경지에서 누적한 `realmKills`를 저장한다. 기존 판 2 저장에 `realmKills`가 없으면 0으로 복원하고 다른 값은 유지한다. 음수 처치 수는 0, 요구치를 넘는 값은 요구치 - 1로 자른다. 초절정은 0이다. 오프라인 동안 처치와 경지는 바뀌지 않는다. 돌파 연출의 진행은 저장하지 않는다.
 
 ## 범위 밖
 
-- 보너스를 실제 공격력·최대 체력에 적용하는 계산: 능력치 강화 기능이 한다. 그 사양을 고치기 전에는 돌파해도 능력치가 바뀌지 않는다.
-- 돌파 때 현재 체력을 늘리는 처리: 전투 기능이 한다. 그 사양을 고치기 전에는 현재 체력이 바뀌지 않는다.
-- 경지를 저장 데이터·파일에 넣고 불러오는 것, 저장 판 번호: 저장 기능이 한다.
-- 공격 속도 강화 제거, 내공 강화, 이십사수매화검법: 3단계의 다른 기능이 한다. 스킬은 경지 보너스가 적용된 `StatUpgrades.Attack`을 쓴다.
-- 실제 오오라·버튼·경지 이름 그림 제작, 기운·꽃잎·고리·기둥·충격파 그림 제작: 사용자가 PixelLab 등으로 만든다. 그림을 넣으면 이 사양의 경로대로 바뀐다.
-- `ParticleSystem`, 가산 혼합 재질·셰이더 에셋: 쓰지 않는다. 꽃잎은 Core 계산과 `SpriteRenderer`로 그린다.
-- 히트스톱(게임 멈춤), 연출 중 버튼 잠금: 하지 않는다.
-- 평소(연출이 아닐 때)의 블룸·Light2D 조명: 하지 않는다.
-- 한글 표기(`경지: 이류`, `최대`, `500금화`)와 한글 글꼴: 글꼴이 준비되면 `RealmText`의 글자만 바꾼다.
-- 돌파 소리, 큰 안내 패널, 경지 되돌리기·환불, 여러 단계 한꺼번에 돌파, 스테이지 조건: 하지 않는다.
-- 밸런스 조정: 4단계에서 한다.
+- 150마리 조건을 적용할 추가 경지, 오프라인 처치, 처치 진행도 표시.
+- 돌파 소리, 경지 되돌리기·환불.
 
 ## 완료 조건 초안
 
@@ -477,7 +364,7 @@ namespace PlumSword.Game.Realm
 
 화면 (자동 테스트 없음. 사람이 실행해 확인)
 
-31. 금화 200 이상에서 돌파 버튼을 누르면 금화가 200 줄고, 왼쪽 위가 `REALM: SECOND RATE`, 버튼이 `SECOND RATE` / `500`으로 바뀐다. 0.5초 동안 배경과 적이 조금 어두워지며 분홍 꽃잎 12장이 제자에게 모인 뒤 바깥으로 흩어지고, 연분홍 오오라와 기운 2줄이 나타난다. 고리·기둥·번쩍임은 없다. 전투는 멈추지 않는다. 그림 모드면 버튼에 강화 버튼과 같은 성공 연출이 나온다.
+31. 삼류에서 30번째 몬스터를 처치하면 금화 변화 없이 경지가 이류로 바뀌고 왼쪽 위 한글 표시와 돌파 연출이 갱신된다. 하단에는 돌파 버튼이 없다.
 49. 일류 → 절정 돌파 때 바닥 고리가 퍼지고 빛기둥이 솟으며, 화면이 2 픽셀 흔들리고 제자 주변의 바닥·배경이 분홍으로 밝아지며 기둥이 번져 보인다. 1.8초 뒤 블룸과 어둡게가 사라지고 화면이 원래 밝기로 돌아온다.
 50. 절정 → 초절정 돌파 때 흰 번쩍임과 충격파가 더해지고 꽃잎 36장이 터지며 3 픽셀 흔들린다. 그 뒤 상시 오오라는 기운 4줄과 떠오르는 꽃잎 5장이다.
 51. 연출 중에 다시 돌파하면 새 경지의 연출이 처음부터 나온다. 저장된 절정으로 이어하면 연출 없이 절정 오오라만 보인다. 돌파하지 않은 평소 화면의 밝기와 색은 이번 변경 전과 같다 (전역 Light2D 확인).

@@ -246,9 +246,10 @@ namespace PlumSword.Core.Tests.Stage
             _stage.Begin();
             _stage.Tick(StageProgress.SubstageIntroSeconds);
 
-            for (int i = 0; i < 20000 && _stage.Phase != StagePhase.FadingOut; i++)
+            for (int i = 0; i < 20000 && _cleared.Count == 0; i++)
             {
-                if (_stage.IsSubstageIntroShowing) _stage.Tick(StageProgress.SubstageIntroSeconds);
+                if (_stage.Phase == StagePhase.FadingOut || _stage.Phase == StagePhase.FadingIn) _stage.Tick(StageProgress.FadeSeconds * 2);
+                else if (_stage.IsSubstageIntroShowing) _stage.Tick(StageProgress.SubstageIntroSeconds);
                 else _battle.Step();
             }
 

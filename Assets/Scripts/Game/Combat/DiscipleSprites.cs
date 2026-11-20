@@ -16,6 +16,10 @@ namespace PlumSword.Game.Combat
         public const string IdlePath = "Art/Characters/disciple_idle";
         public const string RunPath = "Art/Characters/disciple_run";
         public const string AttackPath = "Art/Characters/disciple_attack";
+        public const string DownPath = "Art/Characters/disciple_down";
+        public const int DownFrameCount = 17;
+        public const float DownFrameSeconds = 0.075f;
+        public const float DownDuration = DownFrameCount * DownFrameSeconds;
 
         /// <summary>docs/dev/art.md "기본 숫자". 모든 스프라이트가 같은 값을 쓴다.</summary>
         public const float PixelsPerUnit = 32f;
@@ -28,16 +32,19 @@ namespace PlumSword.Game.Combat
         private static readonly Sheet IdleSheet = new Sheet(IdlePath, DiscipleAnimator.IdleFrameCount, 76, 76, 38, 12);
         private static readonly Sheet RunSheet = new Sheet(RunPath, DiscipleAnimator.RunFrameCount, 76, 80, 38, 14);
         private static readonly Sheet AttackSheet = new Sheet(AttackPath, DiscipleAnimator.AttackFrameCount, 76, 76, 38, 12);
+        private static readonly Sheet DownSheet = new Sheet(DownPath, DownFrameCount, 76, 76, 38, 12);
 
         private readonly Sprite[] _idle;
         private readonly Sprite[] _run;
         private readonly Sprite[] _attack;
+        private readonly Sprite[] _down;
 
-        private DiscipleSprites(Sprite[] idle, Sprite[] run, Sprite[] attack)
+        private DiscipleSprites(Sprite[] idle, Sprite[] run, Sprite[] attack, Sprite[] down)
         {
             _idle = idle;
             _run = run;
             _attack = attack;
+            _down = down;
         }
 
         /// <summary>세 시트를 모두 읽으면 돌려주고, 하나라도 실패하면 경고를 남기고 null.</summary>
@@ -48,7 +55,8 @@ namespace PlumSword.Game.Combat
             Sprite[] attack = run == null ? null : Slice(AttackSheet);
             if (attack != null)
             {
-                return new DiscipleSprites(idle, run, attack);
+                // 쓰러짐 에셋이 없어도 기존 전투 스프라이트는 계속 표시한다.
+                return new DiscipleSprites(idle, run, attack, Slice(DownSheet));
             }
 
             DestroyAll(idle);
@@ -69,11 +77,15 @@ namespace PlumSword.Game.Combat
             return frames[Mathf.Clamp(frame, 0, frames.Length - 1)];
         }
 
+        public Sprite GetDown(int frame) => _down == null ? Get(DiscipleMotion.Idle, 0)
+            : _down[Mathf.Clamp(frame, 0, _down.Length - 1)];
+
         public void Dispose()
         {
             DestroyAll(_idle);
             DestroyAll(_run);
             DestroyAll(_attack);
+            DestroyAll(_down);
         }
 
         private static Sprite[] Slice(Sheet sheet)

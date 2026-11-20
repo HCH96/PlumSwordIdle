@@ -24,6 +24,24 @@ namespace PlumSword.Game.Tests
                 var health = canvas.transform.Find("StatButton_Health");
                 Assert.That(attack.Find("Visual").GetComponent<Image>().sprite.name, Is.EqualTo("button"));
                 Assert.That(attack.Find("Visual/Icon").GetComponent<Image>().sprite.name, Is.EqualTo("attack"));
+                var textType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro", true);
+                var fontProperty = textType.GetProperty("font");
+                object sharedFont = null;
+                foreach (var pair in new[] { ("Attack", "무력"), ("Health", "체력"), ("InnerPower", "내공") })
+                {
+                    var nameLabel = canvas.transform.Find("StatButton_" + pair.Item1 + "/Visual/Name");
+                    Assert.That(ReadText(nameLabel), Is.EqualTo(pair.Item2));
+                    var fontAsset = fontProperty.GetValue(nameLabel.GetComponent(textType));
+                    Assert.That(fontAsset, Is.Not.Null);
+                    if (sharedFont == null) sharedFont = fontAsset;
+                    Assert.That(fontAsset, Is.SameAs(sharedFont));
+                    var source = (Font)fontAsset.GetType().GetProperty("sourceFontFile").GetValue(fontAsset);
+                    Assert.That(source, Is.EqualTo(Resources.Load<Font>("Fonts/Galmuri11")));
+                    var hasCharacter = fontAsset.GetType().GetMethod("HasCharacter", new[] { typeof(int) });
+                    foreach (var character in pair.Item2)
+                        Assert.That(hasCharacter.Invoke(fontAsset, new object[] { (int)character }), Is.EqualTo(true));
+                }
+
                 Assert.That(ReadText(attack.Find("Visual/Cost")), Is.EqualTo("20"));
                 attack.GetComponent<Button>().onClick.Invoke();
                 Assert.That(ReadText(attack.Find("Visual/Level")), Is.EqualTo("Lv.1"));
@@ -93,7 +111,7 @@ namespace PlumSword.Game.Tests
                 var inner = canvas.transform.Find("StatButton_InnerPower");
                 Assert.That(inner, Is.Not.Null);
                 Assert.That(inner.GetComponent<RectTransform>().anchoredPosition, Is.EqualTo(new Vector2(432, 8)));
-                Assert.That(ReadText(inner.Find("Visual/Name")), Is.EqualTo("INNER"));
+                Assert.That(ReadText(inner.Find("Visual/Name")), Is.EqualTo("내공"));
                 Assert.That(ReadText(inner.Find("Visual/Level")), Is.EqualTo("Lv.0"));
                 Assert.That(ReadText(inner.Find("Visual/Cost")), Is.EqualTo("20"));
 

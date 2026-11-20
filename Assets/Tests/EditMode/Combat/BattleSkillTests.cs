@@ -148,17 +148,17 @@ namespace PlumSword.Core.Tests.Combat
             var battle = SkillBattle();
             int used = 0;
             battle.SkillUsed += () => used++;
-            Enemy boss = battle.AddEnemy(EnemyKind.Boss, 1, 1.5);
+            Enemy boss = battle.AddEnemy(EnemyKind.Boss, 2, 1.5);
             battle.Step();
-            Assert.AreEqual(100, boss.Health);
+            Assert.AreEqual(130, boss.Health);
             Assert.AreEqual(0, used);
             Assert.IsTrue(battle.IsSkillReady);
             Steps(battle, 3);
             Assert.AreEqual(0.5, battle.DisciplePosition, 1e-6);
             Steps(battle, 20);
-            Assert.AreEqual(100, boss.Health);
+            Assert.AreEqual(130, boss.Health);
             battle.Step();
-            Assert.AreEqual(80, boss.Health);
+            Assert.AreEqual(110, boss.Health);
             Assert.AreEqual(1, used);
         }
 
@@ -169,7 +169,7 @@ namespace PlumSword.Core.Tests.Combat
             int used = 0;
             battle.SkillUsed += () => used++;
             Enemy normal = battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
-            Enemy boss = battle.AddEnemy(EnemyKind.Boss, 1, 8.0);
+            Enemy boss = battle.AddEnemy(EnemyKind.Boss, 2, 8.0);
             battle.Step();
             Assert.AreEqual(10, normal.Health);
             Steps(battle, 50);
@@ -177,16 +177,16 @@ namespace PlumSword.Core.Tests.Combat
             Steps(battle, 55);
             Assert.AreEqual(7.0, battle.DisciplePosition, 1e-6);
             Steps(battle, 20);
-            Assert.AreEqual(100, boss.Health);
+            Assert.AreEqual(130, boss.Health);
             battle.Step();
-            Assert.AreEqual(90, boss.Health);
+            Assert.AreEqual(120, boss.Health);
             Steps(battle, 124);
             Assert.IsTrue(battle.IsSkillReady);
-            Assert.AreEqual(70, boss.Health);
+            Assert.AreEqual(100, boss.Health);
             Steps(battle, 25);
-            Assert.AreEqual(70, boss.Health);
+            Assert.AreEqual(100, boss.Health);
             battle.Step();
-            Assert.AreEqual(50, boss.Health);
+            Assert.AreEqual(80, boss.Health);
             Assert.AreEqual(2, used);
         }
 

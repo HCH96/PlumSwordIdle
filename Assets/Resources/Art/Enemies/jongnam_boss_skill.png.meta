@@ -1,0 +1,757 @@
+fileFormatVersion: 2
+guid: 279b6d42eea4eab478de74edbedfb9c7
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1523614329780544538
+    second: jongnam_boss_skill_0
+  - first:
+      213: -7900185884481338594
+    second: jongnam_boss_skill_1
+  - first:
+      213: -6275437645297640853
+    second: jongnam_boss_skill_2
+  - first:
+      213: 6403009118963010075
+    second: jongnam_boss_skill_3
+  - first:
+      213: 7371029304511287309
+    second: jongnam_boss_skill_4
+  - first:
+      213: 7030439944110199509
+    second: jongnam_boss_skill_5
+  - first:
+      213: 5603094793370174182
+    second: jongnam_boss_skill_6
+  - first:
+      213: -8696497603726423945
+    second: jongnam_boss_skill_7
+  - first:
+      213: 2854258853251034961
+    second: jongnam_boss_skill_8
+  - first:
+      213: -7316848483549263547
+    second: jongnam_boss_skill_9
+  - first:
+      213: 2137472298756755700
+    second: jongnam_boss_skill_10
+  - first:
+      213: 1626030942673168787
+    second: jongnam_boss_skill_11
+  - first:
+      213: 328045142361991919
+    second: jongnam_boss_skill_12
+  - first:
+      213: -1784987076929983687
+    second: jongnam_boss_skill_13
+  - first:
+      213: 6718414268296336351
+    second: jongnam_boss_skill_14
+  - first:
+      213: 7006963264775378259
+    second: jongnam_boss_skill_15
+  - first:
+      213: -2858346509708007871
+    second: jongnam_boss_skill_16
+  - first:
+      213: 7134110861751723300
+    second: jongnam_boss_skill_17
+  - first:
+      213: -5995184218950270274
+    second: jongnam_boss_skill_18
+  - first:
+      213: -5079433092352963530
+    second: jongnam_boss_skill_19
+  - first:
+      213: -729356244583820715
+    second: jongnam_boss_skill_20
+  - first:
+      213: -7227461579919888866
+    second: jongnam_boss_skill_21
+  - first:
+      213: 4287290451136181722
+    second: jongnam_boss_skill_22
+  - first:
+      213: 6620534534098104701
+    second: jongnam_boss_skill_23
+  - first:
+      213: -859560864828500169
+    second: jongnam_boss_skill_24
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: jongnam_boss_skill_0
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a14a3451927f42510800000000000000
+      internalID: 1523614329780544538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_1
+      rect:
+        serializedVersion: 2
+        x: 115
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e134fe78bc6ec5290800000000000000
+      internalID: -7900185884481338594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_2
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 14
+        width: 51
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6a9be5d5ba29e8a0800000000000000
+      internalID: -6275437645297640853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_3
+      rect:
+        serializedVersion: 2
+        x: 330
+        y: 14
+        width: 47
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1a806d7ede0cd850800000000000000
+      internalID: 6403009118963010075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_4
+      rect:
+        serializedVersion: 2
+        x: 431
+        y: 14
+        width: 46
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d00d36c59182b4660800000000000000
+      internalID: 7371029304511287309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_5
+      rect:
+        serializedVersion: 2
+        x: 532
+        y: 14
+        width: 45
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d2d76b51e3219160800000000000000
+      internalID: 7030439944110199509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_6
+      rect:
+        serializedVersion: 2
+        x: 631
+        y: 14
+        width: 46
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e28ba1370132cd40800000000000000
+      internalID: 5603094793370174182
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_7
+      rect:
+        serializedVersion: 2
+        x: 731
+        y: 14
+        width: 46
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 778c9d36185df4780800000000000000
+      internalID: -8696497603726423945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_8
+      rect:
+        serializedVersion: 2
+        x: 833
+        y: 14
+        width: 44
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15faa05fd4d5c9720800000000000000
+      internalID: 2854258853251034961
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_9
+      rect:
+        serializedVersion: 2
+        x: 933
+        y: 14
+        width: 45
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 549c0be0215557a90800000000000000
+      internalID: -7316848483549263547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_10
+      rect:
+        serializedVersion: 2
+        x: 1035
+        y: 14
+        width: 43
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f052ac1bb3d9ad10800000000000000
+      internalID: 2137472298756755700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_11
+      rect:
+        serializedVersion: 2
+        x: 1135
+        y: 14
+        width: 51
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 399e3dbf682d09610800000000000000
+      internalID: 1626030942673168787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_12
+      rect:
+        serializedVersion: 2
+        x: 1233
+        y: 14
+        width: 53
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fea67c4a1537d8400800000000000000
+      internalID: 328045142361991919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_13
+      rect:
+        serializedVersion: 2
+        x: 1334
+        y: 14
+        width: 52
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93bece6f5b37a37e0800000000000000
+      internalID: -1784987076929983687
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_14
+      rect:
+        serializedVersion: 2
+        x: 1414
+        y: 14
+        width: 65
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd318bb6e2a9c3d50800000000000000
+      internalID: 6718414268296336351
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_15
+      rect:
+        serializedVersion: 2
+        x: 1515
+        y: 14
+        width: 68
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 355d52ff6fbbd3160800000000000000
+      internalID: 7006963264775378259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_16
+      rect:
+        serializedVersion: 2
+        x: 1615
+        y: 14
+        width: 70
+        height: 74
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14660eb5efc1558d0800000000000000
+      internalID: -2858346509708007871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_17
+      rect:
+        serializedVersion: 2
+        x: 1715
+        y: 14
+        width: 70
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 425a7f6d704710360800000000000000
+      internalID: 7134110861751723300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_18
+      rect:
+        serializedVersion: 2
+        x: 1815
+        y: 14
+        width: 71
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb2017a77b3dccca0800000000000000
+      internalID: -5995184218950270274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_19
+      rect:
+        serializedVersion: 2
+        x: 1915
+        y: 14
+        width: 70
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 63c00f5b38a3289b0800000000000000
+      internalID: -5079433092352963530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_20
+      rect:
+        serializedVersion: 2
+        x: 2015
+        y: 14
+        width: 69
+        height: 73
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5525ede1c5ec0e5f0800000000000000
+      internalID: -729356244583820715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_21
+      rect:
+        serializedVersion: 2
+        x: 2115
+        y: 14
+        width: 69
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1e671d5cf5e2bb90800000000000000
+      internalID: -7227461579919888866
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_22
+      rect:
+        serializedVersion: 2
+        x: 2178
+        y: 25
+        width: 8
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad575e443f38f7b30800000000000000
+      internalID: 4287290451136181722
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_23
+      rect:
+        serializedVersion: 2
+        x: 2215
+        y: 14
+        width: 71
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d71bf18e41dd0eb50800000000000000
+      internalID: 6620534534098104701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: jongnam_boss_skill_24
+      rect:
+        serializedVersion: 2
+        x: 2315
+        y: 14
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 737d11592f93214f0800000000000000
+      internalID: -859560864828500169
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable: {}
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

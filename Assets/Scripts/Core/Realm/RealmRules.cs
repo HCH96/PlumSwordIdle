@@ -19,14 +19,14 @@ namespace PlumSword.Core.Realm
             }
         }
 
-        public static long BreakthroughCost(RealmLevel from)
+        public static int KillsRequired(RealmLevel from)
         {
             switch (from)
             {
-                case RealmLevel.ThirdRate: return 200;
-                case RealmLevel.SecondRate: return 500;
-                case RealmLevel.FirstRate: return 1000;
-                case RealmLevel.Peak: return 2000;
+                case RealmLevel.ThirdRate: return 30;
+                case RealmLevel.SecondRate: return 50;
+                case RealmLevel.FirstRate: return 70;
+                case RealmLevel.Peak: return 100;
                 case RealmLevel.Transcendent: return 0;
                 default: throw new ArgumentOutOfRangeException(nameof(from));
             }

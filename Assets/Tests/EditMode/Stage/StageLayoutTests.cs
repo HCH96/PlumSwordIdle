@@ -19,7 +19,8 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(StageLayout.FirstGroupPosition, Is.EqualTo(6.0).Within(Tolerance));
             Assert.That(StageLayout.GroupSpacing, Is.EqualTo(18.0).Within(Tolerance));
             Assert.That(StageLayout.InGroupSpacing, Is.EqualTo(2.0).Within(Tolerance));
-            Assert.That(StageLayout.BossDistance, Is.EqualTo(18.0).Within(Tolerance));
+            Assert.That(StageLayout.BossDistance, Is.EqualTo(24.0).Within(Tolerance));
+            Assert.That(StageLayout.EncounterDistance, Is.EqualTo(24.0).Within(Tolerance));
         }
 
         // RollGroups

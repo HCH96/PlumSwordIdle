@@ -7,7 +7,7 @@ namespace PlumSword.Core.Tests.Save
 {
     public class SaveCodecTests
     {
-        private const string Standard = "version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n";
+        private const string Standard = "version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nrealmKills=0\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n";
 
         [Test]
         public void Encode_StandardData_ProducesExactText() =>
@@ -15,6 +15,23 @@ namespace PlumSword.Core.Tests.Save
 
         [Test]
         public void Encode_Null_Throws() => Assert.Throws<ArgumentNullException>(() => SaveCodec.Encode(null));
+
+        [Test]
+        public void Decode_LegacyVersionTwoWithoutKills_PreservesDataAndStartsAtZero()
+        {
+            var result = SaveCodec.Decode(Standard.Replace("realmKills=0\n", ""));
+            Assert.That(result.Status, Is.EqualTo(SaveLoadStatus.Loaded));
+            Assert.That(result.Data.RealmLevel, Is.EqualTo(2));
+            Assert.That(result.Data.RealmKills, Is.Zero);
+            Assert.That(result.Data.Gold, Is.EqualTo(1234));
+        }
+
+        [Test]
+        public void Decode_InvalidKillCount_IsCorrupt()
+        {
+            Assert.That(SaveCodec.Decode(Standard.Replace("realmKills=0", "realmKills=bad")).Status,
+                Is.EqualTo(SaveLoadStatus.Corrupt));
+        }
 
         [Test]
         public void Decode_StandardText_LoadsAllValues()

@@ -120,7 +120,7 @@ namespace PlumSword.Core.Tests.Combat
         public void WindUp_ScalesWithAttackInterval()
         {
             Create(10, 100);
-            _battle.AddEnemy(EnemyKind.Boss, 1, 5.0);
+            _battle.AddEnemy(EnemyKind.Boss, 2, 5.0);
 
             Steps(31);    // 31칸째에 4.0 에 도착
             Assert.AreEqual(4.0, _battle.DisciplePosition, Tolerance);
@@ -279,24 +279,24 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void DiscipleWalksToBoss_BossAttacksOnArrivalDiscipleAfterWindUp()
         {
-            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 5.0);
+            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 2, 5.0);
 
             // 31칸째에 4.0 에 도착한다.
             Steps(30);
-            Assert.AreEqual(100L, boss.Health);
+            Assert.AreEqual(130L, boss.Health);
             Assert.AreEqual(100L, _battle.DiscipleHealth);
 
             Steps(1);
-            Assert.AreEqual(100L, boss.Health);
-            Assert.AreEqual(90L, _battle.DiscipleHealth);
+            Assert.AreEqual(130L, boss.Health);
+            Assert.AreEqual(86L, _battle.DiscipleHealth);
             Assert.AreEqual(4.0, _battle.DisciplePosition, Tolerance);
             Assert.AreEqual(5.0, boss.Position, Tolerance);
 
             Steps(20);
-            Assert.AreEqual(100L, boss.Health);
+            Assert.AreEqual(130L, boss.Health);
 
             Steps(1);
-            Assert.AreEqual(90L, boss.Health);
+            Assert.AreEqual(120L, boss.Health);
         }
 
         // ---- 대기 시간 ----
@@ -306,7 +306,7 @@ namespace PlumSword.Core.Tests.Combat
         {
             Create(30, 100);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
-            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 2.0);
+            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 2, 2.0);
 
             Steps(1);
             Assert.AreEqual(1, _battle.Enemies.Count);
@@ -314,15 +314,15 @@ namespace PlumSword.Core.Tests.Combat
 
             Steps(25);
             Assert.AreEqual(1.0, _battle.DisciplePosition, Tolerance);
-            Assert.AreEqual(100L, boss.Health);
+            Assert.AreEqual(130L, boss.Health);
             Assert.AreEqual(0.5, _battle.DiscipleAttackCooldown, Tolerance);
-            Assert.AreEqual(85L, _battle.DiscipleHealth);
+            Assert.AreEqual(81L, _battle.DiscipleHealth);
 
             Steps(24);
-            Assert.AreEqual(100L, boss.Health);
+            Assert.AreEqual(130L, boss.Health);
 
             Steps(1);
-            Assert.AreEqual(70L, boss.Health);
+            Assert.AreEqual(100L, boss.Health);
         }
 
         [Test]
@@ -330,14 +330,14 @@ namespace PlumSword.Core.Tests.Combat
         {
             Create(30, 100);
             _battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
-            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 1, 8.0);
+            Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 2, 8.0);
 
             // 56칸째에 도착하고, 앞 동작 21칸 뒤인 77칸째에 피해.
             Steps(76);
-            Assert.AreEqual(100L, boss.Health);
+            Assert.AreEqual(130L, boss.Health);
 
             Steps(1);
-            Assert.AreEqual(70L, boss.Health);
+            Assert.AreEqual(100L, boss.Health);
         }
 
         // ---- 강화 반영 ----

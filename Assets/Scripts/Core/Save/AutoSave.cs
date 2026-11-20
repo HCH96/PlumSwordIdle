@@ -27,6 +27,7 @@ namespace PlumSword.Core.Save
             wallet.BalanceChanged += OnBalanceChanged;
             upgrades.Upgraded += OnUpgraded;
             stage.StageStarted += OnStageStarted;
+            realm.ProgressChanged += MarkDirty;
         }
 
         public bool Enabled { get; private set; }

@@ -69,10 +69,10 @@
 | 내공 | 최종 능력치 없음 | 단계만 내준다. 스킬 배율(200% + 단계당 10%p)은 전투 기능의 수치다 |
 | 세 능력치의 최대 단계 | `int.MaxValue` (2,147,483,647) | 기획상 상한은 없다. 넘침을 막는 기술적 상한이다. 이때 비용 10,737,418,255 |
 | 시작 능력치 (`GameRoot`가 넣는 값) | 공격력 `Battle.DiscipleBaseAttack` (10), 최대 체력 `Battle.DiscipleBaseMaxHealth` (100) | 전투 기능의 수치다 |
-| 이름 표기 `StatUpgradeText.Name` | `Attack` → `ATK`, `Health` → `HP`, `InnerPower` → `INNER` | 한글 글꼴이 없어 한글을 쓰지 않는다 |
+| 이름 표기 `StatUpgradeText.Name` | `Attack` → `무력`, `Health` → `체력`, `InnerPower` → `내공` | 능력치 이름에 Galmuri11 글꼴을 쓴다 |
 | 단계 표기 `StatUpgradeText.Level` | `"Lv." + 단계` | 0 → `Lv.0`, 10 → `Lv.10`. `level.ToString(CultureInfo.InvariantCulture)` |
 | 비용 표기 `StatUpgradeText.Cost` | 최대 단계면 `MAX`, 아니면 `"G " + GoldText.FormatNumber(cost)` | 20 → `G 20`, 1234 → `G 1,234` |
-| 버튼 글자 `StatUpgradeText.ButtonLabel` | `Name + "\n" + Level + "\n" + Cost` | `ATK\nLv.3\nG 35`, `INNER\nLv.1\nG 25`, `HP\nLv.5\nMAX` |
+| 버튼 글자 `StatUpgradeText.ButtonLabel` | `Name + "\n" + Level + "\n" + Cost` | `무력\nLv.3\nG 35`, `내공\nLv.1\nG 25`, `체력\nLv.5\nMAX` |
 | 내공 아이콘 리소스 경로 | `Art/UI/StatUpgrade/inner_power` | 파일 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`. 지금은 없다 ("화면") |
 
 최종 능력치 예시 (시작 공격력 10, 최대 체력 100):
@@ -87,7 +87,7 @@
 | 초절정 (40%) | 3 | 2 | 22 (22.4 내림) | 196 |
 | 초절정 (40%) | `int.MaxValue` | `int.MaxValue` | 6,012,954,225 | 60,129,542,256 |
 
-공격 간격, 몬스터 능력치, 보상 금액, 현재 체력, 공격 대기 시간, 스킬 범위·배율·재사용 대기, 돌파 비용과 보너스 %는 이 기능의 수치가 아니다 ("범위 밖").
+공격 간격, 몬스터 능력치, 보상 금액, 현재 체력, 공격 대기 시간, 스킬 범위·배율·재사용 대기, 돌파 조건과 보너스 %는 이 기능의 수치가 아니다 ("범위 밖").
 
 ## 연결 지점
 
@@ -162,7 +162,7 @@ namespace PlumSword.Core.StatUpgrade
 
     public static class StatUpgradeText
     {
-        // Attack -> "ATK", Health -> "HP", InnerPower -> "INNER". 정의되지 않은 값: ArgumentOutOfRangeException.
+        // Attack -> "무력", Health -> "체력", InnerPower -> "내공". 정의되지 않은 값: ArgumentOutOfRangeException.
         public static string Name(StatType stat);
 
         // "Lv." + level. 예: 0 -> "Lv.0", 10 -> "Lv.10". 음수도 그대로 (예외 없음).
@@ -173,7 +173,7 @@ namespace PlumSword.Core.StatUpgrade
         public static string Cost(long cost, bool isMaxLevel);
 
         // Name(stat) + "\n" + Level(level) + "\n" + Cost(cost, isMaxLevel).
-        // 예: (Attack, 3, 35, false) -> "ATK\nLv.3\nG 35", (InnerPower, 1, 25, false) -> "INNER\nLv.1\nG 25".
+        // 예: (Attack, 3, 35, false) -> "무력\nLv.3\nG 35", (InnerPower, 1, 25, false) -> "내공\nLv.1\nG 25".
         public static string ButtonLabel(StatType stat, int level, long cost, bool isMaxLevel);
     }
 }
@@ -196,7 +196,7 @@ namespace PlumSword.Game.StatUpgrade
 {
     public sealed class StatUpgradeView : MonoBehaviour
     {
-        // canvas 아래에 강화 버튼 세 개(ATK, HP, INNER)를 만들고 지금 상태로 바로 표시한다.
+        // canvas 아래에 강화 버튼 세 개(무력, 체력, 내공)를 만들고 지금 상태로 바로 표시한다.
         // wallet.BalanceChanged, upgrades.Upgraded, upgrades.LockedChanged 를 구독하고, OnDestroy 에서 구독을 끊는다.
         public void Initialize(
             PlumSword.Core.StatUpgrade.StatUpgrades upgrades,
@@ -223,16 +223,16 @@ namespace PlumSword.Game.StatUpgrade
 
 ### 선택한 강화 버튼 그림 (2026-11-18)
 
-그림이 있으면 공통 반투명 무협풍 바탕과 공격·체력·내공 아이콘, 금화 아이콘을 사용한다. 각 버튼은 200×48이며 기존 가로 위치와 구매 가능 조건을 유지한다. 이름, 단계, 비용은 각각 갱신한다. 비용은 금화 아이콘 옆 숫자로 표시하고 최대 단계에는 아이콘 없이 `MAX`를 보인다. 보유 금화 현판은 ATK 위에 둔다 ([금화 사양](currency.md)). 바탕이나 금화 그림이 없으면 단색과 기존 세 줄 글자를 쓴다. 아래의 단색·글자 배치는 그때의 대체 설명이다.
+그림이 있으면 공통 반투명 무협풍 바탕과 공격·체력·내공 아이콘, 금화 아이콘을 사용한다. 각 버튼은 200×48이며 기존 가로 위치와 구매 가능 조건을 유지한다. 이름, 단계, 비용은 각각 갱신한다. 이름에는 Galmuri11을 쓰고 단계와 비용은 기존 글꼴을 유지한다. 그림이 없는 대체 버튼에는 한글을 표시하기 위해 Galmuri11을 쓴다. 비용은 금화 아이콘 옆 숫자로 표시하고 최대 단계에는 아이콘 없이 `MAX`를 보인다. 보유 금화 현판은 무력 위에 둔다 ([금화 사양](currency.md)). 바탕이나 금화 그림이 없으면 단색과 기존 세 줄 글자를 쓴다. 아래의 단색·글자 배치는 그때의 대체 설명이다.
 
 - **그림 모드 조건**: 바탕 `Art/UI/StatUpgrade/button`과 금화 `Art/UI/StatUpgrade/coin`이 모두 있으면 그림 모드다. 능력치 아이콘은 조건에 넣지 않는다.
-- **능력치 아이콘**: `Art/UI/StatUpgrade/` 아래 `attack`(ATK), `health`(HP), `inner_power`(INNER). 그 버튼의 아이콘 그림이 없으면 아이콘 오브젝트(`Visual/Icon`)를 만들되 `SetActive(false)`로 숨긴다. 자리만 비고 이름·단계·비용·금화 아이콘의 배치는 그대로다. 지금은 `inner_power`가 없어 INNER 버튼은 아이콘 없이 보인다. 나중에 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`를 넣으면 코드를 고치지 않아도 아이콘이 보인다.
+- **능력치 아이콘**: `Art/UI/StatUpgrade/` 아래 `attack`(무력), `health`(체력), `inner_power`(내공). 그 버튼의 아이콘 그림이 없으면 아이콘 오브젝트(`Visual/Icon`)를 만들되 `SetActive(false)`로 숨긴다. 자리만 비고 이름·단계·비용·금화 아이콘의 배치는 그대로다. 지금은 `inner_power`가 없어 내공 버튼은 아이콘 없이 보인다. 나중에 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`를 넣으면 코드를 고치지 않아도 아이콘이 보인다.
 
 그림 버튼에 마우스를 올리면 밝아지고 1.025배 커지며, 누르는 동안 0.96배가 된다. 구매 성공 시 아이콘이 잠깐 위로 움직이고 레벨 글자가 금빛으로 변하며 기존 시작 화면 꽃잎 두 장이 0.55초 동안 날아가 사라진다. 반복 구매 시 새 연출을 시작한다. 금화 부족·최대 단계·잠김 상태에는 호버와 성공 연출을 하지 않는다. 소리는 추가하지 않는다.
 
 - **조립**: `GameRoot.Awake`에서 `[CurrencyView]`를 만든 다음에 `[Game]`의 자식 `[StatUpgradeView]`를 만들어 `StatUpgradeView`를 붙이고 `Initialize(StatUpgrades, Wallet, UiCanvas)`를 부른다.
-- **보여 주는 것**: 강화 버튼 세 개. 왼쪽부터 `ATK`, `HP`, `INNER` 순서로 가로 한 줄이다. 내공 버튼은 예전 공격 속도 버튼 자리다. 버튼 오브젝트 이름은 `StatButton_Attack`, `StatButton_Health`, `StatButton_InnerPower`다. 버튼마다 글자 세 줄(이름, 단계, 비용)을 보여 준다. 단색 모드 글자는 `StatUpgradeText.ButtonLabel(stat, upgrades.GetLevel(stat), upgrades.GetCost(stat), upgrades.IsMaxLevel(stat))` 그대로다 (예: `ATK` / `Lv.3` / `G 35`, `INNER` / `Lv.1` / `G 25`). 화면 코드에서 글자를 따로 만들거나 고치지 않는다.
-- **위치**: 캔버스 왼쪽 아래에 앵커와 피벗 (0, 0)을 두고 버튼 크기 200×48, 위치는 `ATK` (8, 8), `HP` (220, 8), `INNER` (432, 8)이다.
+- **보여 주는 것**: 강화 버튼 세 개. 왼쪽부터 `무력`, `체력`, `내공` 순서로 가로 한 줄이다. 내공 버튼은 예전 공격 속도 버튼 자리다. 버튼 오브젝트 이름은 `StatButton_Attack`, `StatButton_Health`, `StatButton_InnerPower`다. 버튼마다 글자 세 줄(이름, 단계, 비용)을 보여 준다. 단색 모드 글자는 `StatUpgradeText.ButtonLabel(stat, upgrades.GetLevel(stat), upgrades.GetCost(stat), upgrades.IsMaxLevel(stat))` 그대로다 (예: `무력` / `Lv.3` / `G 35`, `내공` / `Lv.1` / `G 25`). 화면 코드에서 글자를 따로 만들거나 고치지 않는다.
+- **위치**: 캔버스 왼쪽 아래에 앵커와 피벗 (0, 0)을 두고 버튼 크기 200×48, 위치는 `무력` (8, 8), `체력` (220, 8), `내공` (432, 8)이다.
 - **모양**: 버튼은 `Image`(단색 사각형)와 `Button`을 붙인 오브젝트다. `Button.transition`은 `None`으로 두고 색은 화면 코드가 직접 바꾼다. 글자는 버튼의 자식 `TextMeshProUGUI` 하나로, 버튼을 꽉 채우고 가운데 정렬, 글자 크기 16 (임시), TMP 기본 글꼴, `raycastTarget = false`.
 - **누를 수 있을 때** (`upgrades.CanUpgrade(stat)`가 `true`): `Button.interactable = true`, 버튼 색 RGB (0.20, 0.45, 0.25), 글자 흰색 (임시).
 - **누를 수 없을 때** (`CanUpgrade`가 `false`: 금화 부족, 최대 단계, 잠김): `Button.interactable = false`, 버튼 색 RGB (0.25, 0.25, 0.25), 글자 색 RGB (0.6, 0.6, 0.6) (임시). 세 경우를 모양으로 구분하지 않는다. 최대 단계는 글자 `MAX`로 알 수 있다.
@@ -261,11 +261,11 @@ namespace PlumSword.Game.StatUpgrade
 - 제자의 현재 체력과 체력 강화·돌파 때 현재 체력을 늘리는 처리: 전투 기능이 정한다. 이 기능의 `MaxHealth`, `Upgraded`를 쓴다.
 - 기본 공격 간격 1초(임시, `Battle.DiscipleBaseAttackInterval`)와 공격 대기 시간: 전투 기능이 정한다.
 - 이십사수매화검법의 범위, 피해 배율(200% + 내공 단계당 10%p), 피해 내림, 재사용 대기: 전투 기능이 정한다. 이 기능은 `GetLevel(StatType.InnerPower)`, `Attack`, `Upgraded`만 내준다.
-- 경지 단계, 돌파 비용, 보너스 %, 돌파 버튼과 오오라: 경지 기능(`docs/spec/realm.md`)이 정한다.
+- 경지 단계, 돌파 조건, 보너스 %와 오오라: 경지 기능(`docs/spec/realm.md`)이 정한다.
 - 시작 능력치(10 / 100)의 원래 값, 몬스터·보스 능력치: 전투 기능이 정한다.
 - 페이드 때 실제로 잠금을 거는 것: 스테이지 기능이 정한다.
 - 저장 데이터 형식의 변경(공격 속도 칸 → 내공 칸, 판 번호): 저장 기능이 정한다.
-- 한글 표기(`내공 Lv.1 / 25금화`)와 한글 글꼴: 하지 않는다. 글꼴이 준비되면 `StatUpgradeText`의 글자만 바꾼다.
+- 비용 단위의 한글 표기(`25금화`)는 하지 않는다. 능력치 이름에는 Galmuri11을 적용한다.
 - 내공 아이콘 그림 제작: 사람이 나중에 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`만 넣는다.
 - 버튼에 현재 능력치 값을 보여 주는 것, 강화 소리, 길게 눌러 연속 강화, 여러 단계 한꺼번에 강화, 강화 되돌리기·환불(공격 속도 강화 환불 포함): 하지 않는다.
 - 시작 능력치가 `long` 범위를 넘칠 만큼 큰 경우: 다루지 않는다.
@@ -274,7 +274,7 @@ namespace PlumSword.Game.StatUpgrade
 
 루프의 관문은 있던 테스트를 지우거나 검사(Assert) 수를 줄이면 합치지 않는다. 공격 속도를 없애면 그런 테스트가 생기므로 **사람이 대화로 main 에서 직접 하고 커밋한다.** 루프 작업(내공·경지 보너스)은 이 제거가 main 에 커밋된 뒤에 만든다. 제거 뒤에 모든 에딧 모드·플레이 모드 테스트가 통과해야 한다.
 
-제거가 끝난 중간 상태: `StatType`은 `Attack`, `Health` 둘, 생성자는 `StatUpgrades(Wallet wallet, long baseAttack, long baseMaxHealth, int attackLevel = 0, int healthLevel = 0)`, 강화 버튼은 `ATK`, `HP` 두 개다. 내공과 `realm` 인자는 루프가 더한다.
+제거가 끝난 중간 상태: `StatType`은 `Attack`, `Health` 둘, 생성자는 `StatUpgrades(Wallet wallet, long baseAttack, long baseMaxHealth, int attackLevel = 0, int healthLevel = 0)`, 강화 버튼은 `무력`, `체력` 두 개다. 내공과 `realm` 인자는 루프가 더한다.
 
 | 파일 | 할 일 |
 | --- | --- |
@@ -284,16 +284,16 @@ namespace PlumSword.Game.StatUpgrade
 | `Assets/Scripts/Core/Combat/Battle.cs` | `_upgrades.AttackInterval` 세 곳(`DiscipleAttackInterval`, 앞 동작 대기, 공격 뒤 대기)을 `DiscipleBaseAttackInterval`로 바꿈. `DiscipleAttackInterval` 속성은 남기고 1.0 을 돌려준다 |
 | `Assets/Scripts/Core/Save/SaveData.cs` | `Capture`가 `AttackSpeedLevel` 자리에 `0`을 넣음. 칸·생성자·코덱(`SaveCodec.cs`)은 그대로 |
 | `Assets/Scripts/Game/GameRoot.cs` | `StatUpgrades` 생성에서 `DiscipleBaseAttackInterval`과 `data.AttackSpeedLevel` 인자 지움 |
-| `Assets/Scripts/Game/StatUpgrade/StatUpgradeView.cs` | `Stats`·`ButtonPositions`를 `ATK`, `HP` 둘로, 아이콘 이름의 `speed` 분기 지움 |
+| `Assets/Scripts/Game/StatUpgrade/StatUpgradeView.cs` | `Stats`·`ButtonPositions`를 `무력`, `체력` 둘로, 아이콘 이름의 `speed` 분기 지움 |
 | `Assets/Resources/Art/UI/StatUpgrade/speed.png` (+ `.meta`) | 지움 |
 | `Assets/Tests/EditMode/StatUpgrade/StatUpgradesTests.cs` | `AllStats`를 `Attack`, `Health` 둘로. 지움: `TryUpgrade_AttackSpeed_IntervalDecreases`, `TryUpgrade_AttackSpeedTenTimes_ReachesMaxLevel`, `TryUpgrade_AttackSpeedAtMaxLevel_FailsWithoutChange`, `New_AttackSpeedLevelAboveMax_ClampedToTenWithoutException`, `AttackInterval_SmallBase_ClampedToMinimum`, `New_InvalidBaseAttackInterval_ThrowsOutOfRange`. 본문에서 `AttackSpeed`·`AttackInterval` 줄만 뺌: `New_Default_InitialState`, `GetMaxLevel_EachStat_ReturnsLimit`, `TryUpgrade_Attack_OtherStatsUnchanged`, `New_WithLevels_RestoresLevelsWithoutSpending`, `New_NegativeLevels_ClampedToZeroWithoutException`, `New_OtherBaseValues_FinalStatsUseBaseValues`. 모든 생성자 호출에서 `1.0`과 공격 속도 단계 인자를 뺌 |
-| `Assets/Tests/EditMode/StatUpgrade/StatUpgradeTextTests.cs` | `Name_DefinedStat_ReturnsEnglishAbbreviation`의 `SPD` 경우 지움. `ButtonLabel_Values_JoinsNameLevelCostWithNewline`의 `SPD` 경우를 `(Health, 5, 45L, true, "HP\nLv.5\nMAX")`로 바꿈 |
+| `Assets/Tests/EditMode/StatUpgrade/StatUpgradeTextTests.cs` | `Name_DefinedStat_ReturnsEnglishAbbreviation`의 `SPD` 경우 지움. `ButtonLabel_Values_JoinsNameLevelCostWithNewline`의 `SPD` 경우를 `(Health, 5, 45L, true, "체력\nLv.5\nMAX")`로 바꿈 |
 | `Assets/Tests/EditMode/Combat/BattleAttackTests.cs` | `AttackSpeedUpgradeMidBattle_PendingCooldownUnchangedNextUsesNewInterval` 지움. `WindUp_ScalesWithAttackInterval`은 시작 간격을 넣을 수 없으므로 1.0 기준 기대값 `1.0 * 7.0 / 17.0`으로 (테스트 도우미의 간격 인자도 지움) |
 | `Assets/Tests/EditMode/Combat/BattleUpgradeTests.cs` | `AttackAndAttackSpeedUpgrade_DoNotChangeCurrentHealth`에서 공격 속도 강화 줄 지움 (이름은 바꿔도 된다) |
 | `Assets/Tests/EditMode/Combat/DiscipleAnimatorTests.cs` | `BattleDiscipleAttackInterval_FollowsAttackSpeedUpgrade` 지우거나 "`DiscipleAttackInterval`은 늘 1.0" 확인으로 바꿈 |
 | `Assets/Tests/EditMode/Stage/StageProgressRoundTests.cs` | `GetLevel(StatType.AttackSpeed)` 확인 줄 지움 |
 | `Assets/Tests/EditMode/Save/SaveDataTests.cs` | `Restore_OutOfRangeValues_FeatureConstructorsClamp`: 공격 속도 단계 인자와 `GetLevel(AttackSpeed)` 확인 지움 (`SaveData`에 15가 담기는 것은 그대로). `Capture_BeforeBegin_CopiesValuesWithoutChangesOrEvents`: `data.AttackSpeedLevel` 기대값 0, `GetLevel(AttackSpeed)` 확인 지움 |
-| `Assets/Tests/PlayMode/StatUpgradeViewTests.cs` | `Artwork_UpgradeAndMax_UpdateLabelsAndAvailability`: `SPD` 대신 체력을 `int.MaxValue` 단계로 만든 `StatUpgrades`로 `HP` 버튼의 `MAX`·금화 아이콘 숨김·누를 수 없음을 확인 |
+| `Assets/Tests/PlayMode/StatUpgradeViewTests.cs` | `Artwork_UpgradeAndMax_UpdateLabelsAndAvailability`: `SPD` 대신 체력을 `int.MaxValue` 단계로 만든 `StatUpgrades`로 `체력` 버튼의 `MAX`·금화 아이콘 숨김·누를 수 없음을 확인 |
 | 그 밖의 생성자 호출 (코드·테스트 약 25개 파일) | `new StatUpgrades(wallet, 10, 100, 1.0, …)`에서 `1.0`과 공격 속도 단계 인자를 뺌 |
 | `SaveCodecTests.cs`, `FileSaveStoreTests.cs`, `EnemyStatsTests.cs`, `BattleTests.cs`의 `DiscipleBaseAttackInterval` 확인 | 그대로 (`SaveData` 칸, 적 공격 간격, 전투 상수는 남는다) |
 
@@ -332,23 +332,23 @@ namespace PlumSword.Game.StatUpgrade
 40. 절정(`startLevel` 3)에서 단계 (1, 0, 0)이면 `Attack`은 15, `MaxHealth`는 130이다.
 41. 초절정(`startLevel` 4)에서 단계 (3, 2, 5)이면 `Attack`은 22, `MaxHealth`는 196이고, 단계 (3, 2, 0)으로 만들어도 `Attack` 22, `MaxHealth` 196으로 같다 (내공은 영향 없음).
 42. 삼류(`startLevel` 0)에서 단계 (0, 0, 0)이면 `Attack` 10, `MaxHealth` 100이다. `realm`을 `null`로 넣은 `new StatUpgrades(wallet, 10, 100, 1, 1, 0, null)`은 예외 없이 `Attack` 12, `MaxHealth` 120이다.
-43. 금화 200에서 `realm = new RealmProgress(wallet)`, `new StatUpgrades(wallet, 10, 100, 1, 1, 0, realm)`의 `Attack`은 12, `MaxHealth`는 120이다. `realm.TryBreakthrough()`가 `true`를 돌려준 뒤 `Attack`은 13, `MaxHealth`는 132, 금화는 0이고, 그동안 `Upgraded`는 0번 온다.
+43. 금화 200에서 `realm = new RealmProgress(wallet)`, `new StatUpgrades(wallet, 10, 100, 1, 1, 0, realm)`의 `Attack`은 12, `MaxHealth`는 120이다. `realm.RecordKill()`을 30번 부른 뒤 `Attack`은 13, `MaxHealth`는 132, 금화는 200이고, 그동안 `Upgraded`는 0번 온다.
 44. 금화 1000에서 이류(`startLevel` 1)로 만든 `new StatUpgrades(wallet, 10, 100, 0, 0, 0, realm)`의 `MaxHealth`는 110이다. `TryUpgrade(Health)`를 부르면 `true`이고 `Upgraded`를 받는 쪽에서 읽은 `MaxHealth`는 132, 금화는 980이다.
 45. 44번처럼 만든 `upgrades`로 `new Battle(upgrades)`를 만들면 `DiscipleHealth`와 `DiscipleMaxHealth`는 110이다. `TryUpgrade(Health)` 뒤 `DiscipleHealth`와 `DiscipleMaxHealth`는 132다 (22 늘어남). 이어서 `TryUpgrade(Attack)`과 `TryUpgrade(InnerPower)`를 불러도 `DiscipleHealth`는 132 그대로다.
 46. 초절정(`startLevel` 4)에서 `new StatUpgrades(wallet, 10, 100, int.MaxValue, int.MaxValue, 0, realm)`의 `Attack`은 6012954225, `MaxHealth`는 60129542256이고 예외가 없다.
 
 표시 글자 (`StatUpgradeTextTests`)
 
-28. `StatUpgradeText.Name`은 `Attack` → `"ATK"`, `Health` → `"HP"`, `InnerPower` → `"INNER"`를 돌려주고, `(StatType)99`는 `ArgumentOutOfRangeException`을 던진다.
-31. `StatUpgradeText.ButtonLabel`은 (`Attack`, 3, 35, `false`) → `"ATK\nLv.3\nG 35"`, (`Health`, 0, 20, `false`) → `"HP\nLv.0\nG 20"`, (`Health`, 5, 45, `true`) → `"HP\nLv.5\nMAX"`, (`InnerPower`, 1, 25, `false`) → `"INNER\nLv.1\nG 25"`를 돌려주고, `(StatType)99`는 `ArgumentOutOfRangeException`을 던진다.
+28. `StatUpgradeText.Name`은 `Attack` → `"무력"`, `Health` → `"체력"`, `InnerPower` → `"내공"`을 돌려주고, `(StatType)99`는 `ArgumentOutOfRangeException`을 던진다.
+31. `StatUpgradeText.ButtonLabel`은 (`Attack`, 3, 35, `false`) → `"무력\nLv.3\nG 35"`, (`Health`, 0, 20, `false`) → `"체력\nLv.0\nG 20"`, (`Health`, 5, 45, `true`) → `"체력\nLv.5\nMAX"`, (`InnerPower`, 1, 25, `false`) → `"내공\nLv.1\nG 25"`를 돌려주고, `(StatType)99`는 `ArgumentOutOfRangeException`을 던진다.
 
 화면 (`StatUpgradeViewTests`, 플레이 모드)
 
-47. 금화 1000, `new StatUpgrades(wallet, 10, 100)`으로 `StatUpgradeView.Initialize`를 부르면 캔버스 아래에 `StatButton_Attack`, `StatButton_Health`, `StatButton_InnerPower`가 있고 `StatButton_AttackSpeed`는 없으며, `StatButton_InnerPower`의 `anchoredPosition`은 (432, 8)이다. `StatButton_InnerPower`의 `Visual/Name`은 `"INNER"`, `Visual/Level`은 `"Lv.0"`, `Visual/Cost`는 `"20"`이다. `Visual/Icon`은 `Resources.Load<Sprite>("Art/UI/StatUpgrade/inner_power")`가 `null`이면 `activeSelf`가 `false`이고, 아니면 `true`이며 그 그림을 쓴다. 그 버튼을 누르면 `Visual/Level`은 `"Lv.1"`, `Visual/Cost`는 `"25"`, 금화는 980이다.
+47. 금화 1000, `new StatUpgrades(wallet, 10, 100)`으로 `StatUpgradeView.Initialize`를 부르면 캔버스 아래에 `StatButton_Attack`, `StatButton_Health`, `StatButton_InnerPower`가 있고 `StatButton_AttackSpeed`는 없으며, `StatButton_InnerPower`의 `anchoredPosition`은 (432, 8)이다. `StatButton_InnerPower`의 `Visual/Name`은 `"내공"`, `Visual/Level`은 `"Lv.0"`, `Visual/Cost`는 `"20"`이다. `Visual/Icon`은 `Resources.Load<Sprite>("Art/UI/StatUpgrade/inner_power")`가 `null`이면 `activeSelf`가 `false`이고, 아니면 `true`이며 그 그림을 쓴다. 그 버튼을 누르면 `Visual/Level`은 `"Lv.1"`, `Visual/Cost`는 `"25"`, 금화는 980이다.
 
 화면 (자동 테스트 없음. 사람이 실행해 확인)
 
-32. 게임을 실행하면 화면 아래쪽 금화 현판 밑에 버튼 세 개가 왼쪽부터 `ATK`, `HP`, `INNER` 순서로 보이고, 각각 `Lv.0`과 금화 아이콘 옆 `20`이 표시된다. `INNER`는 아이콘 자리가 비어 있다. 금화가 0이라 세 버튼 모두 어둡고 눌리지 않는다. 금화를 모아 이류로 돌파한 뒤 다음 스테이지가 시작되면 제자 체력 바가 `110/110`이다.
+32. 게임을 실행하면 화면 아래쪽 금화 현판 밑에 버튼 세 개가 왼쪽부터 `무력`, `체력`, `내공` 순서로 보이고, 각각 `Lv.0`과 금화 아이콘 옆 `20`이 표시된다. `내공`는 아이콘 자리가 비어 있다. 금화가 0이라 세 버튼 모두 어둡고 눌리지 않는다. 금화를 모아 이류로 돌파한 뒤 다음 스테이지가 시작되면 제자 체력 바가 `110/110`이다.
 
 ## 결정 기록
 

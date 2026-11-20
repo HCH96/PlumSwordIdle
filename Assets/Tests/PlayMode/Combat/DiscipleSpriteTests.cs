@@ -23,13 +23,47 @@ namespace PlumSword.Game.Tests.Combat
         [Test]
         public void Sheets_ImportedAsPointFilteredTextures()
         {
-            foreach (var path in new[] { "Art/Characters/disciple_idle", "Art/Characters/disciple_run", "Art/Characters/disciple_attack" })
+            foreach (var path in new[] { "Art/Characters/disciple_idle", "Art/Characters/disciple_run", "Art/Characters/disciple_attack", "Art/Characters/disciple_down" })
             {
                 var texture = Resources.Load<Texture2D>(path);
                 Assert.That(texture, Is.Not.Null, path);
                 Assert.That(texture.filterMode, Is.EqualTo(FilterMode.Point), path);
                 Assert.That(texture.mipmapCount, Is.EqualTo(1), path);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Defeat_PlaysDownBeforeFadeAndResetsToIdle()
+        {
+            var wallet = new PlumSword.Core.Currency.Wallet();
+            var upgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(wallet, 1, 5);
+            var battle = new PlumSword.Core.Combat.Battle(upgrades);
+            var stage = new PlumSword.Core.Stage.StageProgress(wallet, upgrades, battle, new System.Random(1));
+            var obj = new GameObject("[DefeatTest]");
+            var camera = new GameObject("Camera", typeof(Camera));
+            camera.transform.SetParent(obj.transform, false);
+            var canvas = new GameObject("Canvas", typeof(Canvas));
+            canvas.transform.SetParent(obj.transform, false);
+            try
+            {
+                obj.AddComponent<PlumSword.Game.Combat.CombatView>().Initialize(battle, camera.GetComponent<Camera>());
+                obj.AddComponent<PlumSword.Game.Stage.StageView>().Initialize(stage, canvas.GetComponent<Canvas>());
+                stage.Begin();
+                stage.Tick(PlumSword.Core.Stage.StageProgress.SubstageIntroSeconds);
+                battle.AddEnemy(PlumSword.Core.Combat.EnemyKind.Normal, 1, 0.8);
+                battle.Step();
+                Assert.That(battle.IsDiscipleDefeated, Is.True);
+                var body = obj.transform.Find("[Disciple]/Body").GetComponent<SpriteRenderer>();
+                yield return new WaitForSeconds(0.3f);
+                Assert.That(stage.FadeAlpha, Is.EqualTo(0).Within(0.001));
+                Assert.That(body.sprite.name, Does.StartWith("disciple_down_"));
+                Assert.That(body.sprite.name, Is.Not.EqualTo("disciple_down_00"));
+                yield return new WaitForSeconds(1.7f);
+                Assert.That(battle.IsDiscipleDefeated, Is.False);
+                Assert.That(body.sprite.name, Does.StartWith("disciple_idle_"));
+                Assert.That(stage.SubstageNumber, Is.EqualTo(1));
+            }
+            finally { Object.DestroyImmediate(obj); }
         }
 
         [UnityTest]

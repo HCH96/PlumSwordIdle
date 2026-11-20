@@ -9,10 +9,10 @@ namespace PlumSword.Core.Tests.StatUpgrade
     {
         // Name
 
-        [TestCase(StatType.Attack, "ATK")]
-        [TestCase(StatType.Health, "HP")]
-        [TestCase(StatType.InnerPower, "INNER")]
-        public void Name_DefinedStat_ReturnsEnglishAbbreviation(StatType stat, string expected)
+        [TestCase(StatType.Attack, "무력")]
+        [TestCase(StatType.Health, "체력")]
+        [TestCase(StatType.InnerPower, "내공")]
+        public void Name_DefinedStat_ReturnsKoreanName(StatType stat, string expected)
         {
             Assert.That(StatUpgradeText.Name(stat), Is.EqualTo(expected));
         }
@@ -82,10 +82,10 @@ namespace PlumSword.Core.Tests.StatUpgrade
 
         // ButtonLabel
 
-        [TestCase(StatType.Attack, 3, 35L, false, "ATK\nLv.3\nG 35")]
-        [TestCase(StatType.Health, 0, 20L, false, "HP\nLv.0\nG 20")]
-        [TestCase(StatType.Health, 5, 45L, true, "HP\nLv.5\nMAX")]
-        [TestCase(StatType.InnerPower, 1, 25L, false, "INNER\nLv.1\nG 25")]
+        [TestCase(StatType.Attack, 3, 35L, false, "무력\nLv.3\nG 35")]
+        [TestCase(StatType.Health, 0, 20L, false, "체력\nLv.0\nG 20")]
+        [TestCase(StatType.Health, 5, 45L, true, "체력\nLv.5\nMAX")]
+        [TestCase(StatType.InnerPower, 1, 25L, false, "내공\nLv.1\nG 25")]
         public void ButtonLabel_Values_JoinsNameLevelCostWithNewline(
             StatType stat, int level, long cost, bool isMaxLevel, string expected)
         {

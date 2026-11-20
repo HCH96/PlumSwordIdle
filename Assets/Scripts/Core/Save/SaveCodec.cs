@@ -16,6 +16,7 @@ namespace PlumSword.Core.Save
                 "healthLevel=" + data.HealthLevel.ToString(culture) + "\n" +
                 "innerPowerLevel=" + data.InnerPowerLevel.ToString(culture) + "\n" +
                 "realmLevel=" + data.RealmLevel.ToString(culture) + "\n" +
+                "realmKills=" + data.RealmKills.ToString(culture) + "\n" +
                 "stageNumber=" + data.StageNumber.ToString(culture) + "\n" +
                 "seenIntroStage=" + data.SeenIntroStage.ToString(culture) + "\n" +
                 "savedAtUtcTicks=" + data.SavedAtUtcTicks.ToString(culture) + "\n";
@@ -49,7 +50,10 @@ namespace PlumSword.Core.Save
                 !TryInt(fields, "seenIntroStage", out int seen) ||
                 !TryLong(fields, "savedAtUtcTicks", out long ticks))
                 return new SaveLoadResult(SaveLoadStatus.Corrupt, null);
-            return new SaveLoadResult(SaveLoadStatus.Loaded, new SaveData(gold, attack, health, innerPower, realm, stage, seen, ticks));
+            int kills = 0;
+            if (fields.ContainsKey("realmKills") && !TryInt(fields, "realmKills", out kills))
+                return new SaveLoadResult(SaveLoadStatus.Corrupt, null);
+            return new SaveLoadResult(SaveLoadStatus.Loaded, new SaveData(gold, attack, health, innerPower, realm, stage, seen, ticks, kills));
         }
 
         private static bool TryInt(Dictionary<string, string> fields, string name, out int value)

@@ -106,7 +106,7 @@ namespace PlumSword.Core.Tests.Stage
             for (int i = 0; i < _battle.Enemies.Count; i++)
             {
                 Assert.That(_battle.Enemies[i].MaxHealth, Is.EqualTo(40));
-                Assert.That(_battle.Enemies[i].Position, Is.EqualTo(5.0 + 2.0 * i).Within(Tolerance));
+                Assert.That(_battle.Enemies[i].Position, Is.EqualTo(23.0 + 2.0 * i).Within(Tolerance));
             }
 
             Assert.That(_battle.DisciplePosition, Is.EqualTo(0.0).Within(Tolerance));
