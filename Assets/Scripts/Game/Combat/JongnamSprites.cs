@@ -17,6 +17,8 @@ namespace PlumSword.Game.Combat
         public const int DownFrameCount = 17;
         public const float DownFrameSeconds = 0.075f;
         public const float DownDuration = DownFrameCount * DownFrameSeconds;
+        private static string TianmoFinalBossPrefix = "Art/Enemies/tianmo_final_boss_";
+        private static string TianmoFinalBossSkillPath = "Art/Enemies/tianmo_final_boss_skill";
 
         private JongnamSprites(Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] skill = null, Sprite[] down = null, int attackHitFrame = 10, float walkFramesPerSecond = 12f, int skillHitFrame = 14)
         {
@@ -28,6 +30,19 @@ namespace PlumSword.Game.Combat
             AttackHitFrame = attackHitFrame;
             SkillHitFrame = skillHitFrame;
             WalkFramesPerSecond = walkFramesPerSecond;
+        }
+
+        public static JongnamSprites TryLoadTianmoFinalBoss()
+        {
+            var idle = Slice(TianmoFinalBossPrefix + "idle", 104, 104, 25, 16);
+            var walk = Slice(TianmoFinalBossPrefix + "walk", 104, 104, 25, 16);
+            var attack = Slice(TianmoFinalBossPrefix + "attack", 104, 104, 25, 16);
+            var down = Slice(TianmoFinalBossPrefix + "down", 104, 104, 25, 16);
+            var skill = SliceGrid(TianmoFinalBossSkillPath, 260, 80, 5, 5, 222, 5);
+            if (idle != null && walk != null && attack != null && down != null)
+                return new JongnamSprites(idle, walk, attack, skill, down, attackHitFrame: 11, walkFramesPerSecond: 10f, skillHitFrame: 15);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(skill); DestroyFrames(down);
+            return null;
         }
 
         public static JongnamSprites TryLoadTianmoBoss()

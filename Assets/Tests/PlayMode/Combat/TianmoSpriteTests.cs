@@ -41,7 +41,7 @@ namespace PlumSword.Game.Tests.Combat
             var original = root.StageProgress;
             try
             {
-                foreach (int number in new[] { 5, 10 })
+                foreach (int number in new[] { 4, 9 })
                 {
                     var wallet = new Wallet();
                     var upgrades = new StatUpgrades(wallet, 10000, 10000);
