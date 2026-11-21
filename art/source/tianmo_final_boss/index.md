@@ -1,6 +1,18 @@
 # 5스테이지 천마신교 최종 보스
 
-5스테이지 최종 보스 자료다. 사용자가 공중 부유·광기 표현의 [전신 시안](concept_approved.png)과 기본 스프라이트, 아래의 넓게 휘어진 검격 기술을 승인했다. 동작과 이펙트 원본을 이 폴더에 보관하며 게임에는 아직 적용하지 않았다.
+5스테이지 최종 보스 자료다. 사용자가 공중 부유·광기 표현의 [전신 시안](concept_approved.png)과 기본 스프라이트, 아래의 넓게 휘어진 검격 기술을 승인했다. 원본을 이 폴더에 보관하고 게임용 시트는 `Assets/Resources/Art/Enemies/`에 준비했다. 전투에는 아직 연결하지 않았다.
+
+## 게임용 파일
+
+| 동작 | 게임용 시트 | 배열 | 칸 기준점 |
+| --- | --- | --- | --- |
+| 부유 대기 | [tianmo_final_boss_idle.png](../../../Assets/Resources/Art/Enemies/tianmo_final_boss_idle.png) | 104×104px, 가로 25칸 | (52, 16)px |
+| 부유 이동 | [tianmo_final_boss_walk.png](../../../Assets/Resources/Art/Enemies/tianmo_final_boss_walk.png) | 104×104px, 가로 25칸 | (52, 16)px |
+| 일반 공격 | [tianmo_final_boss_attack.png](../../../Assets/Resources/Art/Enemies/tianmo_final_boss_attack.png) | 104×104px, 가로 25칸 | (52, 16)px |
+| 쓰러짐 | [tianmo_final_boss_down.png](../../../Assets/Resources/Art/Enemies/tianmo_final_boss_down.png) | 104×104px, 가로 25칸 | (52, 16)px |
+| 승인된 검격 기술 | [tianmo_final_boss_skill.png](../../../Assets/Resources/Art/Enemies/tianmo_final_boss_skill.png) | 260×80px, 5열×5행, 25칸 | (222, 5)px |
+
+기준점은 각 칸의 왼쪽 아래부터 잰 픽셀이다. 일반 동작 시트는 남서쪽 원본 프레임을 원래 크기와 순서대로 가로로 배치했고, 기준점은 첫 프레임의 발 위치를 기준으로 잡은 적용 전 값이다. 기술은 승인된 게임 팩의 `whole-with-sprite.png`를 그대로 사용한다. 기술 칸의 기준점은 게임 팩의 자르기 오프셋 `(-222, -75)`와 칸 높이 80px에서 환산했다. 기술은 캐릭터까지 포함하므로 기본 캐릭터와 겹쳐 그리지 않는다. 각 PNG에 Unity `.meta`가 있으며 PPU 32·Point·무압축·밉맵 끔·최대 4096 설정을 따른다. 부유 높이, 화면 배치, 속도와 피해 시점은 전투 연결 시 확인한다. [에셋 목록](../../../docs/dev/assets.md)의 몬스터와 보스 항목에도 기록했다.
 
 | 자료 | 파일 | 내용 |
 | --- | --- | --- |

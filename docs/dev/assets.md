@@ -63,6 +63,7 @@
 
 ## 몬스터와 보스
 
+- **5스테이지 천마신교 최종 보스 게임용 파일 준비, 전투 연결 전**: [원본·미리보기·제작 기록](../../art/source/tianmo_final_boss/index.md). `Art/Enemies/tianmo_final_boss_idle`, `walk`, `attack`, `down`은 각각 104×104px × 25프레임의 가로 한 줄 시트다. 원본 프레임을 확대·축소 없이 순서대로 배치했으며 공통 기준점은 칸 왼쪽 아래부터 (52, 16)px이다. 부유 높이와 화면상의 기준점은 적용 시 확인한다. `Art/Enemies/tianmo_final_boss_skill`은 승인된 날아가는 검격과 캐릭터가 함께 들어 있는 5열×5행 시트로, 칸 260×80px, 25프레임, 발 기준점 (222, 5)px이다. 기술 팩의 `whole-with-sprite.png`를 그대로 사용했으며 첫 칸은 맨 위 왼쪽부터 가로 순서다. 기술에는 캐릭터가 이미 포함되어 있으므로 같은 순간에 기본 캐릭터를 중복 표시하지 않도록 연결한다. PPU 32, Point, 무압축, 밉맵 끔, 최대 4096. 미리보기의 10fps는 검토용이며 게임 속도·발동 조건·피해 시점은 아직 정하지 않았다. 파일은 `Assets/Resources/`에 있지만 코드에서 사용하지 않는다.
 - 천마신교 4스테이지 보스는 사용자가 승인한 [원본과 미리보기](../../art/source/tianmo_boss/index.md)를 사용한다. `Art/Enemies/tianmo_boss_` 아래 `idle`, `walk`, `attack`, `down`, `skill`은 각 칸 104×104px, 각각 17·25·25·17·37프레임이며 발 피벗은 (52, 18)px이다. 기술은 보정된 피색 검격을 포함한다. PPU 32, Point, 무압축, 최대 4096, 표시 배율 1.5다.
 - 남궁 장로 보스는 사용자가 승인한 [원본과 재생 미리보기](../../art/source/namgung_boss/index.md)를 사용한다. `Art/Enemies/namgung_boss_idle`, `walk`, `attack`, `down`은 100×100px, 각각 17·25·25·17프레임, 피벗 (50, 15)px이다. `namgung_boss_skill`은 장로와 빛기둥을 합성한 5열×5행 시트, 칸 246×138px, 25프레임, 피벗 (209, 15)px이다. PPU 32, Point, 무압축, 최대 4096, 표시 배율 1.5. 대기·이동 10fps, 공격·기술은 25 ÷ 공격 간격 fps, 쓰러짐은 0.075초/프레임이다. 기술 시트는 원본 게임 팩의 잘린 칸과 발 기준점을 그대로 사용한다.
 
@@ -162,6 +163,7 @@ UI 스프라이트는 작게 그리고 9-slice로 늘린다. 테두리 폭(9-sli
 | ID | 리소스 경로 | 용도 | 원본 크기 | 화면 크기 | 상태 |
 | --- | --- | --- | --- | --- | --- |
 | jongnam_stage_hud | `Art/UI/jongnam_stage_hud` | 종남파 스테이지 제목·진행도 틀 | 2172×724px | 260×86.7 기준 픽셀 | 최종 (선택된 [원본](../../art/source/jongnam_ui/index.md)) |
+| boss_health_frame_1~5 | `Art/UI/boss_health_frame_{1..5}` | 1~5스테이지(종남·개방·남궁·마교·천마) 보스 체력 틀. 게이지 칸은 투명, 채움은 코드의 색 바 | 2172×724px, 최대 2048·밉맵·필터 2 | 300×100 기준 픽셀, 게이지 칸은 [스테이지 사양](../spec/stage.md) 화면 절 | 원본 그대로 복사, 코드 연결 전 ([원본](../../art/source/boss_health_ui/index.md)) |
 | jongnam_title_plum_duel | `Art/UI/jongnam_title_plum_duel` | 종남 일반 전투 제목 `매화 아래 비무` | 1917×462px | 최대 75.3×12.3 기준 픽셀, 비율 유지 | 최종 (선택 원본의 투명 여백 제거) |
 | substage_intro_plaque | `Art/UI/Substage/intro_plaque` | 작은 스테이지 시작 번호 패 | 2172×724px | 360×120 기준 픽셀 | 최종 ([원본](../../art/source/substage_intro/index.md)) |
 

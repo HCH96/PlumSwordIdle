@@ -31,7 +31,7 @@ namespace PlumSword.Game.Tests.Combat
         }
 
         [UnityTest]
-        public IEnumerator StageFiveAndNextRound_UseBothSpritesAndPlayDown()
+        public IEnumerator StageFourAndNextRound_UseBothSpritesAndPlayDown()
         {
             yield return SceneManager.LoadSceneAsync(0);
             yield return null;
@@ -82,7 +82,7 @@ namespace PlumSword.Game.Tests.Combat
         }
 
         [UnityTest]
-        public IEnumerator LastNormalOpponent_StageFiveWaitsForDownBeforeFade()
+        public IEnumerator LastNormalOpponent_StageFourWaitsForDownBeforeFade()
         {
             var wallet = new Wallet();
             var upgrades = new StatUpgrades(wallet, 10000, 10000);
