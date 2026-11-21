@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace PlumSword.Game.Combat
 {
-    /// <summary>선택한 종남 제자 시트를 원본 픽셀 크기로 잘라 공유한다.</summary>
+    /// <summary>상대 애니메이션 시트를 원본 픽셀 크기로 잘라 공유한다.</summary>
     internal sealed class JongnamSprites : IDisposable
     {
         public readonly Sprite[] Idle;
@@ -11,17 +11,36 @@ namespace PlumSword.Game.Combat
         public readonly Sprite[] Attack;
         public readonly Sprite[] Skill;
         public readonly Sprite[] Down;
+        public readonly int AttackHitFrame;
+        public readonly int SkillHitFrame;
+        public readonly float WalkFramesPerSecond;
         public const int DownFrameCount = 17;
         public const float DownFrameSeconds = 0.075f;
         public const float DownDuration = DownFrameCount * DownFrameSeconds;
 
-        private JongnamSprites(Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] skill = null, Sprite[] down = null)
+        private JongnamSprites(Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] skill = null, Sprite[] down = null, int attackHitFrame = 10, float walkFramesPerSecond = 12f, int skillHitFrame = 14)
         {
             Idle = idle;
             Walk = walk;
             Attack = attack;
             Skill = skill;
             Down = down;
+            AttackHitFrame = attackHitFrame;
+            SkillHitFrame = skillHitFrame;
+            WalkFramesPerSecond = walkFramesPerSecond;
+        }
+
+        public static JongnamSprites TryLoadGaebang(bool unarmed)
+        {
+            string prefix = "Art/Enemies/gaebang_" + (unarmed ? "unarmed_" : "staff_");
+            var idle = Slice(prefix + "idle", unarmed ? 64 : 96, unarmed ? 84 : 96, 17, unarmed ? 13 : 24);
+            var walk = Slice(prefix + "walk", unarmed ? 84 : 96, unarmed ? 84 : 96, unarmed ? 24 : 25, unarmed ? 13 : 24);
+            var attack = Slice(prefix + "attack", unarmed ? 84 : 68, unarmed ? 84 : 68, 24, unarmed ? 13 : 10);
+            var down = Slice(prefix + "down", unarmed ? 104 : 96, unarmed ? 104 : 96, 16, unarmed ? 23 : 24);
+            if (idle != null && walk != null && attack != null)
+                return new JongnamSprites(idle, walk, attack, down: down, attackHitFrame: unarmed ? 5 : 16, walkFramesPerSecond: 10f);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(down);
+            return null;
         }
 
         public static JongnamSprites TryLoadBoss()
@@ -33,7 +52,21 @@ namespace PlumSword.Game.Combat
             var skill = Slice(prefix + "skill", 100, 100, 24, 15);
             var down = Slice(prefix + "down", 100, 100, DownFrameCount, 15);
             if (idle != null && walk != null && attack != null && skill != null)
-                return new JongnamSprites(idle, walk, attack, skill, down);
+                return new JongnamSprites(idle, walk, attack, skill, down, attackHitFrame: 13);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(skill); DestroyFrames(down);
+            return null;
+        }
+
+        public static JongnamSprites TryLoadGaebangBoss()
+        {
+            const string prefix = "Art/Enemies/gaebang_boss_";
+            var idle = Slice(prefix + "idle", 96, 96, 9, 16);
+            var walk = Slice(prefix + "walk", 96, 96, 25, 16);
+            var attack = Slice(prefix + "attack", 96, 96, 25, 16);
+            var skill = Slice(prefix + "skill", 96, 96, 33, 16);
+            var down = Slice(prefix + "down", 96, 96, 25, 16);
+            if (idle != null && walk != null && attack != null && down != null)
+                return new JongnamSprites(idle, walk, attack, skill, down, attackHitFrame: 8, walkFramesPerSecond: 10f, skillHitFrame: 19);
             DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(skill); DestroyFrames(down);
             return null;
         }

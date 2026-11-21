@@ -1,0 +1,292 @@
+{
+  "group_id": "9a75068f-1783-4523-b645-bfbcbcc101dd",
+  "states": [
+    {
+      "character": {
+        "id": "48af9664-a759-4146-a0e0-076ea1c0e80c",
+        "name": "Idle",
+        "prompt": "Broad stocky middle-aged Beggars Sect martial boss, dark hair tied in topknot, red cloth headband with tails, rugged face with dark stubble, worn patched charcoal gray robe over brown crossed inner robe, muted red sash, wraps on wrists and shins. Holds a single thick bamboo cudgel with visible nodes and cloth grip in his hands, the weapon is part of the character sprite in every direction. Strong broad silhouette, compact SD chibi pixel art, larger than ordinary disciples, readable proportions, idle combat stance. No separate weapon layer.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-20T17:23:52.601506+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "Gaebang_boss_down": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down/south-west/frame_016.png"
+            ]
+          },
+          "Gaebang_boss_walk": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_016.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_017.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_018.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_019.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_020.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_021.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_022.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_023.png",
+              "Idle/animations/Gaebang_boss_walk/south-west/frame_024.png"
+            ]
+          },
+          "Gaebang_boss_attack": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_016.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_017.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_018.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_019.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_020.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_021.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_022.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_023.png",
+              "Idle/animations/Gaebang_boss_attack/south-west/frame_024.png"
+            ]
+          },
+          "Gaebang_boss_down_release_v6": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down_release_v6/south-west/frame_016.png"
+            ]
+          },
+          "Gaebang_boss_down_left": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down_left/south-west/frame_016.png"
+            ]
+          },
+          "Gaebang_boss_down_natural_v4": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down_natural_v4/south-west/frame_016.png"
+            ]
+          },
+          "Gaebang_boss_down_natural_v3": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_016.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_017.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_018.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_019.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_020.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_021.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_022.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_023.png",
+              "Idle/animations/Gaebang_boss_down_natural_v3/south-west/frame_024.png"
+            ]
+          },
+          "Gaebang_boss_drop_staff_v7": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_016.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_017.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_018.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_019.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_020.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_021.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_022.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_023.png",
+              "Idle/animations/Gaebang_boss_drop_staff_v7/south-west/frame_024.png"
+            ]
+          },
+          "Gaebang_boss_idle": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_idle/south-west/frame_008.png"
+            ]
+          },
+          "Gaebang_boss_down_right_v2": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down_right_v2/south-west/frame_016.png"
+            ]
+          },
+          "Gaebang_boss_down_natural_v5": {
+            "south-west": [
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_000.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_001.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_002.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_003.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_004.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_005.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_006.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_007.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_008.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_009.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_010.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_011.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_012.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_013.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_014.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_015.png",
+              "Idle/animations/Gaebang_boss_down_natural_v5/south-west/frame_016.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-21T09:26:52.890603"
+}

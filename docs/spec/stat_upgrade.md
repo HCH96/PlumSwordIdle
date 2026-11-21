@@ -73,7 +73,7 @@
 | 단계 표기 `StatUpgradeText.Level` | `"Lv." + 단계` | 0 → `Lv.0`, 10 → `Lv.10`. `level.ToString(CultureInfo.InvariantCulture)` |
 | 비용 표기 `StatUpgradeText.Cost` | 최대 단계면 `MAX`, 아니면 `"G " + GoldText.FormatNumber(cost)` | 20 → `G 20`, 1234 → `G 1,234` |
 | 버튼 글자 `StatUpgradeText.ButtonLabel` | `Name + "\n" + Level + "\n" + Cost` | `무력\nLv.3\nG 35`, `내공\nLv.1\nG 25`, `체력\nLv.5\nMAX` |
-| 내공 아이콘 리소스 경로 | `Art/UI/StatUpgrade/inner_power` | 파일 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`. 지금은 없다 ("화면") |
+| 내공 아이콘 리소스 경로 | `Art/UI/StatUpgrade/inner_power` | 파일 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png` ("화면") |
 
 최종 능력치 예시 (시작 공격력 10, 최대 체력 100):
 
@@ -226,7 +226,7 @@ namespace PlumSword.Game.StatUpgrade
 그림이 있으면 공통 반투명 무협풍 바탕과 공격·체력·내공 아이콘, 금화 아이콘을 사용한다. 각 버튼은 200×48이며 기존 가로 위치와 구매 가능 조건을 유지한다. 이름, 단계, 비용은 각각 갱신한다. 이름에는 Galmuri11을 쓰고 단계와 비용은 기존 글꼴을 유지한다. 그림이 없는 대체 버튼에는 한글을 표시하기 위해 Galmuri11을 쓴다. 비용은 금화 아이콘 옆 숫자로 표시하고 최대 단계에는 아이콘 없이 `MAX`를 보인다. 보유 금화 현판은 무력 위에 둔다 ([금화 사양](currency.md)). 바탕이나 금화 그림이 없으면 단색과 기존 세 줄 글자를 쓴다. 아래의 단색·글자 배치는 그때의 대체 설명이다.
 
 - **그림 모드 조건**: 바탕 `Art/UI/StatUpgrade/button`과 금화 `Art/UI/StatUpgrade/coin`이 모두 있으면 그림 모드다. 능력치 아이콘은 조건에 넣지 않는다.
-- **능력치 아이콘**: `Art/UI/StatUpgrade/` 아래 `attack`(무력), `health`(체력), `inner_power`(내공). 그 버튼의 아이콘 그림이 없으면 아이콘 오브젝트(`Visual/Icon`)를 만들되 `SetActive(false)`로 숨긴다. 자리만 비고 이름·단계·비용·금화 아이콘의 배치는 그대로다. 지금은 `inner_power`가 없어 내공 버튼은 아이콘 없이 보인다. 나중에 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`를 넣으면 코드를 고치지 않아도 아이콘이 보인다.
+- **능력치 아이콘**: `Art/UI/StatUpgrade/` 아래 `attack`(무력), `health`(체력), `inner_power`(내공). 그 버튼의 아이콘 그림이 없으면 아이콘 오브젝트(`Visual/Icon`)를 만들되 `SetActive(false)`로 숨긴다. 자리만 비고 이름·단계·비용·금화 아이콘의 배치는 그대로다. `inner_power`는 매화빛 기운을 표현한 아이콘을 사용한다.
 
 그림 버튼에 마우스를 올리면 밝아지고 1.025배 커지며, 누르는 동안 0.96배가 된다. 구매 성공 시 아이콘이 잠깐 위로 움직이고 레벨 글자가 금빛으로 변하며 기존 시작 화면 꽃잎 두 장이 0.55초 동안 날아가 사라진다. 반복 구매 시 새 연출을 시작한다. 금화 부족·최대 단계·잠김 상태에는 호버와 성공 연출을 하지 않는다. 소리는 추가하지 않는다.
 
@@ -266,7 +266,6 @@ namespace PlumSword.Game.StatUpgrade
 - 페이드 때 실제로 잠금을 거는 것: 스테이지 기능이 정한다.
 - 저장 데이터 형식의 변경(공격 속도 칸 → 내공 칸, 판 번호): 저장 기능이 정한다.
 - 비용 단위의 한글 표기(`25금화`)는 하지 않는다. 능력치 이름에는 Galmuri11을 적용한다.
-- 내공 아이콘 그림 제작: 사람이 나중에 `Assets/Resources/Art/UI/StatUpgrade/inner_power.png`만 넣는다.
 - 버튼에 현재 능력치 값을 보여 주는 것, 강화 소리, 길게 눌러 연속 강화, 여러 단계 한꺼번에 강화, 강화 되돌리기·환불(공격 속도 강화 환불 포함): 하지 않는다.
 - 시작 능력치가 `long` 범위를 넘칠 만큼 큰 경우: 다루지 않는다.
 

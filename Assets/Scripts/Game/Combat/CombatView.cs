@@ -76,9 +76,10 @@ namespace PlumSword.Game.Combat
         private readonly List<CombatActor> _defeatedEnemies = new List<CombatActor>();
         private Transform _ground;
         private Transform[] _trees;
-        // 사용자가 플레이하며 검토하는 임시 1스테이지 배경. 파일이 없으면 기존 대체 표시를 쓴다.
+        // 테마별 배경을 같은 세 타일에 표시한다. 없는 테마는 대체 표시를 쓴다.
         private Transform[] _previewBackground;
         private float _previewWidth;
+        private Sprite[] _stageBackgrounds;
         private GameRoot _gameRoot;
         private GameObject _petals;
         private SpriteRenderer _skillSlash;
@@ -92,8 +93,13 @@ namespace PlumSword.Game.Combat
         private JongnamSprites _jongnamMale;
         private JongnamSprites _jongnamFemale;
         private JongnamSprites _jongnamBoss;
+        private JongnamSprites _gaebangStaff;
+        private JongnamSprites _gaebangUnarmed;
+        private JongnamSprites _gaebangBoss;
         private bool _discipleAttackedThisTick;
         private float _discipleDownElapsed;
+        private bool _skillAnimationPlaying;
+        private float _skillAnimationElapsed;
         private readonly DiscipleAnimator _discipleAnimator = new DiscipleAnimator();
 
         /// <summary>
@@ -138,6 +144,9 @@ namespace PlumSword.Game.Combat
             _jongnamMale = JongnamSprites.TryLoad(false);
             _jongnamFemale = JongnamSprites.TryLoad(true);
             _jongnamBoss = JongnamSprites.TryLoadBoss();
+            _gaebangStaff = JongnamSprites.TryLoadGaebang(false);
+            _gaebangUnarmed = JongnamSprites.TryLoadGaebang(true);
+            _gaebangBoss = JongnamSprites.TryLoadGaebangBoss();
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
             _disciple.DisplayedHealth = _battle.DiscipleHealth;
             _disciple.HealthRatioInitialized = false;
@@ -206,9 +215,15 @@ namespace PlumSword.Game.Combat
             _jongnamMale?.Dispose();
             _jongnamFemale?.Dispose();
             _jongnamBoss?.Dispose();
+            _gaebangStaff?.Dispose();
+            _gaebangUnarmed?.Dispose();
+            _gaebangBoss?.Dispose();
             _jongnamMale = null;
             _jongnamFemale = null;
             _jongnamBoss = null;
+            _gaebangStaff = null;
+            _gaebangBoss = null;
+            _gaebangUnarmed = null;
             if (_petals != null) Destroy(_petals);
         }
 
@@ -242,6 +257,7 @@ namespace PlumSword.Game.Combat
 
             if (_battle.IsDiscipleDefeated)
             {
+                _skillAnimationPlaying = false;
                 int frame = Mathf.Min((int)(_discipleDownElapsed / DiscipleSprites.DownFrameSeconds), DiscipleSprites.DownFrameCount - 1);
                 _disciple.Body.sprite = _discipleSprites.GetDown(frame);
                 _discipleDownElapsed += deltaTime;
@@ -255,6 +271,17 @@ namespace PlumSword.Game.Combat
 
             _discipleAnimator.Update(deltaTime, moved, attacked, engaged,
                 _battle.DiscipleAttackCooldown, _battle.DiscipleAttackInterval);
+            if (_skillAnimationPlaying)
+            {
+                if (!_battle.Paused) _skillAnimationElapsed += deltaTime;
+                int frame = (int)(_skillAnimationElapsed * DiscipleSprites.SkillFramesPerSecond);
+                if (frame < DiscipleSprites.SkillFrameCount)
+                {
+                    _disciple.Body.sprite = _discipleSprites.GetSkill(frame);
+                    return;
+                }
+                _skillAnimationPlaying = false;
+            }
             _disciple.Body.sprite = _discipleSprites.Get(_discipleAnimator.Motion, _discipleAnimator.Frame);
         }
 
@@ -299,10 +326,14 @@ namespace PlumSword.Game.Combat
                 : CreateActor("[Enemy]", NormalSize, NormalColor, EnemyOrder, EnemyHealthColor);
             // 프레임마다 스프라이트의 중심이 달라져도 적들의 앞뒤 순서는 바뀌지 않는다.
             actor.Body.sortingOrder = EnemyOrder + Math.Min(enemy.Index, 9989);
-            bool jongnam = _gameRoot != null
-                && _gameRoot.StageProgress != null && _gameRoot.StageProgress.DisplayStageNumber == 1;
-            actor.Jongnam = !jongnam ? null : enemy.Kind == EnemyKind.Boss
-                ? _jongnamBoss : (enemy.Index % 2 == 0 ? _jongnamMale : _jongnamFemale);
+            int stage = _gameRoot != null && _gameRoot.StageProgress != null
+                ? _gameRoot.StageProgress.DisplayStageNumber : 0;
+            if (stage == 1)
+                actor.Jongnam = enemy.Kind == EnemyKind.Boss
+                    ? _jongnamBoss : (enemy.Index % 2 == 0 ? _jongnamMale : _jongnamFemale);
+            else if (stage == 2)
+                actor.Jongnam = enemy.Kind == EnemyKind.Boss
+                    ? _gaebangBoss : (enemy.Index % 2 == 0 ? _gaebangStaff : _gaebangUnarmed);
             actor.PreviousPosition = enemy.Position;
             actor.DisplayedHealth = enemy.Health;
             if (actor.Jongnam != null)
@@ -366,6 +397,8 @@ namespace PlumSword.Game.Combat
         private void OnResetCompleted()
         {
             _discipleDownElapsed = 0f;
+            _skillAnimationPlaying = false;
+            _skillAnimationElapsed = 0f;
             _skillSlash.enabled = false;
             foreach (var number in _damageNumbers) if (number.Root != null) Destroy(number.Root);
             _damageNumbers.Clear();
@@ -396,6 +429,14 @@ namespace PlumSword.Game.Combat
 
         private void OnSkillUsed()
         {
+            if (_discipleSprites != null && _discipleSprites.HasSkill)
+            {
+                _skillAnimationElapsed = 0f;
+                _skillAnimationPlaying = true;
+                _disciple.Body.sprite = _discipleSprites.GetSkill(0);
+                _skillSlash.enabled = false;
+                return;
+            }
             _skillSlash.transform.localPosition = new Vector3(
                 (float)_battle.DisciplePosition + ActorDisplayOffset.x + 1f, ActorDisplayOffset.y + 0.75f, 0f);
             _skillSlashElapsed = 0.0;
@@ -432,9 +473,10 @@ namespace PlumSword.Game.Combat
             {
                 var actor = _defeatedEnemies[i];
                 actor.DownElapsed += deltaTime;
-                int frame = Mathf.Min((int)(actor.DownElapsed / JongnamSprites.DownFrameSeconds), JongnamSprites.DownFrameCount - 1);
+                int count = actor.Jongnam.Down.Length;
+                int frame = Mathf.Min((int)(actor.DownElapsed / JongnamSprites.DownFrameSeconds), count - 1);
                 actor.Body.sprite = actor.Jongnam.Down[frame];
-                if (actor.DownElapsed >= JongnamSprites.DownDuration + 0.5f)
+                if (actor.DownElapsed >= count * JongnamSprites.DownFrameSeconds + 0.5f)
                 {
                     Destroy(actor.Root);
                     _defeatedEnemies.RemoveAt(i);
@@ -455,19 +497,29 @@ namespace PlumSword.Game.Combat
                 _trees[i].localPosition = new Vector3(x, TreeSize.y * 0.5f, 0f);
             }
 
-            bool showPreview = _previewBackground != null && _gameRoot != null
-                && _gameRoot.StageProgress != null && _gameRoot.StageProgress.DisplayStageNumber == 1;
+            int stage = _gameRoot != null && _gameRoot.StageProgress != null
+                ? _gameRoot.StageProgress.DisplayStageNumber : 0;
+            Sprite background = stage > 0 && stage <= _stageBackgrounds.Length
+                ? _stageBackgrounds[stage - 1] : null;
+            bool showPreview = background != null && _previewBackground != null;
             _ground.gameObject.SetActive(!showPreview);
             foreach (var tree in _trees) tree.gameObject.SetActive(!showPreview);
             if (_previewBackground != null)
             {
-                int centerTile = Mathf.FloorToInt((float)cameraX / _previewWidth);
+                if (showPreview) _previewWidth = background.bounds.size.x * (18f / background.bounds.size.y);
+                int centerTile = showPreview ? Mathf.FloorToInt((float)cameraX / _previewWidth) : 0;
                 for (int i = 0; i < _previewBackground.Length; i++)
                 {
                     int tileIndex = centerTile + i - 1;
-                    _previewBackground[i].gameObject.SetActive(showPreview);
-                    _previewBackground[i].localPosition = new Vector3(tileIndex * _previewWidth, 2.9f, 0f);
-                    _previewBackground[i].GetComponent<SpriteRenderer>().flipX = (tileIndex & 1) != 0;
+                    var tile = _previewBackground[i];
+                    tile.gameObject.SetActive(showPreview);
+                    if (!showPreview) continue;
+                    float scale = 18f / background.bounds.size.y;
+                    tile.localScale = new Vector3(scale, scale, 1f);
+                    tile.localPosition = new Vector3(tileIndex * _previewWidth, 2.9f, 0f);
+                    var renderer = tile.GetComponent<SpriteRenderer>();
+                    renderer.sprite = background;
+                    renderer.flipX = (tileIndex & 1) != 0;
                 }
             }
         }
@@ -493,29 +545,36 @@ namespace PlumSword.Game.Combat
             actor.PreviousPosition = enemy.Position;
 
             // 피해가 이미 처리된 순간을 검격 프레임에 맞춘다. 다음 피해 전에는 앞 동작을 보여 준다.
-            bool isBoss = actor.Jongnam.Skill != null;
-            bool currentSkill = isBoss && enemy.AttackCount > 0 && enemy.AttackCount % 3 == 0;
-            bool nextSkill = isBoss && (enemy.AttackCount + 1) % 3 == 0;
-            int currentHitFrame = isBoss ? (currentSkill ? 14 : 13) : 10;
-            int nextHitFrame = isBoss ? (nextSkill ? 14 : 13) : 10;
-            const int attackFrames = 24;
-            float fps = attackFrames / (float)enemy.AttackInterval;
+            bool hasSkill = actor.Jongnam.Skill != null;
+            bool currentSkill = hasSkill && enemy.AttackCount > 0 && enemy.AttackCount % 3 == 0;
+            bool nextSkill = hasSkill && (enemy.AttackCount + 1) % 3 == 0;
+            var currentFrames = currentSkill ? actor.Jongnam.Skill : actor.Jongnam.Attack;
+            var nextFrames = nextSkill ? actor.Jongnam.Skill : actor.Jongnam.Attack;
+            int currentHitFrame = currentSkill ? actor.Jongnam.SkillHitFrame : actor.Jongnam.AttackHitFrame;
+            int nextHitFrame = nextSkill ? actor.Jongnam.SkillHitFrame : actor.Jongnam.AttackHitFrame;
+            float currentFps = currentFrames.Length / (float)enemy.AttackInterval;
+            float nextFps = nextFrames.Length / (float)enemy.AttackInterval;
             double cooldown = enemy.AttackCooldown;
             double sinceHit = enemy.AttackInterval - cooldown;
-            if (cooldown > 0 && sinceHit * fps < attackFrames - currentHitFrame)
+            if (cooldown > 0 && nextSkill && cooldown * nextFps <= nextHitFrame)
             {
-                int frame = Mathf.Clamp(currentHitFrame + (int)(sinceHit * fps), 0, attackFrames - 1);
-                actor.Body.sprite = (currentSkill ? actor.Jongnam.Skill : actor.Jongnam.Attack)[frame];
+                int frame = Mathf.Clamp(nextHitFrame - (int)Math.Ceiling(cooldown * nextFps), 0, nextHitFrame - 1);
+                actor.Body.sprite = nextFrames[frame];
             }
-            else if (cooldown > 0 && cooldown * fps <= nextHitFrame)
+            else if (cooldown > 0 && sinceHit * currentFps < currentFrames.Length - currentHitFrame)
             {
-                int frame = Mathf.Clamp(nextHitFrame - (int)Math.Ceiling(cooldown * fps), 0, nextHitFrame - 1);
-                actor.Body.sprite = (nextSkill ? actor.Jongnam.Skill : actor.Jongnam.Attack)[frame];
+                int frame = Mathf.Clamp(currentHitFrame + (int)(sinceHit * currentFps), 0, currentFrames.Length - 1);
+                actor.Body.sprite = currentFrames[frame];
+            }
+            else if (cooldown > 0 && cooldown * nextFps <= nextHitFrame)
+            {
+                int frame = Mathf.Clamp(nextHitFrame - (int)Math.Ceiling(cooldown * nextFps), 0, nextHitFrame - 1);
+                actor.Body.sprite = nextFrames[frame];
             }
             else
             {
                 var frames = actor.WalkGrace > 0f ? actor.Jongnam.Walk : actor.Jongnam.Idle;
-                float rate = actor.WalkGrace > 0f ? 12f : 10f;
+                float rate = actor.WalkGrace > 0f ? actor.Jongnam.WalkFramesPerSecond : 10f;
                 actor.Body.sprite = frames[(int)(actor.AnimationTime * rate) % frames.Length];
             }
         }
@@ -697,19 +756,17 @@ namespace PlumSword.Game.Combat
                 _trees[i] = CreateRect("[Tree]", transform, TreeSize, TreeColor, TreeOrder).transform;
             }
 
-            var preview = Resources.Load<Sprite>("Art/Backgrounds/stage1_preview");
-            if (preview == null) return;
-            // 아래 UI 뒤까지 채우면서 연무장 바닥 높이는 제자의 발에 맞춘다.
-            float scale = 18f / preview.bounds.size.y;
-            _previewWidth = preview.bounds.size.x * scale;
+            _stageBackgrounds = new[]
+            {
+                Resources.Load<Sprite>("Art/Backgrounds/stage1_preview"),
+                Resources.Load<Sprite>("Art/Backgrounds/stage2_gaebang")
+            };
             _previewBackground = new Transform[3];
             for (int i = 0; i < _previewBackground.Length; i++)
             {
-                var tile = new GameObject("[Stage1BackgroundPreview]");
+                var tile = new GameObject("[StageBackground]");
                 tile.transform.SetParent(transform, false);
-                tile.transform.localScale = new Vector3(scale, scale, 1f);
                 var renderer = tile.AddComponent<SpriteRenderer>();
-                renderer.sprite = preview;
                 renderer.sortingOrder = GroundOrder;
                 _previewBackground[i] = tile.transform;
             }

@@ -17,6 +17,9 @@ namespace PlumSword.Game.Combat
         public const string RunPath = "Art/Characters/disciple_run";
         public const string AttackPath = "Art/Characters/disciple_attack";
         public const string DownPath = "Art/Characters/disciple_down";
+        public const string SkillPath = "Art/Characters/disciple_skill";
+        public const int SkillFrameCount = 32;
+        public const float SkillFramesPerSecond = 24f;
         public const int DownFrameCount = 17;
         public const float DownFrameSeconds = 0.075f;
         public const float DownDuration = DownFrameCount * DownFrameSeconds;
@@ -38,13 +41,15 @@ namespace PlumSword.Game.Combat
         private readonly Sprite[] _run;
         private readonly Sprite[] _attack;
         private readonly Sprite[] _down;
+        private readonly Sprite[] _skill;
 
-        private DiscipleSprites(Sprite[] idle, Sprite[] run, Sprite[] attack, Sprite[] down)
+        private DiscipleSprites(Sprite[] idle, Sprite[] run, Sprite[] attack, Sprite[] down, Sprite[] skill)
         {
             _idle = idle;
             _run = run;
             _attack = attack;
             _down = down;
+            _skill = skill;
         }
 
         /// <summary>세 시트를 모두 읽으면 돌려주고, 하나라도 실패하면 경고를 남기고 null.</summary>
@@ -56,7 +61,7 @@ namespace PlumSword.Game.Combat
             if (attack != null)
             {
                 // 쓰러짐 에셋이 없어도 기존 전투 스프라이트는 계속 표시한다.
-                return new DiscipleSprites(idle, run, attack, Slice(DownSheet));
+                return new DiscipleSprites(idle, run, attack, Slice(DownSheet), SliceSkill());
             }
 
             DestroyAll(idle);
@@ -80,12 +85,33 @@ namespace PlumSword.Game.Combat
         public Sprite GetDown(int frame) => _down == null ? Get(DiscipleMotion.Idle, 0)
             : _down[Mathf.Clamp(frame, 0, _down.Length - 1)];
 
+        public bool HasSkill => _skill != null;
+        public Sprite GetSkill(int frame) => _skill[Mathf.Clamp(frame, 0, _skill.Length - 1)];
+
+        private static Sprite[] SliceSkill()
+        {
+            var texture = Resources.Load<Texture2D>(SkillPath);
+            const int width = 99, height = 105, columns = 8;
+            if (texture == null || texture.width != width * columns || texture.height != height * 4)
+                return null;
+
+            var frames = new Sprite[SkillFrameCount];
+            for (int i = 0; i < frames.Length; i++)
+            {
+                var rect = new Rect((i % columns) * width, (3 - i / columns) * height, width, height);
+                frames[i] = Sprite.Create(texture, rect, new Vector2(58f / width, 6f / height), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                frames[i].name = $"{texture.name}_{i:00}";
+            }
+            return frames;
+        }
+
         public void Dispose()
         {
             DestroyAll(_idle);
             DestroyAll(_run);
             DestroyAll(_attack);
             DestroyAll(_down);
+            DestroyAll(_skill);
         }
 
         private static Sprite[] Slice(Sheet sheet)

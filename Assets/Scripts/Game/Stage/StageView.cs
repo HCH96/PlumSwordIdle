@@ -340,9 +340,18 @@ namespace PlumSword.Game.Stage
 
         private void OnChanged()
         {
-            if (_stage.Phase == StagePhase.FadingOut && _previousPhase == StagePhase.Playing
-                && !_failedTransition && _stage.DisplayStageNumber == 1 && HasJongnamDownSheets())
-                _defeatAnimationRemaining = JongnamSprites.DownDuration;
+            if (_stage.Phase == StagePhase.FadingOut && _previousPhase == StagePhase.Playing && !_failedTransition)
+            {
+                if (_stage.DisplayStageNumber == 1 && HasJongnamDownSheets())
+                    _defeatAnimationRemaining = JongnamSprites.DownDuration;
+                else if (_stage.DisplayStageNumber == 2 && _stage.SubstageNumber > StageLayout.NormalSubstageCount
+                    && HasDownSheet("Art/Enemies/gaebang_boss_down", 96, 25))
+                    _defeatAnimationRemaining = 25 * JongnamSprites.DownFrameSeconds;
+                else if (_stage.DisplayStageNumber == 2 && _stage.SubstageNumber <= StageLayout.NormalSubstageCount
+                    && HasDownSheet("Art/Enemies/gaebang_staff_down", 96, 16)
+                    && HasDownSheet("Art/Enemies/gaebang_unarmed_down", 104, 16))
+                    _defeatAnimationRemaining = 16 * JongnamSprites.DownFrameSeconds;
+            }
             if (_stage.Phase != StagePhase.FadingOut) _failedTransition = false;
             _previousPhase = _stage.Phase;
             Redraw();
@@ -356,10 +365,10 @@ namespace PlumSword.Game.Stage
                 && HasDownSheet("Art/Enemies/jongnam_female_down", 76);
         }
 
-        private static bool HasDownSheet(string path, int size)
+        private static bool HasDownSheet(string path, int size, int count = JongnamSprites.DownFrameCount)
         {
             var texture = Resources.Load<Texture2D>(path);
-            return texture != null && texture.width == size * JongnamSprites.DownFrameCount && texture.height == size;
+            return texture != null && texture.width == size * count && texture.height == size;
         }
 
         // 글자·보스 이름·바를 지금 상태로 다시 그린다. 비율과 보스 여부는 StageProgress 의 값을 그대로 쓴다.
@@ -369,9 +378,9 @@ namespace PlumSword.Game.Stage
 
             bool bossActive = _stage.IsBossActive;
             float ratio = Mathf.Clamp01((float)_stage.BarRatio);
-            bool useJongnamArt = _stage.DisplayStageNumber == 1 && _jongnamHeader != null;
+            bool useJongnamArt = _jongnamHeader != null;
             bool useJongnamTitle = useJongnamArt && !bossActive && _jongnamTitle != null;
-            bool usePreview = _stage.DisplayStageNumber == 1 && _substagePreview != null;
+            bool usePreview = _substagePreview != null;
             if (_substagePreview != null) _substagePreview.gameObject.SetActive(usePreview);
             if (usePreview) _substagePreview.SetProgress(_stage.DisplayStageNumber, _stage.SubstageNumber);
             if (_fallbackHeader != null) _fallbackHeader.SetActive(!useJongnamArt && !usePreview);

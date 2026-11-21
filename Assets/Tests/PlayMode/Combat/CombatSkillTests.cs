@@ -93,38 +93,32 @@ namespace PlumSword.Game.Tests.Combat
         }
 
         [UnityTest]
-        public IEnumerator SkillUsed_ShowsSlashAtAttackPosition_FadesAndResetHidesIt()
+        public IEnumerator SkillUsed_PlaysApprovedAnimation_PausesAndResetStopsIt()
         {
             var battle = new Battle(new StatUpgrades(new Wallet(), 10, 100), null, true);
             var viewObject = new GameObject("[TestCombatView]");
             var cameraObject = new GameObject("[TestCamera]");
             try
             {
-                var view = viewObject.AddComponent<CombatView>();
-                view.Initialize(battle, cameraObject.AddComponent<Camera>());
-                var slash = viewObject.transform.Find("[SkillSlash]");
-                var renderer = slash.GetComponent<SpriteRenderer>();
-                Assert.That(renderer.enabled, Is.False);
-                Assert.That(slash.localScale, Is.EqualTo(new Vector3(2f, 0.4f, 1f)));
-                Assert.That(renderer.sortingOrder, Is.EqualTo(20000));
+                viewObject.AddComponent<CombatView>().Initialize(battle, cameraObject.AddComponent<Camera>());
+                var slash = viewObject.transform.Find("[SkillSlash]").GetComponent<SpriteRenderer>();
+                var body = viewObject.transform.Find("[Disciple]/Body").GetComponent<SpriteRenderer>();
+                Assert.That(Resources.Load<Texture2D>("Art/Characters/disciple_skill"), Is.Not.Null);
                 battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
                 battle.Step();
-                Assert.That(renderer.enabled, Is.True);
-                Assert.That(slash.localPosition.x, Is.EqualTo((float)battle.DisciplePosition - 1.25f).Within(1e-5f));
-                Assert.That(slash.localPosition.y, Is.EqualTo(-0.75f).Within(1e-5f));
-                Assert.That(renderer.color.a, Is.EqualTo(0.6f).Within(1e-5f));
-                var position = slash.localPosition;
-                yield return new WaitForSeconds(0.1f);
-                Assert.That(slash.localPosition, Is.EqualTo(position));
-                Assert.That(renderer.color.a, Is.LessThan(0.6f));
-                yield return new WaitForSeconds(0.3f);
-                Assert.That(renderer.enabled, Is.False);
+                Assert.That(slash.enabled, Is.False);
+                Assert.That(body.sprite.name, Is.EqualTo("disciple_skill_00"));
+                yield return new WaitForSeconds(0.2f);
+                Assert.That(body.sprite.name, Does.StartWith("disciple_skill_"));
+                Assert.That(body.sprite.name, Is.Not.EqualTo("disciple_skill_00"));
+                battle.SetPaused(true);
+                yield return null;
+                var pausedFrame = body.sprite;
+                yield return new WaitForSeconds(0.2f);
+                Assert.That(body.sprite, Is.EqualTo(pausedFrame));
                 battle.Reset();
-                battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
-                battle.Step();
-                Assert.That(renderer.enabled, Is.True);
-                battle.Reset();
-                Assert.That(renderer.enabled, Is.False);
+                Assert.That(body.sprite.name, Does.StartWith("disciple_idle_"));
+                Assert.That(slash.enabled, Is.False);
             }
             finally
             {
@@ -132,5 +126,6 @@ namespace PlumSword.Game.Tests.Combat
                 Object.DestroyImmediate(cameraObject);
             }
         }
+
     }
 }
