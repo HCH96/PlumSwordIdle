@@ -45,6 +45,7 @@ namespace PlumSword.Game.Stage
         private static readonly Vector2 TopCenter = new Vector2(0.5f, 1f);
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
 
+        private static string FinalBossDownPath = "Art/Enemies/tianmo_final_boss_down";
         private StageProgress _stage;
         private float _defeatAnimationRemaining;
         private StagePhase _previousPhase;
@@ -365,6 +366,10 @@ namespace PlumSword.Game.Stage
                     && HasDownSheet("Art/Enemies/tianmo_swordsman_down", 64, 17)
                     && HasDownSheet("Art/Enemies/tianmo_guard_down", 64, 17))
                     _defeatAnimationRemaining = JongnamSprites.DownDuration;
+                else if (_stage.DisplayStageNumber == StageLayout.FinalDisplayStage
+                    && _stage.SubstageNumber > StageLayout.NormalSubstageCount
+                    && HasDownSheet(FinalBossDownPath, 104, 25))
+                    _defeatAnimationRemaining = 25 * JongnamSprites.DownFrameSeconds;
             }
             if (_stage.Phase != StagePhase.FadingOut) _failedTransition = false;
             _previousPhase = _stage.Phase;
@@ -396,7 +401,11 @@ namespace PlumSword.Game.Stage
             bool useJongnamTitle = useJongnamArt && !bossActive && _jongnamTitle != null;
             bool usePreview = _substagePreview != null;
             if (_substagePreview != null) _substagePreview.gameObject.SetActive(usePreview);
-            if (usePreview) _substagePreview.SetProgress(_stage.DisplayStageNumber, _stage.SubstageNumber);
+            if (usePreview)
+            {
+                _substagePreview.SetProgress(_stage.DisplayStageNumber, _stage.SubstageNumber);
+                _substagePreview.SetMarkersVisible(!bossActive);
+            }
             if (_fallbackHeader != null) _fallbackHeader.SetActive(!useJongnamArt && !usePreview);
             if (_jongnamHeader != null) _jongnamHeader.SetActive(useJongnamArt && !usePreview);
             if (_jongnamTitle != null) _jongnamTitle.SetActive(useJongnamTitle && !usePreview);
@@ -444,7 +453,7 @@ namespace PlumSword.Game.Stage
                 try
                 {
                     _stageLabel.text = StageText.RoundStageLabel(_stage.RoundNumber, _stage.DisplayStageNumber)
-                        + " · " + _stage.DisplayStageNumber + "-" + _stage.SubstageNumber;
+                        + " · " + StageText.SubstageLabel(_stage.DisplayStageNumber, _stage.SubstageNumber);
                 }
                 catch (Exception e)
                 {

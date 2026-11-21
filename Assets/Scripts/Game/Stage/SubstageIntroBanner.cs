@@ -59,7 +59,7 @@ namespace PlumSword.Game.Stage
 
         public void Show(int stage, int substage)
         {
-            _number.text = stage + "-" + substage;
+            _number.text = StageText.SubstageLabel(stage, substage);
             _elapsed = 0f;
             gameObject.SetActive(true);
             ApplyAnimation();

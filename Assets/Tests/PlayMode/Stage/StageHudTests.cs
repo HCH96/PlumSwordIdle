@@ -113,6 +113,9 @@ namespace PlumSword.Game.Tests.Stage
                         Assert.That(((RectTransform)preview.Find("Marker" + marker)).anchoredPosition.y, Is.EqualTo(-96f));
                 }
                 Assert.That(stage.IsBossActive, Is.True);
+                for (int marker = 1; marker <= 6; marker++)
+                    Assert.That(preview.Find("Marker" + marker).gameObject.activeSelf, Is.False);
+                Assert.That(preview.Find("BossMarker").gameObject.activeSelf, Is.False);
                 Assert.That(preview.gameObject.activeSelf, Is.True);
                 Assert.That(frame.gameObject.activeSelf, Is.False);
                 Assert.That(fill.transform.parent.gameObject.activeSelf, Is.True);
