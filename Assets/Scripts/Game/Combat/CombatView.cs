@@ -82,6 +82,7 @@ namespace PlumSword.Game.Combat
         private Sprite[] _stageBackgrounds;
         private GameRoot _gameRoot;
         private GameObject _petals;
+        private GameObject _ash;
         private SpriteRenderer _skillSlash;
         private double _skillSlashElapsed;
         private Sprite[] _damageDigits;
@@ -98,6 +99,10 @@ namespace PlumSword.Game.Combat
         private JongnamSprites _gaebangBoss;
         private JongnamSprites _namgungMale;
         private JongnamSprites _namgungFemale;
+        private JongnamSprites _namgungBoss;
+        private JongnamSprites _tianmoBoss;
+        private JongnamSprites _tianmoSwordsman;
+        private JongnamSprites _tianmoGuard;
         private bool _discipleAttackedThisTick;
         private float _discipleDownElapsed;
         private bool _skillAnimationPlaying;
@@ -143,6 +148,7 @@ namespace PlumSword.Game.Combat
 
             CreateBackground();
             CreatePetals();
+            CreateAsh();
             _jongnamMale = JongnamSprites.TryLoad(false);
             _jongnamFemale = JongnamSprites.TryLoad(true);
             _jongnamBoss = JongnamSprites.TryLoadBoss();
@@ -151,6 +157,10 @@ namespace PlumSword.Game.Combat
             _gaebangBoss = JongnamSprites.TryLoadGaebangBoss();
             _namgungMale = JongnamSprites.TryLoadNamgung(false);
             _namgungFemale = JongnamSprites.TryLoadNamgung(true);
+            _namgungBoss = JongnamSprites.TryLoadNamgungBoss();
+            _tianmoBoss = JongnamSprites.TryLoadTianmoBoss();
+            _tianmoSwordsman = JongnamSprites.TryLoadTianmo(false);
+            _tianmoGuard = JongnamSprites.TryLoadTianmo(true);
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
             _disciple.DisplayedHealth = _battle.DiscipleHealth;
             _disciple.HealthRatioInitialized = false;
@@ -224,6 +234,10 @@ namespace PlumSword.Game.Combat
             _gaebangBoss?.Dispose();
             _namgungMale?.Dispose();
             _namgungFemale?.Dispose();
+            _namgungBoss?.Dispose();
+            _tianmoBoss?.Dispose();
+            _tianmoSwordsman?.Dispose();
+            _tianmoGuard?.Dispose();
             _jongnamMale = null;
             _jongnamFemale = null;
             _jongnamBoss = null;
@@ -232,7 +246,12 @@ namespace PlumSword.Game.Combat
             _gaebangUnarmed = null;
             _namgungMale = null;
             _namgungFemale = null;
+            _namgungBoss = null;
+            _tianmoBoss = null;
+            _tianmoSwordsman = null;
+            _tianmoGuard = null;
             if (_petals != null) Destroy(_petals);
+            if (_ash != null) Destroy(_ash);
         }
 
         // ---- 제자 스프라이트 (없으면 단색 사각형 대체 표시 그대로) ----
@@ -342,8 +361,13 @@ namespace PlumSword.Game.Combat
             else if (stage == 2)
                 actor.Jongnam = enemy.Kind == EnemyKind.Boss
                     ? _gaebangBoss : (enemy.Index % 2 == 0 ? _gaebangStaff : _gaebangUnarmed);
-            else if (stage == 3 && enemy.Kind == EnemyKind.Normal)
-                actor.Jongnam = enemy.Index % 2 == 0 ? _namgungMale : _namgungFemale;
+            else if (stage == 3)
+                actor.Jongnam = enemy.Kind == EnemyKind.Boss
+                    ? _namgungBoss : (enemy.Index % 2 == 0 ? _namgungMale : _namgungFemale);
+            else if (stage == 4 && enemy.Kind == EnemyKind.Boss)
+                actor.Jongnam = _tianmoBoss;
+            else if (stage == 5 && enemy.Kind == EnemyKind.Normal)
+                actor.Jongnam = enemy.Index % 2 == 0 ? _tianmoSwordsman : _tianmoGuard;
             actor.PreviousPosition = enemy.Position;
             actor.DisplayedHealth = enemy.Health;
             if (actor.Jongnam != null)
@@ -756,6 +780,20 @@ namespace PlumSword.Game.Combat
             _petals.AddComponent<CombatPetals>().Initialize(_gameRoot);
         }
 
+        private void CreateAsh()
+        {
+            if (_gameRoot == null || _gameRoot.UiCanvas == null) return;
+            _ash = new GameObject("[CombatAsh]", typeof(RectTransform));
+            var rect = (RectTransform)_ash.transform;
+            rect.SetParent(_gameRoot.UiCanvas.transform, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.SetAsFirstSibling();
+            _ash.AddComponent<CombatAsh>().Initialize(_gameRoot);
+        }
+
         private void CreateBackground()
         {
             _ground = CreateRect("[Ground]", transform, GroundSize, GroundColor, GroundOrder).transform;
@@ -770,7 +808,9 @@ namespace PlumSword.Game.Combat
             {
                 Resources.Load<Sprite>("Art/Backgrounds/stage1_preview"),
                 Resources.Load<Sprite>("Art/Backgrounds/stage2_gaebang"),
-                Resources.Load<Sprite>("Art/Backgrounds/stage3_namgung")
+                Resources.Load<Sprite>("Art/Backgrounds/stage3_namgung"),
+                Resources.Load<Sprite>("Art/Backgrounds/stage4_magyo"),
+                Resources.Load<Sprite>("Art/Backgrounds/stage5_tianmo")
             };
             _previewBackground = new Transform[3];
             for (int i = 0; i < _previewBackground.Length; i++)

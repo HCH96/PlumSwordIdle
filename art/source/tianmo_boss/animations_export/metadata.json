@@ -1,0 +1,137 @@
+{
+  "group_id": "634f732d-0de4-4ffb-af14-0256d753e6f7",
+  "states": [
+    {
+      "character": {
+        "id": "f3395d21-8dd6-4a21-9861-54f1378e1b3e",
+        "name": "Idle",
+        "prompt": "Adult woman martial arts cult commander with long unruly black hair partly in a high ponytail tied red, a clearly visible black eyepatch over one eye and a single glaring bright red eye, unhinged fierce grin; dark charcoal layered wuxia robes with angular shoulders, muted bronze fastenings, crimson lining and long flowing red sash. Wields one broad crescent curved dao with pale silver edge visibly separated from body. Compact SD chibi boss, large head and slender body, sinister battle-ready stance. Keep eyepatch distinct from hair and exposed eye.",
+        "size": {
+          "width": 96,
+          "height": 96
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-21T17:27:41.803221+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "Tianmo_boss_walk": {
+            "south-west": [
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_000.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_001.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_002.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_003.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_004.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_005.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_006.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_007.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_008.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_009.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_010.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_011.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_012.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_013.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_014.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_015.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_016.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_017.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_018.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_019.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_020.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_021.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_022.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_023.png",
+              "Idle/animations/Tianmo_boss_walk/south-west/frame_024.png"
+            ]
+          },
+          "Tianmo_boss_down": {
+            "south-west": [
+              "Idle/animations/Tianmo_boss_down/south-west/frame_000.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_001.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_002.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_003.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_004.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_005.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_006.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_007.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_008.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_009.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_010.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_011.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_012.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_013.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_014.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_015.png",
+              "Idle/animations/Tianmo_boss_down/south-west/frame_016.png"
+            ]
+          },
+          "Tianmo_boss_idle": {
+            "south-west": [
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_000.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_001.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_002.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_003.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_004.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_005.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_006.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_007.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_008.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_009.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_010.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_011.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_012.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_013.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_014.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_015.png",
+              "Idle/animations/Tianmo_boss_idle/south-west/frame_016.png"
+            ]
+          },
+          "Tianmo_boss_attack": {
+            "south-west": [
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_000.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_001.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_002.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_003.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_004.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_005.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_006.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_007.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_008.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_009.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_010.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_011.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_012.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_013.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_014.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_015.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_016.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_017.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_018.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_019.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_020.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_021.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_022.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_023.png",
+              "Idle/animations/Tianmo_boss_attack/south-west/frame_024.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-21T17:38:55.766271"
+}

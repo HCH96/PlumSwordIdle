@@ -30,6 +30,48 @@ namespace PlumSword.Game.Combat
             WalkFramesPerSecond = walkFramesPerSecond;
         }
 
+        public static JongnamSprites TryLoadTianmoBoss()
+        {
+            const string prefix = "Art/Enemies/tianmo_boss_";
+            var idle = Slice(prefix + "idle", 104, 104, 17, 18);
+            var walk = Slice(prefix + "walk", 104, 104, 25, 18);
+            var attack = Slice(prefix + "attack", 104, 104, 25, 18);
+            var down = Slice(prefix + "down", 104, 104, 17, 18);
+            var skill = Slice(prefix + "skill", 104, 104, 37, 18);
+            if (idle != null && walk != null && attack != null && down != null)
+                return new JongnamSprites(idle, walk, attack, skill, down, attackHitFrame: 11, walkFramesPerSecond: 10f, skillHitFrame: 7);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(skill); DestroyFrames(down);
+            return null;
+        }
+
+        public static JongnamSprites TryLoadTianmo(bool guard)
+        {
+            string prefix = "Art/Enemies/tianmo_" + (guard ? "guard_" : "swordsman_");
+            int bottom = guard ? 5 : 6;
+            var idle = Slice(prefix + "idle", 64, 64, 17, bottom);
+            var walk = Slice(prefix + "walk", 64, 64, 25, bottom);
+            var attack = Slice(prefix + "attack", 64, 64, 25, bottom);
+            var down = Slice(prefix + "down", 64, 64, 17, bottom);
+            if (idle != null && walk != null && attack != null && down != null)
+                return new JongnamSprites(idle, walk, attack, down: down, attackHitFrame: guard ? 11 : 9, walkFramesPerSecond: 10f);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(down);
+            return null;
+        }
+
+        public static JongnamSprites TryLoadNamgungBoss()
+        {
+            const string prefix = "Art/Enemies/namgung_boss_";
+            var idle = Slice(prefix + "idle", 100, 100, 17, 15);
+            var walk = Slice(prefix + "walk", 100, 100, 25, 15);
+            var attack = Slice(prefix + "attack", 100, 100, 25, 15);
+            var down = Slice(prefix + "down", 100, 100, 17, 15);
+            var skill = SliceGrid(prefix + "skill", 246, 138, 5, 5, 209, 15);
+            if (idle != null && walk != null && attack != null && down != null)
+                return new JongnamSprites(idle, walk, attack, skill, down, attackHitFrame: 8, walkFramesPerSecond: 10f, skillHitFrame: 7);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(skill); DestroyFrames(down);
+            return null;
+        }
+
         public static JongnamSprites TryLoadNamgung(bool female)
         {
             string prefix = "Art/Enemies/namgung_" + (female ? "female_" : "male_");
@@ -106,6 +148,20 @@ namespace PlumSword.Game.Combat
             {
                 frames[i] = Sprite.Create(texture, new Rect(i * width, 0, width, height),
                     new Vector2(0.5f, (float)bottom / height), 32f, 0, SpriteMeshType.FullRect);
+                frames[i].name = texture.name + "_" + i.ToString("00");
+            }
+            return frames;
+        }
+
+        private static Sprite[] SliceGrid(string path, int width, int height, int columns, int rows, int pivotX, int bottom)
+        {
+            var texture = Resources.Load<Texture2D>(path);
+            if (texture == null || texture.width != width * columns || texture.height != height * rows) return null;
+            var frames = new Sprite[columns * rows];
+            for (int i = 0; i < frames.Length; i++)
+            {
+                var rect = new Rect((i % columns) * width, (rows - 1 - i / columns) * height, width, height);
+                frames[i] = Sprite.Create(texture, rect, new Vector2((float)pivotX / width, (float)bottom / height), 32f, 0, SpriteMeshType.FullRect);
                 frames[i].name = texture.name + "_" + i.ToString("00");
             }
             return frames;

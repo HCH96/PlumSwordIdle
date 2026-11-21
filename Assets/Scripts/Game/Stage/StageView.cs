@@ -355,6 +355,16 @@ namespace PlumSword.Game.Stage
                     && HasDownSheet("Art/Enemies/namgung_male_down", 76, 17)
                     && HasDownSheet("Art/Enemies/namgung_female_down", 76, 17))
                     _defeatAnimationRemaining = JongnamSprites.DownDuration;
+                else if (_stage.DisplayStageNumber == 3 && _stage.SubstageNumber > StageLayout.NormalSubstageCount
+                    && HasDownSheet("Art/Enemies/namgung_boss_down", 100, 17))
+                    _defeatAnimationRemaining = JongnamSprites.DownDuration;
+                else if (_stage.DisplayStageNumber == 4 && _stage.SubstageNumber > StageLayout.NormalSubstageCount
+                    && HasDownSheet("Art/Enemies/tianmo_boss_down", 104, 17))
+                    _defeatAnimationRemaining = JongnamSprites.DownDuration;
+                else if (_stage.DisplayStageNumber == 5 && _stage.SubstageNumber <= StageLayout.NormalSubstageCount
+                    && HasDownSheet("Art/Enemies/tianmo_swordsman_down", 64, 17)
+                    && HasDownSheet("Art/Enemies/tianmo_guard_down", 64, 17))
+                    _defeatAnimationRemaining = JongnamSprites.DownDuration;
             }
             if (_stage.Phase != StagePhase.FadingOut) _failedTransition = false;
             _previousPhase = _stage.Phase;

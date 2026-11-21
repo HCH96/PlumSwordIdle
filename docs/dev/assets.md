@@ -63,7 +63,12 @@
 
 ## 몬스터와 보스
 
+- 천마신교 4스테이지 보스는 사용자가 승인한 [원본과 미리보기](../../art/source/tianmo_boss/index.md)를 사용한다. `Art/Enemies/tianmo_boss_` 아래 `idle`, `walk`, `attack`, `down`, `skill`은 각 칸 104×104px, 각각 17·25·25·17·37프레임이며 발 피벗은 (52, 18)px이다. 기술은 보정된 피색 검격을 포함한다. PPU 32, Point, 무압축, 최대 4096, 표시 배율 1.5다.
+- 남궁 장로 보스는 사용자가 승인한 [원본과 재생 미리보기](../../art/source/namgung_boss/index.md)를 사용한다. `Art/Enemies/namgung_boss_idle`, `walk`, `attack`, `down`은 100×100px, 각각 17·25·25·17프레임, 피벗 (50, 15)px이다. `namgung_boss_skill`은 장로와 빛기둥을 합성한 5열×5행 시트, 칸 246×138px, 25프레임, 피벗 (209, 15)px이다. PPU 32, Point, 무압축, 최대 4096, 표시 배율 1.5. 대기·이동 10fps, 공격·기술은 25 ÷ 공격 간격 fps, 쓰러짐은 0.075초/프레임이다. 기술 시트는 원본 게임 팩의 잘린 칸과 발 기준점을 그대로 사용한다.
+
 - 남궁 일반 상대는 사용자가 승인한 청의 검객과 머리를 풀어 내린 여성 검객을 3스테이지에 사용한다. [원본·생성 정보·미리보기](../../art/source/namgung/index.md). `Art/Enemies/namgung_male_` 및 `namgung_female_` 아래 `idle`, `walk`, `attack`, `down`을 둔다. 모두 76×76px, 각각 17·25·25·17프레임, 발 기준점은 남자 (38, 12)·여자 (38, 13)px이다. PPU 32, Point, 무압축, 최대 4096, 화면 배율 1.5. 대기·이동 10fps, 공격은 25 ÷ 공격 간격 fps, 쓰러짐은 0.075초/프레임이다. 검기는 공격 프레임에 포함된다.
+
+- 천마신교 4스테이지 일반 상대는 사용자가 승인한 마검사와 흑갑 호위다. 현재 게임에는 잘못하여 5스테이지에 배치되어 있어 4스테이지로 옮기는 수정이 남았다. 5스테이지는 일반 상대 없이 최종 보스만 등장할 예정이다. [원본·생성 정보·미리보기](../../art/source/tianmo_enemies/index.md). `Art/Enemies/tianmo_swordsman_`과 `tianmo_guard_` 아래 `idle`, `walk`, `attack`, `down`을 둔다. 각 칸 64×64px, 17·25·25·17프레임이고 발 기준점은 각각 (32, 6), (32, 5)px이다. PPU 32, Point, 무압축, 화면 배율 1.5, 대기·이동 10fps, 공격 25 ÷ 공격 간격 fps, 쓰러짐 0.075초/프레임이다. 공격은 승인한 마검사의 왼쪽 수평 찌르기와 호위의 수정 베기다.
 
 일반 몬스터와 보스는 테마별로 하나씩 둔다 (테마 목록은 아래 "배경"). `<테마>` 자리에 테마 ID가 들어간다. 테마가 확정되기 전에는 `default` 한 벌만 만든다.
 
@@ -121,6 +126,7 @@
 
 테마당 시차 스크롤용 레이어 세 장. 높이 360, 폭 800 이상이고 가로로 이어 붙여도 이음매가 안 보이게 그린다.
 
+- 4스테이지는 사용자가 선택한 [검은 성문 안뜰 A](../../art/source/stage4_magyo/index.md), 5스테이지는 [어두운 대전 B](../../art/source/stage5_tianmo/index.md)를 적용한다. 1~3스테이지와 같은 위치·높이·좌우 반전 반복이며 별도 시차 레이어는 없다.
 - 3스테이지 남궁세가 도심 배경은 2026-11-21 사용자가 좌우 반전 반복을 확인하고 승인했다. [원본과 생성 문구](../../art/source/stage3_namgung/index.md)를 보관하며 1스테이지와 같은 위치·높이·좌우 반전 반복을 쓴다.
 - 2스테이지 개방 강가 야영지 배경은 2026-11-21 사용자가 시안을 승인했다. 원본과 생성 문구는 [원본 색인](../../art/source/stage2_gaebang/index.md)에 보관한다. 1스테이지와 같은 위치·높이·좌우 반전 반복을 쓴다.
 - 1스테이지 화산파 연무장 배경은 사용자가 v3를 확인하고 확정했다. `Assets/Resources/Art/Backgrounds/stage1_preview.png`를 좌우로 번갈아 반전해 반복하며 별도 시차 레이어는 없다. [원본과 참고 자료](../../art/source/stage1_courtyard_revision/index.md)를 보관한다.
@@ -130,6 +136,8 @@
 | stage1_preview | `Art/Backgrounds/stage1_preview` | 1스테이지 화산파 연무장 | 2172×724 | 가운데 | 최종 |
 | stage2_gaebang | `Art/Backgrounds/stage2_gaebang` | 2스테이지 개방 강가 야영지 | 2172×724 | 가운데 | 시안 승인·적용 |
 | stage3_namgung | `Art/Backgrounds/stage3_namgung` | 3스테이지 남궁세가 도심 | 2172×724 | 가운데 | 시안 승인·적용 |
+| stage4_magyo | `Art/Backgrounds/stage4_magyo` | 4스테이지 마교 성문 안뜰 | 2172×724 | 가운데 | 시안 승인·적용 |
+| stage5_tianmo | `Art/Backgrounds/stage5_tianmo` | 5스테이지 천마 대전 | 2172×724 | 가운데 | 시안 승인·적용 |
 | bg_<테마>_far | `Art/Backgrounds/<테마>_far` | 먼 산·하늘 (가장 느림) | 800×360 | 가운데 | 계획 |
 | bg_<테마>_mid | `Art/Backgrounds/<테마>_mid` | 중간 (나무, 건물) | 800×360 | 가운데 | 계획 |
 | bg_<테마>_ground | `Art/Backgrounds/<테마>_ground` | 땅·길 (카메라와 같이 움직임) | 800×192 | 위 가운데 (윗변이 땅 높이) | 계획 |
@@ -211,6 +219,7 @@ UI 스프라이트는 작게 그리고 9-slice로 늘린다. 테두리 폭(9-sli
 | fx_plum | `Art/Effects/plum` | 매화 꽃잎 흩날림 (처치·보스 등장 등) | 64×64 | 8 | 12 | 가운데 | 계획 |
 
 - 시작 화면의 매화 꽃잎 세 장은 위 "시작 화면"에 적용했다. `fx_plum`과는 별개다.
+- 4스테이지 재: `Art/Effects/Stage4Ash/ash_01`~`ash_05`, 1536×1024 투명 PNG 다섯 장. [생성 원본](../../art/source/stage4_ash_particles/)을 그대로 사용하고 화면 코드에서 조각 주변만 스프라이트로 지정한다. Point·무압축·PPU 32. 4스테이지 배경 위에 표시하며 화면 크기와 노출 조건은 [전투 사양](../spec/combat.md)의 "4스테이지 재"를 따른다.
 
 ## 그림이 아닌 것 (메모)
 
