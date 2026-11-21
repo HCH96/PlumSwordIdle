@@ -87,7 +87,7 @@ namespace PlumSword.Game.Tests.Combat
             var wallet = new Wallet();
             var upgrades = new StatUpgrades(wallet, 10000, 10000);
             var battle = new Battle(upgrades);
-            var stage = new StageProgress(wallet, upgrades, battle, new System.Random(1), 5, 5);
+            var stage = new StageProgress(wallet, upgrades, battle, new System.Random(1), 4, 4);
             var obj = new GameObject("[TianmoFadeTest]");
             var canvas = new GameObject("Canvas", typeof(Canvas));
             canvas.transform.SetParent(obj.transform, false);

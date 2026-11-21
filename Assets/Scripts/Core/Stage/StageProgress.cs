@@ -254,7 +254,7 @@ namespace PlumSword.Core.Stage
         }
 
         /// <summary>
-        /// 큰 스테이지 배치: battle.Reset → 처치 수·보스 초기화 → 첫 무리 배치.
+        /// 큰 스테이지 배치: battle.Reset → 처치 수·보스 초기화 → 첫 구간 배치.
         /// Begin 과 가려진 순간의 교체(Tick)가 함께 쓴다.
         /// </summary>
         private void PlaceStage()
@@ -263,7 +263,8 @@ namespace PlumSword.Core.Stage
 
             DefeatedNormalCount = 0;
             Boss = null;
-            SubstageNumber = 1;
+            SubstageNumber = DisplayStageNumber == StageLayout.FinalDisplayStage
+                ? StageLayout.NormalSubstageCount + 1 : 1;
             PlaceSubstage();
         }
 
