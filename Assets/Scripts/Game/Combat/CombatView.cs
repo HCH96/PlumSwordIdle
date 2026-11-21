@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PlumSword.Core.Combat;
+using PlumSword.Core.Stage;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -101,6 +102,7 @@ namespace PlumSword.Game.Combat
         private JongnamSprites _namgungFemale;
         private JongnamSprites _namgungBoss;
         private JongnamSprites _tianmoBoss;
+        private JongnamSprites _tianmoFinalBoss;
         private JongnamSprites _tianmoSwordsman;
         private JongnamSprites _tianmoGuard;
         private bool _discipleAttackedThisTick;
@@ -159,6 +161,7 @@ namespace PlumSword.Game.Combat
             _namgungFemale = JongnamSprites.TryLoadNamgung(true);
             _namgungBoss = JongnamSprites.TryLoadNamgungBoss();
             _tianmoBoss = JongnamSprites.TryLoadTianmoBoss();
+            _tianmoFinalBoss = JongnamSprites.TryLoadTianmoFinalBoss();
             _tianmoSwordsman = JongnamSprites.TryLoadTianmo(false);
             _tianmoGuard = JongnamSprites.TryLoadTianmo(true);
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
@@ -236,6 +239,7 @@ namespace PlumSword.Game.Combat
             _namgungFemale?.Dispose();
             _namgungBoss?.Dispose();
             _tianmoBoss?.Dispose();
+            _tianmoFinalBoss?.Dispose();
             _tianmoSwordsman?.Dispose();
             _tianmoGuard?.Dispose();
             _jongnamMale = null;
@@ -248,6 +252,7 @@ namespace PlumSword.Game.Combat
             _namgungFemale = null;
             _namgungBoss = null;
             _tianmoBoss = null;
+            _tianmoFinalBoss = null;
             _tianmoSwordsman = null;
             _tianmoGuard = null;
             if (_petals != null) Destroy(_petals);
@@ -366,8 +371,10 @@ namespace PlumSword.Game.Combat
                     ? _namgungBoss : (enemy.Index % 2 == 0 ? _namgungMale : _namgungFemale);
             else if (stage == 4 && enemy.Kind == EnemyKind.Boss)
                 actor.Jongnam = _tianmoBoss;
-            else if (stage == 5 && enemy.Kind == EnemyKind.Normal)
+            else if (stage == 4 && enemy.Kind == EnemyKind.Normal)
                 actor.Jongnam = enemy.Index % 2 == 0 ? _tianmoSwordsman : _tianmoGuard;
+            else if (stage == StageLayout.FinalDisplayStage && enemy.Kind == EnemyKind.Boss)
+                actor.Jongnam = _tianmoFinalBoss;
             actor.PreviousPosition = enemy.Position;
             actor.DisplayedHealth = enemy.Health;
             if (actor.Jongnam != null)

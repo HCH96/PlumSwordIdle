@@ -12,6 +12,12 @@ namespace PlumSword.Core.Tests.Stage
         // 상수
 
         [Test]
+        public void FinalDisplayStage_IsFive()
+        {
+            Assert.That(StageLayout.FinalDisplayStage, Is.EqualTo(5));
+        }
+
+        [Test]
         public void Constants_AreSpecValues()
         {
             Assert.That(StageLayout.NormalCount, Is.EqualTo(10));

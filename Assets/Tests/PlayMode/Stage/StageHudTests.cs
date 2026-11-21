@@ -14,7 +14,7 @@ namespace PlumSword.Game.Tests.Stage
     {
         [TestCase(2, "2-1")]
         [TestCase(3, "3-1")]
-        [TestCase(5, "5-1")]
+        [TestCase(4, "4-1")]
         [TestCase(7, "2-1")]
         public void AllThemes_ShareTheStageOneProgressHud(int startStage, string expected)
         {
@@ -47,7 +47,7 @@ namespace PlumSword.Game.Tests.Stage
         [TestCase(2, 2)]
         [TestCase(3, 3)]
         [TestCase(4, 4)]
-        [TestCase(5, 5)]
+        [TestCase(9, 4)]
         [TestCase(7, 2)]
         public void ProgressHud_ChangesFromProgressToBossHealth(int startStage, int displayStage)
         {
@@ -113,6 +113,9 @@ namespace PlumSword.Game.Tests.Stage
                         Assert.That(((RectTransform)preview.Find("Marker" + marker)).anchoredPosition.y, Is.EqualTo(-96f));
                 }
                 Assert.That(stage.IsBossActive, Is.True);
+                for (int marker = 1; marker <= 6; marker++)
+                    Assert.That(preview.Find("Marker" + marker).gameObject.activeSelf, Is.False);
+                Assert.That(preview.Find("BossMarker").gameObject.activeSelf, Is.False);
                 Assert.That(preview.gameObject.activeSelf, Is.True);
                 Assert.That(frame.gameObject.activeSelf, Is.False);
                 Assert.That(fill.transform.parent.gameObject.activeSelf, Is.True);

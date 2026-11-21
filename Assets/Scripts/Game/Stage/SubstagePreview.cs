@@ -65,7 +65,7 @@ namespace PlumSword.Game.Stage
 
         public void SetProgress(int stage, int substage)
         {
-            number.text = stage + "-" + substage;
+            number.text = StageText.SubstageLabel(stage, substage);
             bossMarker.rectTransform.localScale = Vector3.one;
             bossMarker.color = Color.white;
             for (int i = 0; i < markers.Length; i++)
@@ -79,6 +79,12 @@ namespace PlumSword.Game.Stage
             currentImage = substage <= markers.Length ? markers[substage - 1] : bossMarker;
             current = currentImage.rectTransform;
             trackFill.sizeDelta = new Vector2(Mathf.Clamp(substage - 1, 0, 6) * 40, 2);
+        }
+
+        public void SetMarkersVisible(bool visible)
+        {
+            foreach (var marker in markers) marker.gameObject.SetActive(visible);
+            bossMarker.gameObject.SetActive(visible);
         }
 
         private static Image ImageAt(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
