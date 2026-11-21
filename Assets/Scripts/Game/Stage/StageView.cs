@@ -351,6 +351,10 @@ namespace PlumSword.Game.Stage
                     && HasDownSheet("Art/Enemies/gaebang_staff_down", 96, 16)
                     && HasDownSheet("Art/Enemies/gaebang_unarmed_down", 104, 16))
                     _defeatAnimationRemaining = 16 * JongnamSprites.DownFrameSeconds;
+                else if (_stage.DisplayStageNumber == 3 && _stage.SubstageNumber <= StageLayout.NormalSubstageCount
+                    && HasDownSheet("Art/Enemies/namgung_male_down", 76, 17)
+                    && HasDownSheet("Art/Enemies/namgung_female_down", 76, 17))
+                    _defeatAnimationRemaining = JongnamSprites.DownDuration;
             }
             if (_stage.Phase != StagePhase.FadingOut) _failedTransition = false;
             _previousPhase = _stage.Phase;

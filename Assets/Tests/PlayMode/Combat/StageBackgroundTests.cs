@@ -32,18 +32,20 @@ namespace PlumSword.Game.Tests.Combat
                 var battle = new Battle(upgrades);
                 var view = obj.AddComponent<CombatView>();
                 view.Initialize(battle, camera.AddComponent<Camera>());
-                foreach (int stageNumber in new[] { 1, 2, 3, 7, 1 })
+                foreach (int stageNumber in new[] { 1, 2, 3, 4, 7, 8, 1 })
                 {
                     var stage = new StageProgress(wallet, upgrades, battle, new System.Random(1), stageNumber);
                     property.GetSetMethod(true).Invoke(root, new object[] { stage });
                     view.SendMessage("Update");
                     var tile = obj.transform.Find("[StageBackground]");
-                    bool hasArt = stageNumber != 3;
+                    bool hasArt = stageNumber != 4;
                     Assert.That(tile.gameObject.activeSelf, Is.EqualTo(hasArt));
                     Assert.That(obj.transform.Find("[Ground]").gameObject.activeSelf, Is.EqualTo(!hasArt));
                     if (hasArt)
                     {
-                        string expected = stageNumber == 1 ? "stage1_preview" : "stage2_gaebang";
+                        string expected = stageNumber == 1 ? "stage1_preview"
+                            : stageNumber == 2 || stageNumber == 7 ? "stage2_gaebang"
+                            : "stage3_namgung";
                         Assert.That(tile.GetComponent<SpriteRenderer>().sprite.name, Is.EqualTo(expected));
                     }
                 }

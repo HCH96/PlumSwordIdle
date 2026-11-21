@@ -30,6 +30,20 @@ namespace PlumSword.Game.Combat
             WalkFramesPerSecond = walkFramesPerSecond;
         }
 
+        public static JongnamSprites TryLoadNamgung(bool female)
+        {
+            string prefix = "Art/Enemies/namgung_" + (female ? "female_" : "male_");
+            int bottom = female ? 13 : 12;
+            var idle = Slice(prefix + "idle", 76, 76, 17, bottom);
+            var walk = Slice(prefix + "walk", 76, 76, 25, bottom);
+            var attack = Slice(prefix + "attack", 76, 76, 25, bottom);
+            var down = Slice(prefix + "down", 76, 76, 17, bottom);
+            if (idle != null && walk != null && attack != null)
+                return new JongnamSprites(idle, walk, attack, down: down, attackHitFrame: female ? 6 : 8, walkFramesPerSecond: 10f);
+            DestroyFrames(idle); DestroyFrames(walk); DestroyFrames(attack); DestroyFrames(down);
+            return null;
+        }
+
         public static JongnamSprites TryLoadGaebang(bool unarmed)
         {
             string prefix = "Art/Enemies/gaebang_" + (unarmed ? "unarmed_" : "staff_");

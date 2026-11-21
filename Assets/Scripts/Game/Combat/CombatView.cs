@@ -96,6 +96,8 @@ namespace PlumSword.Game.Combat
         private JongnamSprites _gaebangStaff;
         private JongnamSprites _gaebangUnarmed;
         private JongnamSprites _gaebangBoss;
+        private JongnamSprites _namgungMale;
+        private JongnamSprites _namgungFemale;
         private bool _discipleAttackedThisTick;
         private float _discipleDownElapsed;
         private bool _skillAnimationPlaying;
@@ -147,6 +149,8 @@ namespace PlumSword.Game.Combat
             _gaebangStaff = JongnamSprites.TryLoadGaebang(false);
             _gaebangUnarmed = JongnamSprites.TryLoadGaebang(true);
             _gaebangBoss = JongnamSprites.TryLoadGaebangBoss();
+            _namgungMale = JongnamSprites.TryLoadNamgung(false);
+            _namgungFemale = JongnamSprites.TryLoadNamgung(true);
             _disciple = CreateActor("[Disciple]", DiscipleSize, DiscipleColor, DiscipleOrder, DiscipleHealthColor);
             _disciple.DisplayedHealth = _battle.DiscipleHealth;
             _disciple.HealthRatioInitialized = false;
@@ -218,12 +222,16 @@ namespace PlumSword.Game.Combat
             _gaebangStaff?.Dispose();
             _gaebangUnarmed?.Dispose();
             _gaebangBoss?.Dispose();
+            _namgungMale?.Dispose();
+            _namgungFemale?.Dispose();
             _jongnamMale = null;
             _jongnamFemale = null;
             _jongnamBoss = null;
             _gaebangStaff = null;
             _gaebangBoss = null;
             _gaebangUnarmed = null;
+            _namgungMale = null;
+            _namgungFemale = null;
             if (_petals != null) Destroy(_petals);
         }
 
@@ -334,6 +342,8 @@ namespace PlumSword.Game.Combat
             else if (stage == 2)
                 actor.Jongnam = enemy.Kind == EnemyKind.Boss
                     ? _gaebangBoss : (enemy.Index % 2 == 0 ? _gaebangStaff : _gaebangUnarmed);
+            else if (stage == 3 && enemy.Kind == EnemyKind.Normal)
+                actor.Jongnam = enemy.Index % 2 == 0 ? _namgungMale : _namgungFemale;
             actor.PreviousPosition = enemy.Position;
             actor.DisplayedHealth = enemy.Health;
             if (actor.Jongnam != null)
@@ -759,7 +769,8 @@ namespace PlumSword.Game.Combat
             _stageBackgrounds = new[]
             {
                 Resources.Load<Sprite>("Art/Backgrounds/stage1_preview"),
-                Resources.Load<Sprite>("Art/Backgrounds/stage2_gaebang")
+                Resources.Load<Sprite>("Art/Backgrounds/stage2_gaebang"),
+                Resources.Load<Sprite>("Art/Backgrounds/stage3_namgung")
             };
             _previewBackground = new Transform[3];
             for (int i = 0; i < _previewBackground.Length; i++)
