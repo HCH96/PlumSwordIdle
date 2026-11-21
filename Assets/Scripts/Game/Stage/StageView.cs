@@ -46,6 +46,15 @@ namespace PlumSword.Game.Stage
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);
 
         private static string FinalBossDownPath = "Art/Enemies/tianmo_final_boss_down";
+        private static string BossHealthFramePath = "Art/UI/boss_health_frame_";
+        // 원본의 게이지 칸: 왼쪽, 오른쪽, 위, 아래 (끝 픽셀 포함).
+        private static readonly int[,] BossGaugeBounds = {
+            { 405, 1965, 342, 401 }, { 457, 1933, 324, 385 },
+            { 448, 1947, 334, 397 }, { 518, 1964, 351, 425 },
+            { 533, 1930, 322, 401 }
+        };
+        private readonly Sprite[] _bossHealthSprites = new Sprite[5];
+        private Image _bossHealthFrame;
         private StageProgress _stage;
         private float _defeatAnimationRemaining;
         private StagePhase _previousPhase;
@@ -89,6 +98,7 @@ namespace PlumSword.Game.Stage
             CreateJongnamTitle(canvas);
             CreateBossName(canvas);
             CreateBar(canvas);
+            CreateBossHealthFrame(canvas);
             _substagePreview = SubstagePreview.Create(canvas);
             // 스테이지 글자·보스 이름·진행 바보다 나중에 만들어 그 위에 그린다.
             CreateIntroPanel(canvas);
@@ -234,6 +244,33 @@ namespace PlumSword.Game.Stage
             if (_bossName == null) return;
 
             _bossNameObject = _bossName.gameObject;
+        }
+
+        private void CreateBossHealthFrame(Canvas canvas)
+        {
+            for (int i = 0; i < _bossHealthSprites.Length; i++)
+                _bossHealthSprites[i] = Resources.Load<Sprite>(BossHealthFramePath + (i + 1));
+            var obj = new GameObject("BossHealthFrame", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)obj.transform;
+            rect.SetParent(canvas.transform, false);
+            PlaceTopCenter(rect, new Vector2(0f, -126f), new Vector2(300f, 100f));
+            rect.pivot = Center;
+            _bossHealthFrame = obj.GetComponent<Image>();
+            _bossHealthFrame.raycastTarget = false;
+            if (_bossNameObject != null) _bossNameObject.transform.SetAsLastSibling();
+        }
+
+        private static void PlaceBossGauge(RectTransform rect, int stageNumber)
+        {
+            int i = stageNumber - 1;
+            float k = 300f / 2172f;
+            float left = BossGaugeBounds[i, 0], right = BossGaugeBounds[i, 1];
+            float top = BossGaugeBounds[i, 2], bottom = BossGaugeBounds[i, 3];
+            var position = new Vector2(((left + right + 1f) / 2f - 1086f) * k,
+                -126f - ((top + bottom + 1f) / 2f - 362f) * k);
+            var size = new Vector2((right - left + 1f) * k, (bottom - top + 1f) * k);
+            PlaceTopCenter(rect, position, size);
+            rect.pivot = Center;
         }
 
         private TextMeshProUGUI CreateText(Canvas canvas, string name, Vector2 position, Vector2 size, float fontSize)
@@ -396,6 +433,14 @@ namespace PlumSword.Game.Stage
             if (_stage == null) return;
 
             bool bossActive = _stage.IsBossActive;
+            int frameIndex = _stage.DisplayStageNumber - 1;
+            Sprite bossFrame = bossActive && frameIndex >= 0 && frameIndex < _bossHealthSprites.Length
+                ? _bossHealthSprites[frameIndex] : null;
+            if (_bossHealthFrame != null)
+            {
+                _bossHealthFrame.sprite = bossFrame;
+                _bossHealthFrame.gameObject.SetActive(bossFrame != null);
+            }
             float ratio = Mathf.Clamp01((float)_stage.BarRatio);
             bool useJongnamArt = _jongnamHeader != null;
             bool useJongnamTitle = useJongnamArt && !bossActive && _jongnamTitle != null;
@@ -427,8 +472,15 @@ namespace PlumSword.Game.Stage
             if (_barRect != null)
                 PlaceTopCenter(_barRect, useJongnamArt ? new Vector2(0f, -76f * JongnamHudScale) : BarPosition,
                     useJongnamArt ? new Vector2(264f * JongnamHudScale, 12.2f * JongnamHudScale) : BarSize);
-            if (_barRect != null && usePreview && bossActive)
-                PlaceTopCenter(_barRect, new Vector2(0, -126), new Vector2(180, 7));
+            if (_barRect != null && bossActive)
+            {
+                if (bossFrame != null) PlaceBossGauge(_barRect, _stage.DisplayStageNumber);
+                else
+                {
+                    PlaceTopCenter(_barRect, new Vector2(0, -126), new Vector2(180, 7));
+                    _barRect.pivot = Center;
+                }
+            }
 
             if (_barFillRect != null)
             {
