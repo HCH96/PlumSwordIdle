@@ -34,6 +34,7 @@ namespace PlumSword.Game
         public VolumeSettings Volume { get; private set; }
         public LeaveGame LeaveGame { get; private set; }
         public SettingsView Settings { get; private set; }
+        public PlumSword.Game.Audio.AudioView Audio { get; private set; }
 
         /// <summary>시작할 때 읽은 저장 결과. 이어하기 여부를 판단할 때 쓴다.</summary>
         public SaveLoadResult LoadResult { get; private set; }
@@ -114,6 +115,10 @@ namespace PlumSword.Game
             settingsObject.transform.SetParent(transform, false);
             Settings = settingsObject.AddComponent<SettingsView>();
             Settings.Initialize(UiCanvas, Volume, LeaveGame, ReturnToTitle, Quit, SaveVolume);
+            var audioObject = new GameObject("[AudioView]");
+            audioObject.transform.SetParent(transform, false);
+            Audio = audioObject.AddComponent<PlumSword.Game.Audio.AudioView>();
+            Audio.Initialize(this);
 
             if (StartMenuRules.ShowsStartScreen(Entry, Application.isBatchMode))
             {
