@@ -9,6 +9,41 @@ namespace PlumSword.Core.Tests.Stage
     {
         // StageLabel
 
+        [TestCase(5, 7, "FINAL")]
+        [TestCase(5, 1, "FINAL")]
+        [TestCase(4, 7, "4-7")]
+        [TestCase(1, 1, "1-1")]
+        public void SubstageLabel_ValidInputs_ReturnsLabel(int stage, int substage, string expected)
+        {
+            Assert.That(StageText.SubstageLabel(stage, substage), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void SubstageLabel_CurrentCultureIsTurkish_UsesInvariantNumbers()
+        {
+            var original = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = new CultureInfo("tr-TR");
+                Assert.That(StageText.SubstageLabel(3, 6), Is.EqualTo("3-6"));
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = original;
+            }
+        }
+
+        [TestCase(0, 1)]
+        [TestCase(6, 1)]
+        [TestCase(1, 0)]
+        [TestCase(1, 8)]
+        [TestCase(5, 0)]
+        [TestCase(5, 8)]
+        public void SubstageLabel_InvalidInput_Throws(int stage, int substage)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => StageText.SubstageLabel(stage, substage));
+        }
+
         [TestCase(1, "STAGE 1")]
         [TestCase(12, "STAGE 12")]
         [TestCase(0, "STAGE 0")]

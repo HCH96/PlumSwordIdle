@@ -21,6 +21,14 @@ namespace PlumSword.Core.Stage
             return "STAGE " + stage.ToString(CultureInfo.InvariantCulture);
         }
 
+        public static string SubstageLabel(int stage, int substage)
+        {
+            if (stage < 1 || stage > StageLayout.FinalDisplayStage) throw new ArgumentOutOfRangeException(nameof(stage));
+            if (substage < 1 || substage > StageLayout.NormalSubstageCount + 1) throw new ArgumentOutOfRangeException(nameof(substage));
+            if (stage == StageLayout.FinalDisplayStage) return "FINAL";
+            return stage.ToString(CultureInfo.InvariantCulture) + "-" + substage.ToString(CultureInfo.InvariantCulture);
+        }
+
         public static string RoundStageLabel(int round, int stage)
         {
             if (round < 1) throw new ArgumentOutOfRangeException(nameof(round));

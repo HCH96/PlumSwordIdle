@@ -19,6 +19,8 @@ namespace PlumSword.Core.Stage
         public const double BossDistance = 24.0;
         public const int NormalSubstageCount = 6;
         public const int MinSubstageEnemies = 2;
+        /// <summary>일반 구간 없이 최종 보스만 나오는 화면상 큰 스테이지 번호.</summary>
+        public const int FinalDisplayStage = 5;
 
         /// <summary>작은 스테이지 하나의 일반 상대 수와 2유닛 간격을 정한다.</summary>
         public static double[] SubstagePositions(Random random, double center)
