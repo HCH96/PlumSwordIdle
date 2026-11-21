@@ -23,3 +23,4 @@
 | `20261119-190813` | save_m3 | 2026-11-19 19:16 | 2건 | EditMode 684/684, PlayMode 80/80 | claude (교차) | 4건 | [report.md](20261119-190813/report.md) |
 | `20261120-175740` | realm_fx | 2026-11-20 20:32 | 5건 | EditMode 783/783, PlayMode 80/80 | claude (같은 에이전트) | 14건 | [report.md](20261120-175740/report.md) |
 | `20261122-035241` | stage45_final | 2026-11-22 04:18 | 5건 | EditMode 793/793, PlayMode 142/142 | claude (교차) | 3건 | [report.md](20261122-035241/report.md) |
+| `20261122-050216` | audio | 2026-11-22 05:48 | 5건 | EditMode 884/884, PlayMode 142/142 | claude (교차) | 0건 | [report.md](20261122-050216/report.md) |
