@@ -1,0 +1,481 @@
+{
+  "loop": "loop/20261122-091339",
+  "bundle": "flow_test",
+  "merged_at": "2026-11-22 09:36",
+  "tag": "loop-merged/20261122-091339",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 884,
+      "passed": 884,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 154,
+      "passed": 154,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [
+      "`docs/dev/architecture.md` 가 바뀜 (작업이 요구한 변경인지 본다)"
+    ],
+    "stats": {
+      "files_changed": 11,
+      "files": [
+        "Assets/Scripts/Game/AssemblyInfo.cs",
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Tests/PlayMode/Flow/FullRoundFlowTests.cs",
+        "Assets/Tests/PlayMode/Flow/GameFlow.cs",
+        "Assets/Tests/PlayMode/Flow/GameFlowTests.cs",
+        "Assets/Tests/PlayMode/Flow/SaveReloadFlowTests.cs",
+        "docs/dev/architecture.md",
+        "docs/history/074_flow_test_hooks.md",
+        "docs/history/075_flow_full_round.md",
+        "docs/history/076_flow_save_reload.md",
+        "docs/spec/save.md"
+      ],
+      "tests_before": 695,
+      "tests_after": 701,
+      "new_tests": [
+        "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves",
+        "GameFlowTests.PowerUp_TenLevels_UpgradesWithoutSpendingStartingGold",
+        "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+        "GameFlowTests.ResetToFreshLaunch_AfterSavedGame_StartsFresh",
+        "GameFlowTests.ResetToFreshLaunch_AfterSceneReload_KeepsRootCameraAlive",
+        "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": [
+        "Assets/Scripts/Game/AssemblyInfo.cs",
+        "Assets/Scripts/Game/GameRoot.cs"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "doc": "074_flow_test_hooks.md",
+      "branch": "task/074_flow_test_hooks",
+      "agents": "codex(시도 1~2)",
+      "summary": "배치 저장소 주입과 흐름 테스트 도우미를 구현하고, 씬 재로드 시 파괴된 카메라 참조가 남지 않도록 수정했다. Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "GameRoot 에는 요구한 BatchSaveStore·RecreateAs 두 가지만 더해졌고, 배치 모드가 아닐 때의 동작은 그대로다. GameFlow 도우미와 GameFlowTests 가 완료 조건의 상황과 숫자를 모두 Assert 로 확인한다. 요구사항에 없던 카메라 태그 처리가 하나 더해졌지만, 처음 켠 게임과 같은 상태(루트가 자기 카메라를 가짐)를 맞추려는 테스트 도우미 안의 처리이고 문서와 가정에 적혀 있어 문제 삼지 않는다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "Assets/Tests/PlayMode/Flow/GameFlowTests.cs` 에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "GameFlowTests 전체 (조건 2~11 이 아래 테스트에 모두 들어 있음, 통과 여부는 루프 실행 결과)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "저장 글자 `SaveCodec.Encode(new SaveData(500, 3, 2, 1, 1, 3, 3, DateTime.UtcNow.Ticks, 5))` 를 쓴 `MemorySaveStore` 로 `Relaunch(store, StartEntry.Launch)` 하면 새 루트의 `LoadResult.Status` 는 `Loaded` 다.",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "같은 상황에서 새 루트의 `Wallet.Balance` 는 500 이다.",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "같은 상황에서 새 루트의 공격력·체력·내공 단계는 3, 2, 1 이다.",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "같은 상황에서 새 루트의 `Realm.Current` 는 `RealmLevel.SecondRate`, `Realm.Kills` 는 5 다.",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "같은 상황에서 새 루트의 `StageProgress.StageNumber` 는 3 이고 `HasBegun` 은 `true` 다.",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "같은 상황에서 새 루트의 `OfflineReward.HasReward` 는 `false` 다 (저장 시각이 방금이므로).",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "같은 상황에서 `Relaunch` 가 끝난 뒤 `SaveCodec.Decode(store.Text).Data.StageNumber` 는 3 이다 (새 루트의 자동 저장이 같은 저장소에 썼다).",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "Relaunch` 뒤 켜져 있는 `GameRoot` 는 하나뿐이고, 이전 루트 오브젝트는 지워졌다.",
+            "test": "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState (FindObjectsByType<GameRoot> 개수 1, oldObject == null)",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "3스테이지 저장으로 다시 켠 뒤 `ResetToFreshLaunch()` 를 하면 `Entry` 는 `Launch`, `LoadResult.Status` 는 `Empty`, `StageProgress.StageNumber` 는 1, `GameRoot.BatchSaveStore` 는 `null` 이다.",
+            "test": "GameFlowTests.ResetToFreshLaunch_AfterSavedGame_StartsFresh",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "처음 켠 게임에서 `PowerUp(root, 10)` 을 하면 공격력과 체력 단계는 각각 10 이고, `Wallet.Balance` 는 시작 때와 같다.",
+            "test": "GameFlowTests.PowerUp_TenLevels_UpgradesWithoutSpendingStartingGold",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "화면 코드가 컴파일되고 기존 테스트가 모두 통과한다 (`BatchSaveStore` 가 `null` 일 때 배치 모드 시작이 지금과 같으므로 `GameRootSaveTests`·`GameRootOfflineRewardTests`·`GameRootStartMenuTests` 가 그대로 통과한다).",
+            "test": "-",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "Assets/Tests/PlayMode/Flow/GameFlow.cs:27-54 — 요구사항에 없던 처리가 있다. Relaunch 가 재생성하는 동안 씬의 MainCamera 태그를 잠시 Untagged 로 바꿔, 새 루트가 GameRoot.cs:280 의 Camera.main 대신 자기 카메라를 만들게 한다. 처음 켠 게임과 같은 상태를 맞추고, 다음 SetUp 의 씬 교체 때 카메라가 파괴되지 않게 하려는 것이다. 게임 코드가 아니라 테스트 도우미 안의 처리이고 보고서의 가정과 architecture.md 에 적혀 있다. 검사하는 테스트는 ResetToFreshLaunch_AfterSceneReload_KeepsRootCameraAlive 다."
+          },
+          {
+            "severity": "note",
+            "text": "docs/dev/architecture.md:55 — 요구한 한 줄(Flow 폴더, GameFlow 사용, TearDown 에서 ResetToFreshLaunch)에 카메라 태그 설명 한 문장이 더 붙었다. 작업이 요구한 변경의 범위 안이다."
+          },
+          {
+            "severity": "note",
+            "text": "Assets/Scripts/Game/AssemblyInfo.cs:3 — 주석이 Core 처럼 어셈블리의 성격까지 적지는 않고, 이유 한 줄만 적었다. 요구사항(이유를 적은 주석)은 채운다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 884,
+          "passed": 884,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 152,
+          "passed": 152,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "GameFlowTests.PowerUp_TenLevels_UpgradesWithoutSpendingStartingGold",
+        "GameFlowTests.Relaunch_WithSavedGame_RestoresAndFlushesState",
+        "GameFlowTests.ResetToFreshLaunch_AfterSavedGame_StartsFresh",
+        "GameFlowTests.ResetToFreshLaunch_AfterSceneReload_KeepsRootCameraAlive"
+      ],
+      "screen_files": [
+        "Assets/Scripts/Game/AssemblyInfo.cs",
+        "Assets/Scripts/Game/GameRoot.cs"
+      ],
+      "human_conditions": [],
+      "gate_warnings": [
+        "`docs/dev/architecture.md` 가 바뀜 (작업이 요구한 변경인지 본다)"
+      ],
+      "assumptions": [
+        "흐름 테스트의 재생성 루트는 다음 테스트의 씬 교체를 견디도록 자체 카메라를 사용한다. 외부 메인 카메라 태그는 재생성 후 복구한다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "075_flow_full_round.md",
+      "branch": "task/075_flow_full_round",
+      "agents": "codex(시도 1)",
+      "summary": "새 게임부터 천마 처치와 2회차 진입까지의 플레이 모드 흐름 및 정리 검사를 추가했다. Unity 테스트는 루프 스크립트의 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "테스트 파일 하나만 추가됐고, 작업 문서의 흐름(빈 저장소로 Launch, 이벤트 구독, PowerUp 200, timeScale 20, 180초 대기, 3프레임 뒤 검사)과 완료 조건의 숫자를 모두 Assert로 직접 확인한다. 게임 코드, GameFlow 도우미, 씬·어셈블리 정의는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "Assets/Tests/PlayMode/Flow/FullRoundFlowTests.cs` 에 아래 조건마다 검사가 있고 모두 통과한다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves + TearDown",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "빈 저장소로 `Launch` 하면 `LoadResult.Status` 는 `Empty`, `StageProgress.StageNumber` 는 1, `RoundNumber` 는 1 이다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (36~38줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "PowerUp(root, 200)` 뒤 `StatUpgrades.Attack` 은 410, `StatUpgrades.MaxHealth` 는 4100 이다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (45~46줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "Time.timeScale` 20 에서 실제 시간 180초 안에 `StageProgress.StageNumber` 가 6 이 된다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (49~54줄, GameFlow.WaitUntil 180초, 실패 시 상태 메시지)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "그때 `RoundNumber` 는 2, `DisplayStageNumber` 는 1, `SubstageNumber` 는 1 이다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (57~59줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "그때까지 모은 `StageCleared` 번호는 차례대로 [1, 2, 3, 4, 5] 다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (60줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "그때까지 `StageFailed` 는 한 번도 오지 않았다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (61줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "그때 `Realm.Current` 는 `RealmLevel.SecondRate` 다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (62줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "그때 `Wallet.Balance` 는 3단계 직후 기록한 값보다 974 이상 1286 이하만큼 많다.",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (47줄 기록, 63줄 Is.InRange(974, 1286))",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "3프레임 뒤 `SaveCodec.Decode(store.Text).Data.StageNumber` 는 6 이다 (자동 저장이 다음 회차 진입을 저장했다).",
+            "test": "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves (55줄 3프레임 대기, 64~66줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "테스트가 끝난 뒤 TearDown 의 `ResetToFreshLaunch()` 로 `StageProgress.StageNumber` 는 1, `Time.timeScale` 은 1 이다 (다음 테스트를 위한 정리. 같은 파일의 두 번째 테스트나 TearDown 안의 `Assert` 로 확인한다).",
+            "test": "FullRoundFlowTests.TearDown (25~27줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프가 판정",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "61줄의 실패 검사는 이 테스트가 시작될 때 구독한 이벤트만 셉니다. 루트는 TearDown에서 새로 만들어지므로 구독을 풀지 않아도 문제는 없습니다 (Assets/Tests/PlayMode/Flow/FullRoundFlowTests.cs:42-43)."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 884,
+          "passed": 884,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 153,
+          "passed": 153,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "없음. 시간 배율은 작업 문서의 임시값 20을 사용했다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "076_flow_save_reload.md",
+      "branch": "task/076_flow_save_reload",
+      "agents": "codex(시도 1~2)",
+      "summary": "저장 후 재시작 테스트에서 구간 소개가 끝난 뒤 전투 재개를 확인하고 4스테이지 제한 시간에 소개 대기를 포함했다. Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "테스트 파일 하나만 추가됐고, 테스트 하나 안에서 저장·재시작·복원·재진행을 이어서 검사한다. 완료 조건마다 기대값(200·200·1, 스테이지 3, 구간 1, 스테이지 4)을 Assert로 확인하고, 게임 코드와 하지 말 것 범위는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "Assets/Tests/PlayMode/Flow/SaveReloadFlowTests.cs` 에 아래 조건마다 검사가 있고 모두 통과한다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "진행해서 `StageProgress.StageNumber` 가 3 이 된 뒤 `AutoSave.SaveNow(DateTime.UtcNow.Ticks)` 는 `true` 다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (42·49줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "다시 켠 새 루트의 `LoadResult.Status` 는 `Loaded` 다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (64줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "새 루트의 `Wallet.Balance` 는 끄기 직전 기록한 금화와 같다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (65줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "새 루트의 공격력·체력·내공 단계는 끄기 직전 기록한 값(200, 200, 1)과 같다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (66~71줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "새 루트의 `Realm.Current` 와 `Realm.Kills` 는 끄기 직전 기록한 값과 같다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (72~73줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "새 루트의 `StageProgress.StageNumber` 는 끄기 직전 기록한 값(3)과 같고 `SubstageNumber` 는 1 이다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (74~76줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "새 루트의 `StageProgress.SeenIntroStage` 는 끄기 직전 기록한 값과 같다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (77줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "새 루트의 `StageProgress.HasBegun` 은 `true`, `Battle.Paused` 는 `false` 다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (78줄 HasBegun, 87~89줄 구간 소개가 끝난 뒤 Paused)",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "새 루트의 `Battle.DiscipleHealth` 는 `Battle.DiscipleMaxHealth` 와 같다 (불러오면 체력이 가득 찬다).",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (79줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "새 루트의 `OfflineReward` 는 `null` 이 아니고 `HasReward` 는 `false` 이며, `[OfflineRewardView]` 자식이 없다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (80~82줄)",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "다시 켠 뒤 `Time.timeScale` 20 에서 실제 시간 120초 안에 `StageProgress.StageNumber` 가 4 가 된다.",
+            "test": "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues (84~93줄, 소개 대기와 진행 대기를 합쳐 120초 안)",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프가 판정",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "Battle.Paused 를 재시작 직후가 아니라 구간 소개(1.2초)가 끝나 Phase 가 Playing 이 된 뒤에 검사한다 (SaveReloadFlowTests.cs:87-89). stage.md 21줄에 따르면 구간이 시작할 때마다 1.2초 동안 전투가 멈추므로, 사양과 맞는 해석이고 보고서의 가정에도 적혀 있다."
+          },
+          {
+            "severity": "note",
+            "text": "재시작하는 프레임 동안 진행을 막으려고 저장 직전에 Time.timeScale 을 0으로 둔다 (SaveReloadFlowTests.cs:47). 작업 문서에 없는 테스트 쪽 결정이지만 보고서 가정에 적혀 있고, Relaunch 도우미는 프레임 단위로 기다리므로 영향이 없다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 884,
+          "passed": 884,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 154,
+          "passed": 154,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "SaveReloadFlowTests.SaveAndRelaunch_AfterStageThree_RestoresAndContinues"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "재생성 도우미가 기다리는 프레임 동안 전투가 진행되지 않도록 저장 직전에 시간 배율을 0으로 두고 복원 상태 검사 후 20으로 되돌렸다. 저장과 기존 루트 비활성화는 같은 프레임에 수행한다.",
+        "스테이지 사양에 따라 다시 시작한 첫 구간의 1.2초 소개 중에는 전투가 정지하므로, 소개가 끝난 `Playing` 상태에서 전투 재개를 검사한다.",
+        "사양과 공개 연결 지점의 변경은 없다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": [
+    "077_flow_offline_reward.md"
+  ]
+}
