@@ -70,7 +70,7 @@
 | 보너스 | `realm.BonusPercent` (정수 %) | 경지 기능의 수치: 삼류 0, 이류 10, 일류 20, 절정 30, 초절정 40 (모두 임시). `realm`이 `null`이면 0 |
 | 내공 | 최종 능력치 없음 | 단계만 내준다. 스킬 배율(200% + 단계당 10%p)은 전투 기능의 수치다 |
 | 세 능력치의 최대 단계 | `int.MaxValue` (2,147,483,647) | 기획상 상한은 없다. 넘침을 막는 기술적 상한이다. 이때 비용 10,737,418,255 |
-| 시작 능력치 (`GameRoot`가 넣는 값) | 공격력 `Battle.DiscipleBaseAttack` (10), 최대 체력 `Battle.DiscipleBaseMaxHealth` (100) | 전투 기능의 수치다 |
+| 시작 능력치 (`GameRoot`가 넣는 값) | 공격력, 최대 체력 | `BalanceTable.Current`의 `DiscipleBaseAttack`·`DiscipleBaseMaxHealth` (기본 10, 100) |
 | 이름 표기 `StatUpgradeText.Name` | `Attack` → `무력`, `Health` → `체력`, `InnerPower` → `내공` | 능력치 이름에 Galmuri11 글꼴을 쓴다 |
 | 단계 표기 `StatUpgradeText.Level` | `"Lv." + 단계` | 0 → `Lv.0`, 10 → `Lv.10`. `level.ToString(CultureInfo.InvariantCulture)` |
 | 비용 표기 `StatUpgradeText.Cost` | 최대 단계면 `MAX`, 아니면 `"G " + GoldText.FormatNumber(cost)` | 20 → `G 20`, 1234 → `G 1,234` |
@@ -187,7 +187,7 @@ namespace PlumSword.Game
     public sealed class GameRoot : MonoBehaviour   // 이미 있는 클래스
     {
         // Awake 에서 Wallet, Realm 을 만든 뒤 아래로 하나 만든다:
-        // new StatUpgrades(Wallet, Battle.DiscipleBaseAttack, Battle.DiscipleBaseMaxHealth,
+        // new StatUpgrades(Wallet, BalanceTable.Current.DiscipleBaseAttack, BalanceTable.Current.DiscipleBaseMaxHealth,
         //                  저장된 공격력 단계, 저장된 체력 단계, 0, Realm)
         // 내공 단계는 저장 기능이 내공 칸을 만들 때까지 0 을 넣는다 ("저장").
         public PlumSword.Core.StatUpgrade.StatUpgrades StatUpgrades { get; }
@@ -218,7 +218,7 @@ namespace PlumSword.Game.StatUpgrade
 - `PlumSword.Core.Currency.Wallet` (`docs/spec/currency.md`): `CanSpend(long)`, `TrySpend(long)`, `BalanceChanged`.
 - `PlumSword.Core.Currency.GoldText.FormatNumber(long)` (`docs/spec/currency.md`).
 - `PlumSword.Core.Realm.RealmProgress.BonusPercent` (`docs/spec/realm.md`). 테스트에서는 `new RealmProgress(wallet, startLevel)`로 원하는 경지를 만든다 (`startLevel` 1 = 이류, 3 = 절정, 4 = 초절정).
-- `PlumSword.Core.Combat.Battle.DiscipleBaseAttack`, `DiscipleBaseMaxHealth` (`docs/spec/combat.md`): `GameRoot`가 시작 능력치로 넣는다.
+- `PlumSword.Core.Balance.BalanceTable.Current` (`docs/spec/balance.md`): `GameRoot`가 시작 능력치를 읽는다.
 - `PlumSword.Game.GameRoot.Wallet`, `UiCanvas`, `Realm` (이미 있다).
 
 ## 화면
@@ -241,7 +241,7 @@ namespace PlumSword.Game.StatUpgrade
 - **누르면**: 그 버튼의 능력치로 `upgrades.TryUpgrade(stat)`를 부른다. 성공했을 때 위의 강화 연출을 한다. 한 번 누르면 한 단계다. 길게 눌러 연속 강화는 없다.
 - **바뀌는 때**: `Initialize`에서 한 번, 그 뒤로 `wallet.BalanceChanged`, `upgrades.Upgraded`, `upgrades.LockedChanged`가 올 때마다 버튼 내용을 갱신한다. 호버·강화 연출은 매 프레임 갱신하며 소리는 없다.
 - **사람이 먼저 해 둘 것**: 금화 사양과 같다. TextMeshPro 기본 리소스(TMP Essentials)가 있어야 글자가 보인다. 없어도 예외로 게임이 멈추지 않아야 한다. 내공 아이콘은 그림이 준비되면 위 경로에 파일만 넣는다.
-- 표시 글자와 누를 수 있는지의 판단은 모두 Core(`StatUpgradeText`, `StatUpgrades.CanUpgrade`)에 있고 에딧 모드 테스트로 판정한다. 버튼 이름·아이콘 숨김은 플레이 모드 테스트(`StatUpgradeViewTests`)로 확인한다. `GameRoot`의 조립은 자동 테스트 대상이 아니며 사람이 실행해 확인한다.
+- 표시 글자와 누를 수 있는지의 판단은 모두 Core(`StatUpgradeText`, `StatUpgrades.CanUpgrade`)에 있고 에딧 모드 테스트로 판정한다. 버튼 이름·아이콘 숨김은 플레이 모드 테스트(`StatUpgradeViewTests`)로 확인한다. 시작 능력치 조립은 플레이 모드 흐름 테스트로 확인한다.
 
 ## 저장
 
@@ -264,7 +264,7 @@ namespace PlumSword.Game.StatUpgrade
 - 기본 공격 간격 1초(임시, `Battle.DiscipleBaseAttackInterval`)와 공격 대기 시간: 전투 기능이 정한다.
 - 이십사수매화검법의 범위, 피해 배율(200% + 내공 단계당 10%p), 피해 내림, 재사용 대기: 전투 기능이 정한다. 이 기능은 `GetLevel(StatType.InnerPower)`, `Attack`, `Upgraded`만 내준다.
 - 경지 단계, 돌파 조건, 보너스 %와 오오라: 경지 기능(`docs/spec/realm.md`)이 정한다.
-- 시작 능력치(10 / 100)의 원래 값, 몬스터·보스 능력치: 전투 기능이 정한다.
+- 시작 능력치와 몬스터·보스 능력치: 수치 표 기능이 정한다.
 - 페이드 때 실제로 잠금을 거는 것: 스테이지 기능이 정한다.
 - 저장 데이터 형식의 변경(공격 속도 칸 → 내공 칸, 판 번호): 저장 기능이 정한다.
 - 비용 단위의 한글 표기(`25금화`)는 하지 않는다. 능력치 이름에는 Galmuri11을 적용한다.
