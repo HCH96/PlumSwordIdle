@@ -52,6 +52,7 @@
 
 - 게임 로직은 에딧 모드 테스트로 검사한다. 작업 문서의 완료 조건마다 테스트를 하나 이상 쓴다.
 - 플레이 모드 테스트는 실제 실행이 필요한 부분에만 쓴다. `Assets/Tests/PlayMode/`의 `PlumSword.Game.Tests`에 넣는다 (네임스페이스 `PlumSword.Game.Tests.<기능>`).
+  - 흐름 테스트는 `Assets/Tests/PlayMode/Flow/`에 두고 `GameFlow` 도우미를 쓰며, TearDown에서 `ResetToFreshLaunch()`를 부른다. 도우미는 재생성할 때 씬 카메라의 태그를 잠시 감춰 새 루트가 씬 교체에도 남는 자체 카메라를 갖게 한다.
   - 테스트는 빈 씬에서 시작한다. 카메라가 필요하면 `SceneManager.LoadSceneAsync(0)`으로 첫 씬을 불러온다 (`GameBootTests` 참고). `[Game]` 루트는 씬을 바꿔도 남는다.
   - 테스트 중에 오류 로그(`Debug.LogError`, 예외)가 나면 그 테스트는 실패한다. `GameBootTests`가 화면 조립 중의 오류를 이렇게 잡는다.
   - `Capture/ScreenCaptureTests.cs`는 루프가 증거용 화면을 찍는 데 쓴다 ([loop.md](loop.md) "증거"). 작업에서 고치지 않는다.

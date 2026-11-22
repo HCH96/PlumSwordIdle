@@ -46,7 +46,7 @@
 - **읽기 실패** (파일은 있는데 읽다가 예외): `Corrupt` 와 같다.
 - **저장 데이터가 있는지**: `GameRoot.LoadResult.HasSaveData` (`Status == Loaded` 이면 `true`). 시작 화면 기능이 `게임 시작` / `이어하기` 를 고를 때 쓴다.
 - **저장소** (`GameRoot` 가 고른다):
-  - `Application.isBatchMode` 가 `true` (루프와 명령줄 테스트): 파일을 읽지도 쓰지도 않는 `MemorySaveStore`. 불러오기는 늘 `SaveCodec.Decode(null)` (`Empty`).
+  - `Application.isBatchMode` 가 `true` (루프와 명령줄 테스트): 파일을 읽지도 쓰지도 않는 `MemorySaveStore`. `BatchSaveStore` 가 `null` 이면 새 저장소와 `SaveCodec.Decode(null)` (`Empty`), 아니면 지정한 저장소와 `SaveCodec.Decode(BatchSaveStore.Text)` 를 쓴다.
   - 아니면 (에디터 플레이, 빌드): `FileSaveStore(Application.persistentDataPath)`.
 - **파일 저장소** `FileSaveStore(directory)`: 파일 `save.dat` 하나 (UTF-8, BOM 없음).
   - `Load()`: `save.dat` 가 없으면 `SaveCodec.Decode(null)`. 있으면 전체를 읽어 `SaveCodec.Decode(text)`. 읽다가 예외가 나면 `new SaveLoadResult(SaveLoadStatus.Corrupt, null)`. 예외를 밖으로 내보내지 않는다.
@@ -283,6 +283,10 @@ namespace PlumSword.Game
 
         // Awake 에서 StageProgress 를 만든 뒤, Begin 전에 하나 만든다.
         public PlumSword.Core.Save.AutoSave AutoSave { get; private set; }
+
+        // 테스트 전용(internal): 배치 모드에서 사용할 저장소와 시작 방식 지정 재생성.
+        internal static PlumSword.Core.Save.MemorySaveStore BatchSaveStore;
+        internal void RecreateAs(PlumSword.Core.StartMenu.StartEntry entry);
     }
 }
 
@@ -320,7 +324,7 @@ namespace PlumSword.Game.Save
 
 - 누가 만들고 누가 들고 있는지: `GameRoot` 가 저장소 하나(`MemorySaveStore` 또는 `FileSaveStore`), `LoadResult`, `AutoSave` 하나를 만들어 들고 있는다. 게임에 `AutoSave` 는 하나뿐이다. `Tick`·`Flush`·`SaveNow` 를 부르는 것은 `SaveView` 하나뿐이다.
 - **`GameRoot.Awake` 순서** (지금의 순서에서 바뀌는 곳만):
-  1. 맨 앞: 저장소를 고르고 `LoadResult` 를 읽는다 (`isBatchMode` 면 `SaveCodec.Decode(null)`, 아니면 `FileSaveStore.Load()`). `Loaded` 면 `LoadResult.Data` 의 값, 아니면 처음 값을 쓴다.
+  1. 맨 앞: 저장소를 고르고 `LoadResult` 를 읽는다 (배치 모드에서는 위 저장소 규칙, 아니면 `FileSaveStore.Load()`). `Loaded` 면 `LoadResult.Data` 의 값, 아니면 처음 값을 쓴다.
   2. `Wallet`, `Realm`, `StatUpgrades` 를 그 값으로 만든다 (`new Wallet(gold)`, `new RealmProgress(Wallet, realmLevel, realmKills)`, `StatUpgrades` 생성자의 단계 인자 셋(`attackLevel`, `healthLevel`, `innerPowerLevel`)과 `Realm`). 저장이 없으면 경지와 내공 단계는 0 이다.
   3. 화면 조립(금화, 강화, 전투)은 그대로다.
   4. 스테이지: `StageProgress` 를 `startStage`, `seenIntroStage` 에 그 값을 넣어 만들고 `[StageView]` 를 붙인다. **`Begin()` 은 아직 부르지 않는다.**
