@@ -144,6 +144,7 @@ namespace PlumSword.Core.Combat
         public bool IsDiscipleDefeated { get; private set; }
 
         public bool Paused { get; private set; }
+        public bool IsHoldingPosition { get; private set; }
 
         /// <summary>살아 있는 적. 추가된 순서.</summary>
         public IReadOnlyList<Enemy> Enemies => _enemies;
@@ -206,7 +207,7 @@ namespace PlumSword.Core.Combat
             if (IsSkillActive && ++_skillStep >= SkillActiveSteps) IsSkillActive = false;
             ReduceCooldowns(snapshot);
             double positionBeforeMove = DisciplePosition;
-            if (!IsSkillActive) MoveDisciple(snapshot);
+            if (!IsSkillActive && !IsHoldingPosition) MoveDisciple(snapshot);
             MoveEnemies(snapshot);
             BeginWindUp(snapshot, DisciplePosition > positionBeforeMove);
 
@@ -263,6 +264,7 @@ namespace PlumSword.Core.Combat
             DiscipleAttackCooldown = 0.0;
             SkillCooldown = 0.0;
             IsSkillActive = false;
+            IsHoldingPosition = false;
             _skillStep = 0;
             _nextSkillHit = 0;
             _skillTotalDamage = 0;
@@ -282,6 +284,12 @@ namespace PlumSword.Core.Combat
         public void SetPaused(bool paused)
         {
             Paused = paused;
+        }
+
+        /// <summary>제자의 전진만 막거나 푼다. 멈춤·패배 중에도 설정되며 알림은 없다.</summary>
+        public void SetHoldPosition(bool hold)
+        {
+            IsHoldingPosition = hold;
         }
 
         // 1. 대기 감소: 제자와 모든 적의 공격 대기를 한 칸만큼 줄인다. 0 아래로 내려가지 않는다.

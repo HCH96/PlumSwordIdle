@@ -19,7 +19,7 @@
 - **한 칸(`Step`)의 순서**. 멈춤 상태(`Paused`)이거나 제자가 패배한 상태(`IsDiscipleDefeated`)면 아무것도 하지 않는다.
   1. **대기 감소**: 제자와 모든 적의 공격 대기 시간을 0.02 줄인다. 스킬이 켜져 있으면(`SkillEnabled`) 스킬 대기(`SkillCooldown`)도 0.02 줄인다. 0보다 작아지지 않는다. 이동 중에도, 적이 없어도 줄어든다.
   2. **이동**:
-     - 제자: 가장 가까운 적까지의 거리 `d`(적 좌표 − 제자 좌표의 최솟값)를 본다. 적이 없으면 `6.48 × 0.02`만큼 전진한다. `d ≤ 1.0 + 1e-9`이면 멈춘다. 아니면 `min(6.48 × 0.02, d − 1.0)`만큼 전진한다.
+     - 제자: `IsHoldingPosition`이 참이거나 스킬이 활성 상태면 전진하지 않는다. 두 조건은 독립이며 어느 하나라도 참이면 제자 이동만 건너뛴다. 그 외에는 가장 가까운 적까지의 거리 `d`(적 좌표 − 제자 좌표의 최솟값)를 본다. 적이 없으면 `6.48 × 0.02`만큼 전진한다. `d ≤ 1.0 + 1e-9`이면 멈춘다. 아니면 `min(6.48 × 0.02, d − 1.0)`만큼 전진한다. 제자리 유지 중에도 대기 감소, 적 이동, 앞 동작 판단, 검기 이동, 공격과 쓰러짐 판정은 계속되며 제자가 전진하지 않아 앞 동작이 시작되지는 않는다.
      - 일반 몬스터(추가된 순서대로, 제자가 움직인 뒤의 좌표로 계산): 제자까지의 거리 `d`가 `d ≤ 3.0 + 1e-9`이고 `d > 0.8 + 1e-9`이면 `min(1.0 × 0.02, d − 0.8)`만큼 제자 쪽으로 다가온다. 그 밖에는 움직이지 않는다.
      - 종남 장로(전체 스테이지 번호를 5로 나눈 나머지가 1인 보스)는 제자까지 3.0유닛 안에 들어오면 초당 1.0유닛으로 접근하고 1.0유닛에서 멈춘다. 다른 보스는 현재 제자리에 있는다. 보스별 이동 방식은 독립적으로 정한다 (수치 임시).
   2-1. **앞 동작 시작** (2026-11-17 추가): 이번 칸에 제자가 전진했고, 직전 칸이 끝났을 때는 제자의 공격 범위(`1.0 + 1e-9`) 안에 적이 없었는데 이동이 끝난 지금은 있으면(달려와 멈춘 칸), 제자의 공격 대기를 `max(지금 대기, Battle.DiscipleBaseAttackInterval × 7/17)`(1.0초면 0.4118초, 21칸)로 올린다 (`Battle.DiscipleAttackWindUpRatio`). 그래서 달려와 멈추자마자 피해를 주지 않고, 공격 애니메이션의 앞 동작(17프레임 중 0~6번)이 끝나는 순간 타격 프레임(7번)에 맞춰 피해를 준다. 제자가 전진하지 않은 채 범위 안에 적이 생긴 경우(처음부터 범위 안에 놓인 적, 적을 쓰러뜨린 뒤 다음 적이 이미 범위 안에 있는 경우)는 대기를 바꾸지 않는다. 범위 안 적 여부는 `Reset` 때 "없음"으로 되돌린다.
@@ -42,7 +42,8 @@
 - **개방 보스 쓰러짐 표시**: 승인된 25프레임을 0.075초 간격으로 재생하고 마지막 프레임을 0.5초 유지한다. 쓰러지는 동안 방망이를 놓으며 방망이는 스프라이트에 포함된다. 보스 승리 전환의 페이드 시작은 쓰러짐 재생 후로 미룬다.
 - **개방 보스 기술**: 매 세 번째 공격에 방망이를 크게 휘두르는 기술 동작을 쓴다. 피해는 일반 공격과 같은 근접 피해로 즉시 한 번 적용한다. 피해량·범위·공격 간격은 기존 보스 수치 그대로이며 투사체는 없다. 기술 발생 주기와 피해량은 임시값이다.
 - **적 추가** `AddEnemy(kind, stage, position)`: 능력치를 `EnemyStats`로 계산해 적을 만들고 `Enemies` 끝에 넣은 뒤 `EnemyAdded`를 보낸다. 새 적은 체력이 가득하고 공격 대기 시간이 0(바로 공격할 수 있음)이다. 순번 `Index`는 `Reset` 뒤 0부터, 추가할 때마다 1씩 는다.
-- **초기화** `Reset()`: 제자 좌표 0, 제자 체력 = `StatUpgrades.MaxHealth`, 제자 공격 대기 0, 스킬 대기 0(준비됨), `IsSkillActive = false`와 남은 타격 취소, `IsDiscipleDefeated = false`, 모든 적과 종남 검기 제거(`EnemyDefeated`는 보내지 않는다), 다음 `Index` 0, 모아 둔 시간 0으로 만든 뒤 `ResetCompleted`를 한 번 보낸다. `Paused`는 바꾸지 않는다.
+- **초기화** `Reset()`: 제자 좌표 0, 제자 체력 = `StatUpgrades.MaxHealth`, 제자 공격 대기 0, 스킬 대기 0(준비됨), `IsSkillActive = false`와 남은 타격 취소, `IsHoldingPosition = false`, `IsDiscipleDefeated = false`, 모든 적과 종남 검기 제거(`EnemyDefeated`는 보내지 않는다), 다음 `Index` 0, 모아 둔 시간 0으로 만든 뒤 `ResetCompleted`를 한 번 보낸다. `Paused`는 바꾸지 않는다.
+- **제자리 유지** `SetHoldPosition(hold)`: 제자의 전진만 막거나 푼다. 처음에는 꺼져 있고 같은 값을 설정하면 아무 일도 없으며 알림도 없다. 멈춤·패배 중에도 값을 바꿀 수 있다.
 - **멈춤** `SetPaused(paused)`: 멈춘 동안 `Step`과 `Tick`은 아무것도 하지 않고, `Tick`이 받은 시간은 모으지 않고 버린다. 알림은 없다. 처음에는 멈춰 있지 않다. 멈춤을 거는 쪽은 스테이지 기능이다 (페이드 동안).
 - **스킬 켜기**: 생성자의 `skillEnabled`가 `true`일 때만 스킬이 있다. 게임에서는 `GameRoot`가 `true`로 만든다. `false`(기본값)이면 스킬 대기가 줄지 않고(0 그대로), 공격 차례는 늘 기본 공격이며, `SkillUsed`가 오지 않는다 (1·2단계와 같은 전투). 처음 상태의 스킬 대기는 0(준비됨)이다. 별도 습득 과정은 없다.
 - **강화·경지 반영** (`docs/spec/stat_upgrade.md`, `docs/spec/realm.md`의 약속):
@@ -229,6 +230,7 @@ namespace PlumSword.Core.Combat
         public double DiscipleAttackInterval { get; }   // 늘 DiscipleBaseAttackInterval (1.0). 화면의 공격 애니메이션 속도에 쓴다
         public bool IsDiscipleDefeated { get; }
         public bool Paused { get; }
+        public bool IsHoldingPosition { get; } // 처음에는 false. 제자의 전진만 막는다
 
         public bool SkillEnabled { get; }               // 생성자의 skillEnabled
         public bool IsSkillActive { get; }              // 발동 칸부터 62번째 칸까지 true
@@ -266,6 +268,9 @@ namespace PlumSword.Core.Combat
 
         // 멈추거나 푼다. 같은 값이면 아무 일도 없다. 알림은 없다.
         public void SetPaused(bool paused);
+
+        // 제자리 유지를 설정한다. 멈춤·패배 중에도 변경되며 알림은 없다.
+        public void SetHoldPosition(bool hold);
 
         public event System.Action<Enemy> EnemyAdded;      // AddEnemy 가 적을 넣은 뒤
         public event System.Action<Enemy> EnemyDamaged;    // 제자의 공격으로 그 적의 체력이 준 뒤
@@ -468,6 +473,8 @@ namespace PlumSword.Game.Combat
 - 체력·공격력이 `long` 범위를 넘칠 만큼 큰 경우: 다루지 않는다.
 
 ## 완료 조건 초안
+
+제자리 유지 (`BattleHoldPositionTests`): 기본 전투에서 처음 상태는 꺼져 있다. 유지 중 적 없이 10칸 뒤 좌표는 0이고 해제 후 10칸 뒤 1.296이다. 유지 중 2스테이지 보스가 5.0이면 50칸 뒤 좌표 0, 보스 체력 130이며, 1.0이면 첫 칸에 보스 체력 120, 제자 체력 86이다. 초기화는 유지를 해제하고 멈춤·패배 중에도 설정할 수 있다. 적의 접근과 전진 없는 공격도 계속된다. 기존 테스트도 통과한다.
 
 아래에서 따로 적지 않으면 지갑은 `new Wallet(1000)`, 강화는 `new StatUpgrades(wallet, 10, 100)`이다. "스킬 전투"는 `new Battle(upgrades, null, true)`, "기본 전투"는 `new Battle(upgrades)`다. "경지 전투"는 `realm = new RealmProgress(wallet)`, `upgrades = new StatUpgrades(wallet, 10, 100, 0, 0, 0, realm)`, `new Battle(upgrades, realm)`이다. "n칸 뒤"는 처음부터 `Step()`을 모두 n번 부른 뒤다. 좌표·시간은 오차 1e-6 안에서 비교한다.
 
