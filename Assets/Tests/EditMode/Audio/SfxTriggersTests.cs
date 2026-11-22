@@ -105,6 +105,53 @@ namespace PlumSword.Core.Tests.Audio
             Assert.That(sounds, Has.No.Member(SfxId.AttackHit));
         }
 
+        [Test]
+        public void SkillFirstHit_RequestsSkillWithoutSwingOrHit()
+        {
+            Create(attack: 10, skill: true);
+            battle.AddEnemy(EnemyKind.Boss, 2, battle.DisciplePosition + 1.0);
+            battle.Step();
+            var sounds = Drain();
+            Assert.That(sounds, Has.Member(SfxId.PlumSwordSkill));
+            Assert.That(sounds, Has.No.Member(SfxId.SwordSwing));
+            Assert.That(sounds, Has.No.Member(SfxId.AttackHit));
+        }
+
+        [Test]
+        public void SkillRemainingSteps_RequestNoSwingOrHit()
+        {
+            Create(attack: 10, skill: true);
+            battle.AddEnemy(EnemyKind.Boss, 2, battle.DisciplePosition + 1.0);
+            battle.Step();
+            Drain();
+            int hits = 0;
+            battle.EnemyDamaged += enemy => hits++;
+            for (int i = 0; i < 62; i++)
+            {
+                battle.Step();
+                var sounds = Drain();
+                Assert.That(sounds, Has.No.Member(SfxId.SwordSwing), "step " + (i + 2));
+                Assert.That(sounds, Has.No.Member(SfxId.AttackHit), "step " + (i + 2));
+            }
+            Assert.That(hits, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void AttackAfterSkill_RequestsSwingAndHit()
+        {
+            Create(attack: 10, skill: true);
+            battle.AddEnemy(EnemyKind.Boss, 2, battle.DisciplePosition + 1.0);
+            for (int i = 0; i < 63; i++)
+            {
+                battle.Step();
+                Drain();
+            }
+            battle.Step();
+            var sounds = Drain();
+            Assert.That(sounds, Has.Member(SfxId.SwordSwing));
+            Assert.That(sounds, Has.Member(SfxId.AttackHit));
+        }
+
         [TestCase(EnemyKind.Normal, true)]
         [TestCase(EnemyKind.Boss, false)]
         public void EnemyDefeated_OnlyNormalRequestsDefeat(EnemyKind kind, bool normal)
