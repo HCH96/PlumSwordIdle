@@ -5,6 +5,8 @@ using PlumSword.Core.Combat;
 using PlumSword.Core.Currency;
 using PlumSword.Core.Realm;
 using PlumSword.Core.StatUpgrade;
+using PlumSword.Core.Stage;
+using PlumSword.Core.Tests.Stage;
 
 namespace PlumSword.Core.Tests.Balance
 {
@@ -12,6 +14,129 @@ namespace PlumSword.Core.Tests.Balance
     {
         [TearDown]
         public void TearDown() => BalanceTable.Current = BalanceTable.Default;
+
+        [Test]
+        public void EnemyHealth_UsesSubstageAndLegacyFirstSubstage()
+        {
+            var table = BalanceTable.Default;
+            table.SubstageStep = 1;
+            table.NormalHealth = new GrowthCurve(30, 0, 2);
+            BalanceTable.Current = table;
+            Assert.AreEqual(120, EnemyStats.MaxHealth(EnemyKind.Normal, 1, 3));
+            Assert.AreEqual(30, EnemyStats.MaxHealth(EnemyKind.Normal, 1));
+        }
+
+        [Test]
+        public void AddEnemy_UsesSubstageForHealthAndAttack()
+        {
+            var table = BalanceTable.Default;
+            table.SubstageStep = 1;
+            table.NormalHealth = new GrowthCurve(30, 0, 2);
+            table.NormalAttack = new GrowthCurve(5, 0, 2);
+            BalanceTable.Current = table;
+            var battle = new Battle(new StatUpgrades(new Wallet(0), 10, 100));
+            var enemy = battle.AddEnemy(EnemyKind.Normal, 1, 1.0, 3);
+            Assert.AreEqual(120, enemy.MaxHealth);
+            Assert.AreEqual(20, enemy.Attack);
+        }
+
+        [Test]
+        public void FinalBoss_UsesFixedValuesOnEveryFifthStage()
+        {
+            var table = BalanceTable.Default;
+            table.FinalBossHealth = 5000;
+            table.FinalBossAttack = 300;
+            BalanceTable.Current = table;
+            Assert.AreEqual(5000, EnemyStats.MaxHealth(EnemyKind.Boss, 5));
+            Assert.AreEqual(5000, EnemyStats.MaxHealth(EnemyKind.Boss, 10));
+            Assert.AreEqual(300, EnemyStats.Attack(EnemyKind.Boss, 5));
+            Assert.AreEqual(190, EnemyStats.MaxHealth(EnemyKind.Boss, 4));
+            Assert.AreEqual(70, EnemyStats.MaxHealth(EnemyKind.Normal, 5));
+        }
+
+        [Test]
+        public void Rewards_UseSubstageAndLegacyFirstSubstage()
+        {
+            var table = BalanceTable.Default;
+            table.SubstageStep = 1;
+            table.NormalGold = new GrowthCurve(10, 0, 2);
+            table.BossGold = new GrowthCurve(50, 0, 2);
+            BalanceTable.Current = table;
+            Assert.AreEqual(40, StageRewards.NormalGold(1, 3));
+            Assert.AreEqual(10, StageRewards.NormalGold(1));
+            Assert.AreEqual(200, StageRewards.BossGold(1, 3));
+            Assert.AreEqual(50, StageRewards.BossGold(1));
+        }
+
+        [Test]
+        public void InvalidSubstage_ThrowsWithoutAddingOrNotifying()
+        {
+            var battle = new Battle(new StatUpgrades(new Wallet(0), 10, 100));
+            int added = 0;
+            battle.EnemyAdded += enemy => added++;
+            Assert.Throws<ArgumentOutOfRangeException>(() => EnemyStats.MaxHealth(EnemyKind.Normal, 1, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EnemyStats.Attack(EnemyKind.Boss, 1, 8));
+            Assert.Throws<ArgumentOutOfRangeException>(() => StageRewards.NormalGold(1, 8));
+            Assert.Throws<ArgumentOutOfRangeException>(() => StageRewards.BossGold(1, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => battle.AddEnemy(EnemyKind.Normal, 1, 1.0, 0));
+            Assert.AreEqual(0, battle.Enemies.Count);
+            Assert.AreEqual(0, added);
+        }
+
+        [TestCase(2, 3, false, 40)]
+        [TestCase(1, 2, true, 60)]
+        public void StageProgress_SpawnsWithCurrentSubstage(int stage, int target, bool scaled, long health)
+        {
+            var table = BalanceTable.Default;
+            if (scaled)
+            {
+                table.SubstageStep = 1;
+                table.NormalHealth = new GrowthCurve(30, 0, 2);
+            }
+            BalanceTable.Current = table;
+            var wallet = new Wallet(0);
+            var upgrades = new StatUpgrades(wallet, 100000, 100000);
+            var battle = new Battle(upgrades);
+            var progress = new StageProgress(wallet, upgrades, battle, new MinRandom(), stage);
+            progress.Begin();
+            for (int i = 0; i < 20000 && progress.SubstageNumber < target; i++)
+            {
+                progress.Tick(Battle.StepSeconds);
+                battle.Step();
+            }
+            Assert.AreEqual(target, progress.SubstageNumber);
+            Assert.AreEqual(EnemyKind.Normal, battle.Enemies[0].Kind);
+            Assert.AreEqual(health, battle.Enemies[0].MaxHealth);
+        }
+
+        [TestCase(1, 2, 20)]
+        [TestCase(5, 7, 51200)]
+        public void StageProgress_AwardsCurrentSubstageGold(int stage, int target, long expectedReward)
+        {
+            var table = BalanceTable.Default;
+            table.SubstageStep = 1;
+            table.NormalGold = new GrowthCurve(10, 0, 2);
+            table.BossGold = new GrowthCurve(50, 0, 2);
+            BalanceTable.Current = table;
+            var wallet = new Wallet(0);
+            var upgrades = new StatUpgrades(wallet, 100000, 100000);
+            var battle = new Battle(upgrades);
+            var progress = new StageProgress(wallet, upgrades, battle, new MinRandom(), stage);
+            progress.Begin();
+            for (int i = 0; i < 20000 && progress.SubstageNumber < target; i++)
+            {
+                progress.Tick(Battle.StepSeconds);
+                battle.Step();
+            }
+            Assert.AreEqual(target, progress.SubstageNumber);
+            long before = wallet.Balance;
+            for (int i = 0; i < 20000 && wallet.Balance == before; i++)
+            {
+                progress.Tick(Battle.StepSeconds);
+                battle.Step();
+            }
+            Assert.AreEqual(expectedReward, wallet.Balance - before);
+        }
 
         [Test]
         public void GetCost_ChangedAttackCurve_UsesIndependentCurvesOnExistingObject()

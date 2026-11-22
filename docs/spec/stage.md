@@ -53,6 +53,7 @@
 - `StageLayout.SubstagePositions(Random, double center)`는 무리 하나의 2~3개 좌표를 반환한다. `NormalSubstageCount = 6`, `MinSubstageEnemies = 2`, `MaxGroupSize = 3`, `EncounterDistance = 24`, `InGroupSpacing = 2`, `BossDistance = 24`. 기존 `FirstGroupPosition = 6`, `RollGroups`·`Positions`와 `NormalCount`는 이전 호출과 테스트 호환용이며 현재 스테이지 배치에 사용하지 않는다.
 - `public const int StageLayout.FinalDisplayStage = 5`: 일반 구간 없이 최종 보스만 나오는 화면상 큰 스테이지 번호.
 - `StageRewards.NormalGold(int)`와 `BossGold(int)`는 1 미만에 예외를 던진다. `StageText`는 기존 회차·테마·보스 이름과 영문 테마 소개를 제공한다. 1스테이지 소개는 `Mount Hua and Jongnam disciples spar in Mount Hua's training yard.`이다.
+- `StageRewards.NormalGold(int stage, int substage)`와 `BossGold(int stage, int substage)`는 수치 표의 구간별 보상을 반환하며 1 미만의 스테이지나 1~7 밖의 구간에 예외를 던진다. 기존 메서드는 1구간을 쓴다.
 - `public static string StageText.SubstageLabel(int stage, int substage)`: `stage`가 5면 `"FINAL"`, 아니면 `"{stage}-{substage}"`를 문화권과 무관하게 만든다. `stage`가 1~5 밖이거나 `substage`가 1~7 밖이면 `ArgumentOutOfRangeException`을 던진다.
 - `StageLabelArt`는 제목판·번호 시트 경로 상수 `HeaderBlankPath`, `NumberSheetPath`와 스테이지 1~5의 그림 경로 `TitlePath(int stage)`, `BossNamePath(int stage)`를 제공한다. 경로의 번호는 문화권과 무관하며 범위 밖은 예외다.
 - `UsesBossName(int stage, int substage)`는 5스테이지 또는 7구간에서 참이고, `NumberGlyphs(int stage, int substage)`는 일반 구간에 새 배열 `{stage, HyphenGlyph, substage}`를 반환한다. 스테이지는 1~5, 구간은 1~7이며 번호 배열은 스테이지 1~4와 구간 1~6만 허용한다. 잘못된 값은 `ArgumentOutOfRangeException`이다.

@@ -161,12 +161,14 @@ namespace PlumSword.Core.Combat
         public const double NormalReactRange = 3.0;
         public const double NormalMoveSpeed = 1.0;
 
-        // Normal: 30 + 10 * (stage - 1), Boss: 100 + 30 * (stage - 1). long 으로 계산.
-        // stage 가 1 보다 작거나 kind 가 정의되지 않은 값이면 ArgumentOutOfRangeException (아래 stage, kind 를 받는 메서드 모두 같다).
+        // 수치 표의 구간별 체력. 기존 호출은 1구간이다.
+        // stage < 1, substage가 1~7 밖, 정의되지 않은 kind는 ArgumentOutOfRangeException.
         public static long MaxHealth(EnemyKind kind, int stage);
+        public static long MaxHealth(EnemyKind kind, int stage, int substage);
 
-        // Normal: 5 + 2 * (stage - 1), Boss: 10 + 4 * (stage - 1).
+        // 수치 표의 구간별 공격력. 기존 호출은 1구간이다.
         public static long Attack(EnemyKind kind, int stage);
+        public static long Attack(EnemyKind kind, int stage, int substage);
 
         // 수치 표(BalanceTable.Current)의 종류별 공격 간격(초).
         public static double AttackInterval(EnemyKind kind);
@@ -262,7 +264,7 @@ namespace PlumSword.Core.Combat
         // stage < 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
         // ArgumentOutOfRangeException (아무것도 바꾸지 않는다). 멈췄거나 패배한 상태에서도 추가된다.
         // (Epsilon 허용: 칸마다 0.1296 을 더한 좌표의 소수 오차 때문에 "제자와 같은 좌표" 가 거부되지 않게 한다.)
-        public Enemy AddEnemy(EnemyKind kind, int stage, double position);
+        public Enemy AddEnemy(EnemyKind kind, int stage, double position, int substage = 1);
 
         // 제자를 좌표 0, 체력 가득, 공격 대기 0, 스킬 대기 0, 패배 아님으로 되돌리고 모든 적을 없앤 뒤
         // ResetCompleted 를 보낸다. EnemyDefeated 는 보내지 않는다. Paused 는 바꾸지 않는다.

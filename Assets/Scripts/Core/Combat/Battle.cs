@@ -229,10 +229,10 @@ namespace PlumSword.Core.Combat
 
         /// <summary>
         /// 적을 추가하고 EnemyAdded 를 보낸 뒤 그 적을 돌려준다. 능력치는 EnemyStats 로 계산한다.
-        /// stage &lt; 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
+        /// stage &lt; 1, substage 가 1~7 밖, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
         /// ArgumentOutOfRangeException (아무것도 바꾸지 않는다). 멈췄거나 패배한 상태에서도 추가된다.
         /// </summary>
-        public Enemy AddEnemy(EnemyKind kind, int stage, double position)
+        public Enemy AddEnemy(EnemyKind kind, int stage, double position, int substage = 1)
         {
             // 제자 좌표와의 비교에는 Epsilon 을 허용한다 (칸마다 더한 좌표의 소수 오차로 "같은 좌표" 가 거부되지 않게).
             if (double.IsNaN(position) || double.IsInfinity(position) || position < DisciplePosition - Epsilon)
@@ -240,9 +240,9 @@ namespace PlumSword.Core.Combat
                 throw new ArgumentOutOfRangeException(nameof(position), position, "적의 좌표는 제자의 좌표 이상인 유한한 값이어야 한다.");
             }
 
-            // EnemyStats 가 stage 와 kind 를 검사해 ArgumentOutOfRangeException 을 던진다. 상태를 바꾸기 전에 모두 계산한다.
-            long maxHealth = EnemyStats.MaxHealth(kind, stage);
-            long attack = EnemyStats.Attack(kind, stage);
+            // EnemyStats 가 stage, substage 와 kind 를 검사한다. 상태를 바꾸기 전에 모두 계산한다.
+            long maxHealth = EnemyStats.MaxHealth(kind, stage, substage);
+            long attack = EnemyStats.Attack(kind, stage, substage);
             double attackInterval = EnemyStats.AttackInterval(kind);
 
             bool isJongnamBoss = kind == EnemyKind.Boss && (stage - 1) % 5 == 0;
