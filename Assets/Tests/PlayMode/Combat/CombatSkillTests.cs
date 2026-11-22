@@ -107,10 +107,10 @@ namespace PlumSword.Game.Tests.Combat
                 battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
                 battle.Step();
                 Assert.That(slash.enabled, Is.False);
-                Assert.That(body.sprite.name, Is.EqualTo("disciple_skill_00"));
+                Assert.That(body.sprite.name, Is.EqualTo("disciple_skill_02"));
                 yield return new WaitForSeconds(0.2f);
                 Assert.That(body.sprite.name, Does.StartWith("disciple_skill_"));
-                Assert.That(body.sprite.name, Is.Not.EqualTo("disciple_skill_00"));
+                Assert.That(body.sprite.name, Is.Not.EqualTo("disciple_skill_02"));
                 battle.SetPaused(true);
                 yield return null;
                 var pausedFrame = body.sprite;
