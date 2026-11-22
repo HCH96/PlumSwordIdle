@@ -119,9 +119,9 @@ namespace PlumSword.Game.StatUpgrade
 
 ## 화면
 
-- **위치**: 아래쪽 강화 UI 영역, 금화 현판과 같은 줄의 오른쪽 옆. 캔버스 왼쪽 아래 기준 앵커 (0, 0), 피벗 (0, 1), `anchoredPosition` (216, 86), 크기 96×26 (임시). 금화 현판(왼쪽 위 (8, 86), 최대 너비 200)과 겹치지 않는다.
-- **모양**: 강화 버튼 바탕 `Art/UI/StatUpgrade/button`이 있으면 그 그림을 쓰고, 없으면 단색 사각형이다. 글자는 자식 `TextMeshProUGUI` `Label` 하나로, `AutoUpgradeText.Label(Enabled)` 그대로, Galmuri11, 크기 11 (임시), 가운데 정렬, `raycastTarget = false`.
-- **켜짐**: 바탕 색 RGB (0.20, 0.45, 0.25), 글자 흰색. **꺼짐**: 바탕 색 RGB (0.25, 0.25, 0.25), 글자 RGB (0.6, 0.6, 0.6). 그림 바탕일 때는 그림에 이 색을 곱한다 (임시).
+- **위치**: 아래쪽 강화 UI 영역, 금화 현판과 같은 줄의 오른쪽 8만큼 떨어진 곳. 캔버스 왼쪽 아래 기준 앵커 (0, 0), 피벗 (0, 1), 크기 96×26. 금화 현판의 너비가 늘어나면 버튼도 함께 오른쪽으로 이동한다. 현판이 없으면 `anchoredPosition`은 (132, 86)이다.
+- **모양**: 전용 현판 `Art/UI/StatUpgrade/auto_upgrade`를 쓰고, 없으면 단색 사각형이다. 글자는 자식 `TextMeshProUGUI` `Label` 하나로, `AutoUpgradeText.Label(Enabled)` 그대로, Galmuri11, 크기 11, 가운데 정렬, `raycastTarget = false`.
+- **켜짐**: 현판 원래 색과 밝은 상아색 글자. **꺼짐**: 현판과 글자를 어둡게 표시한다. 글자에도 켜짐·꺼짐을 표시한다.
 - **누르면**: 켜짐과 꺼짐이 바뀐다. 잠금(페이드) 중에도 누를 수 있다. 소리와 연출은 없다.
 - **바뀌는 때**: `Initialize`에서 한 번, 그 뒤 `EnabledChanged`가 올 때마다.
 - 글자는 Core(`AutoUpgradeText`)에서 만들고 에딧 모드 테스트로 판정한다. 버튼 이름·위치·누름은 플레이 모드 테스트로 확인한다.
@@ -139,7 +139,6 @@ namespace PlumSword.Game.StatUpgrade
 ## 범위 밖
 
 - 능력치 비율로 사기, 특정 능력치만 자동, 예약 구매: 하지 않는다.
-- 자동 강화 전용 그림: 에셋이 오면 바탕 그림만 바꾼다.
 - 강화 연출: 자동 구매에도 기존 강화 버튼의 연출은 화면이 `Upgraded`를 받아 하던 대로 한다 (따로 끄지 않는다).
 - 저장 칸 자체: `docs/spec/regression.md`.
 
@@ -164,7 +163,7 @@ Core (`Assets/Tests/EditMode/StatUpgrade/AutoUpgradeTests.cs`). 따로 적지 �
 
 화면 (`Assets/Tests/PlayMode/StatUpgrade/AutoUpgradeViewTests.cs`, 플레이 모드)
 
-15. 꺼진 `AutoUpgrade`로 `AutoUpgradeView.Initialize`를 부르면 캔버스 아래 `AutoUpgradeButton`이 있고 `anchoredPosition`은 (216, 86), 크기는 (96, 26), `Label` 글자는 `"자동 강화 꺼짐"`이다.
+15. 금화 현판이 없는 캔버스에서 꺼진 `AutoUpgrade`로 `AutoUpgradeView.Initialize`를 부르면 캔버스 아래 `AutoUpgradeButton`이 있고 `anchoredPosition`은 (132, 86), 크기는 (96, 26), `Label` 글자는 `"자동 강화 꺼짐"`이다.
 16. 그 버튼을 누르면 `Enabled`는 `true`이고 `Label` 글자는 `"자동 강화 켜짐"`이다.
 17. 첫 씬을 불러오면 `[Game]`의 `GameRoot.AutoUpgrade`가 `null`이 아니고 `Enabled`는 `true`다.
 

@@ -43,6 +43,7 @@
 `Art/UI/StatUpgrade/` 아래 정지 이미지이며 각 1프레임, 가운데 기준점이다. 방향과 fps는 해당 없다. 상태는 사용자 선택 시안 적용. [원본과 색인](../../art/source/stat_upgrade/index.md). 버튼 바탕은 1536×334, 공격력은 350×345, 체력은 347×306, 공격 속도는 395×325, 금화는 501×511px이다. 각각 `button`, `attack`, `health`, `speed`, `coin`으로 불러오며 Trilinear·밉맵을 사용한다. 보유 금화 표시용 `currency_plaque`는 1536×280이며 [원본](../../art/source/currency/index.md)을 따로 보관한다.
 
 - 내공 아이콘 `inner_power`는 1254×1254px 투명 PNG이며, 매화와 회오리치는 기운을 표현한다. 2026-11-21 Codex 내장 이미지 생성으로 제작했고 사용자가 최종 확정해 게임에 적용했다. 다른 강화 아이콘과 같은 가져오기 설정을 사용한다.
+- 자동 강화 현판 `auto_upgrade`는 1944×426px 투명 PNG다. Codex 이미지 생성 시안에서 투명 여백을 잘라 적용했으며 켜짐·꺼짐은 화면 코드의 색과 글자로 구분한다. [원본](../../art/source/auto_upgrade/index.md).
 
 ## 캐릭터
 

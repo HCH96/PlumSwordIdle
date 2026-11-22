@@ -42,7 +42,7 @@ namespace PlumSword.Game.Tests.StatUpgrade
             var button = canvasObject.transform.Find("AutoUpgradeButton");
             Assert.That(button, Is.Not.Null);
             var rect = (RectTransform)button;
-            Assert.That(rect.anchoredPosition, Is.EqualTo(new Vector2(216, 86)));
+            Assert.That(rect.anchoredPosition, Is.EqualTo(new Vector2(132, 86)));
             Assert.That(rect.sizeDelta, Is.EqualTo(new Vector2(96, 26)));
             Assert.That(ReadLabel(button), Is.EqualTo("자동 강화 꺼짐"));
         }

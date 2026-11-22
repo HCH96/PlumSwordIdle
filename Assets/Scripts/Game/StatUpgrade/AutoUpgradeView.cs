@@ -10,6 +10,7 @@ namespace PlumSword.Game.StatUpgrade
     {
         private AutoUpgrade _autoUpgrade;
         private Image _image;
+        private RectTransform _goldPlaque;
         private TextMeshProUGUI _label;
         private static TMP_FontAsset _font;
 
@@ -26,10 +27,11 @@ namespace PlumSword.Game.StatUpgrade
             rect.SetParent(canvas.transform, false);
             rect.anchorMin = rect.anchorMax = Vector2.zero;
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(216f, 86f);
+            rect.anchoredPosition = new Vector2(132f, 86f);
             rect.sizeDelta = new Vector2(96f, 26f);
+            _goldPlaque = canvas.transform.Find("GoldPlaque") as RectTransform;
             _image = buttonObject.AddComponent<Image>();
-            _image.sprite = Resources.Load<Sprite>("Art/UI/StatUpgrade/button");
+            _image.sprite = Resources.Load<Sprite>("Art/UI/StatUpgrade/auto_upgrade");
             var button = buttonObject.AddComponent<Button>();
             button.targetGraphic = _image;
             button.transition = Selectable.Transition.None;
@@ -61,12 +63,19 @@ namespace PlumSword.Game.StatUpgrade
 
         private void OnEnabledChanged(bool enabled) { Refresh(); }
 
+        private void LateUpdate()
+        {
+            if (_image == null || _goldPlaque == null) return;
+            var rect = (RectTransform)_image.transform;
+            rect.anchoredPosition = new Vector2(_goldPlaque.anchoredPosition.x + _goldPlaque.rect.width + 8f, 86f);
+        }
+
         private void Refresh()
         {
             bool enabled = _autoUpgrade.Enabled;
-            _image.color = enabled ? new Color(0.20f, 0.45f, 0.25f) : new Color(0.25f, 0.25f, 0.25f);
+            _image.color = enabled ? Color.white : new Color(0.55f, 0.48f, 0.48f);
             _label.text = AutoUpgradeText.Label(enabled);
-            _label.color = enabled ? Color.white : new Color(0.6f, 0.6f, 0.6f);
+            _label.color = enabled ? new Color(1f, 0.94f, 0.79f) : new Color(0.75f, 0.72f, 0.69f);
         }
 
         private void OnDestroy()
