@@ -1,4 +1,5 @@
 using System;
+using PlumSword.Core.Balance;
 
 namespace PlumSword.Core.Combat
 {
@@ -23,9 +24,6 @@ namespace PlumSword.Core.Combat
         private const long NormalAttackPerStage = 2;
         private const long BossBaseAttack = 10;
         private const long BossAttackPerStage = 4;
-
-        private const double NormalAttackInterval = 2.0;
-        private const double BossAttackInterval = 2.0;
 
         private const double NormalAttackRange = 0.8;
         private const double BossAttackRange = 1.0;
@@ -64,15 +62,15 @@ namespace PlumSword.Core.Combat
             }
         }
 
-        /// <summary>Normal, Boss 모두 2.0 (초). 정의되지 않은 kind: ArgumentOutOfRangeException.</summary>
+        /// <summary>수치 표의 종류별 공격 간격(초). 정의되지 않은 kind: ArgumentOutOfRangeException.</summary>
         public static double AttackInterval(EnemyKind kind)
         {
             switch (kind)
             {
                 case EnemyKind.Normal:
-                    return NormalAttackInterval;
+                    return BalanceTable.Current.NormalAttackInterval;
                 case EnemyKind.Boss:
-                    return BossAttackInterval;
+                    return BalanceTable.Current.BossAttackInterval;
                 default:
                     throw InvalidKind(kind);
             }

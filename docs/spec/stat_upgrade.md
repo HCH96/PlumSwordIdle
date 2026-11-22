@@ -30,7 +30,7 @@
   - 공격력: 전투는 기본 공격과 스킬 피해를 줄 때마다 `Attack`을 읽는다. 그래서 강화·돌파 뒤 다음 피해부터 오른 공격력이 쓰인다.
   - 체력: 이 기능은 최대 체력만 올린다. 현재 체력을 늘리는 것은 전투 기능이 한다. 전투는 `Upgraded`를 받아 `stat == StatType.Health`이면 강화 전후 `MaxHealth`의 차이만큼 현재 체력을 늘린다. 이 차이는 경지 보너스가 적용된 **최종 최대 체력의 차이**다. 예: 이류(10%)에서 체력 0단계 → 1단계면 `MaxHealth`가 110 → 132이고 현재 체력은 22 늘어 `88/110 → 110/132`가 된다. 지금의 전투 코드(`Battle`)가 이미 이렇게 동작하므로 `MaxHealth`에 보너스만 넣으면 된다.
   - 내공: 공격력·최대 체력에 영향이 없다. 전투(스킬)가 `GetLevel(StatType.InnerPower)`를 읽어 스킬 피해 배율을 계산한다 (배율 공식은 전투 기능의 것). 단계가 오르면 `Upgraded`가 `StatType.InnerPower`를 담아 온다.
-- 공격 간격은 이 기능에 없다. 제자의 기본 공격 간격 1초(임시)는 전투 기능의 상수 `Battle.DiscipleBaseAttackInterval`이다.
+- 공격 간격은 이 기능에 없다. 제자의 공격 간격은 전투 기능이 수치 표에서 읽으며 기본값은 1초다.
 - **잠금** `SetLocked(locked)`: 잠긴 동안에는 `TryUpgrade`와 `CanUpgrade`가 모두 `false`다. 값이 실제로 바뀐 때에만 `LockedChanged`를 새 값을 담아 한 번 보낸다. 처음에는 잠겨 있지 않다. 잠금을 거는 쪽은 스테이지 기능이다 (페이드아웃 시작에 `SetLocked(true)`, 페이드인이 끝나면 `SetLocked(false)`).
 - 스테이지 성공·실패, 천마 처치 뒤 1스테이지로 돌아가는 것은 강화 단계에 아무 영향을 주지 않는다. 단계를 되돌리는 동작은 없다.
 - 같은 시점에 여러 번 부르면 부른 순서대로 한 번씩, 그때의 금화와 단계로 따로 판정한다.
@@ -63,10 +63,10 @@
 | 항목 | 값 | 비고 |
 | --- | --- | --- |
 | 단계의 타입 | `int` | 처음 값 0 |
-| 비용·공격력·최대 체력의 타입 | `long` | 정수만 쓴다. 계산은 `long`으로 한다 (단계를 `long`으로 바꾼 뒤 곱한다). 경지 보너스는 `long` 정수 나눗셈으로 적용한다 (= 소수점 내림). 그 밖의 반올림은 없다 |
-| 다음 강화 비용 `GetCost` | `20 + 5 × 단계` (임시) | 세 능력치 모두 같은 식. 단계 0·1·2·3 → 20·25·30·35 |
-| 공격력 `Attack` | `(baseAttack + 2 × 공격력 단계) × (100 + 보너스) / 100` (임시) | 증가량 2는 임시. 아래 예시 표 |
-| 최대 체력 `MaxHealth` | `(baseMaxHealth + 20 × 체력 단계) × (100 + 보너스) / 100` (임시) | 증가량 20은 임시. 아래 예시 표 |
+| 비용·공격력·최대 체력의 타입 | `long` | 비용 곡선은 `double`로 계산해 내림한다. 공격력과 체력은 단계를 `long`으로 바꿔 계산하고 경지 보너스를 `long` 정수 나눗셈으로 적용한다 |
+| 다음 강화 비용 `GetCost` | 수치 표의 능력치별 비용 곡선 | 기본값은 `20 + 5 × 단계`. 단계 0·1·2·3 → 20·25·30·35 |
+| 공격력 `Attack` | `(baseAttack + 수치 표의 단계당 공격력 × 공격력 단계) × (100 + 보너스) / 100` | 기본 증가량 2. 아래 예시 표 |
+| 최대 체력 `MaxHealth` | `(baseMaxHealth + 수치 표의 단계당 체력 × 체력 단계) × (100 + 보너스) / 100` | 기본 증가량 20. 아래 예시 표 |
 | 보너스 | `realm.BonusPercent` (정수 %) | 경지 기능의 수치: 삼류 0, 이류 10, 일류 20, 절정 30, 초절정 40 (모두 임시). `realm`이 `null`이면 0 |
 | 내공 | 최종 능력치 없음 | 단계만 내준다. 스킬 배율(200% + 단계당 10%p)은 전투 기능의 수치다 |
 | 세 능력치의 최대 단계 | `int.MaxValue` (2,147,483,647) | 기획상 상한은 없다. 넘침을 막는 기술적 상한이다. 이때 비용 10,737,418,255 |
@@ -132,7 +132,7 @@ namespace PlumSword.Core.StatUpgrade
         // GetLevel(stat) >= GetMaxLevel(stat) 이면 true.
         public bool IsMaxLevel(StatType stat);
 
-        // 다음 강화에 드는 금화. 20 + 5 * 단계 (long 으로 계산).
+        // 다음 강화에 드는 금화. 수치 표(BalanceTable.Current)의 능력치별 비용 곡선에 단계를 넣는다.
         // 최대 단계여도 같은 식의 값을 돌려준다 (예외 없음).
         public long GetCost(StatType stat);
 
@@ -145,8 +145,8 @@ namespace PlumSword.Core.StatUpgrade
         public bool TryUpgrade(StatType stat);
 
         // 강화와 경지 보너스가 반영된 최종 능력치. 부를 때마다 지금 단계와 realm.BonusPercent 로 계산한다.
-        public long Attack { get; }      // (baseAttack + 2 * 공격력 단계) * (100 + 보너스) / 100
-        public long MaxHealth { get; }   // (baseMaxHealth + 20 * 체력 단계) * (100 + 보너스) / 100
+        public long Attack { get; }      // 수치 표(BalanceTable.Current)의 단계당 공격력과 경지 보너스를 적용
+        public long MaxHealth { get; }   // 수치 표(BalanceTable.Current)의 단계당 체력과 경지 보너스를 적용
 
         // 강화가 성공해 단계가 오른 뒤에 한 번, 오른 능력치를 담아 보낸다. 실패하면 보내지 않는다.
         // 돌파 때는 보내지 않는다.

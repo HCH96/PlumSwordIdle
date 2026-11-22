@@ -1,4 +1,5 @@
 using System;
+using PlumSword.Core.Balance;
 using System.Collections.Generic;
 using PlumSword.Core.Realm;
 using PlumSword.Core.StatUpgrade;
@@ -109,8 +110,8 @@ namespace PlumSword.Core.Combat
         /// <summary>다음 공격까지 남은 시간(초).</summary>
         public double DiscipleAttackCooldown { get; private set; }
 
-        /// <summary>DiscipleBaseAttackInterval 그대로 (고정 1초, 임시). 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
-        public double DiscipleAttackInterval => DiscipleBaseAttackInterval;
+        /// <summary>수치 표의 제자 공격 간격(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
+        public double DiscipleAttackInterval => BalanceTable.Current.DiscipleAttackInterval;
 
         public bool SkillEnabled { get; }
         public bool IsSkillActive { get; private set; }
@@ -138,7 +139,7 @@ namespace PlumSword.Core.Combat
                 throw new ArgumentOutOfRangeException(nameof(innerPowerLevel));
             }
 
-            return attack * (SkillBasePercent + SkillPercentPerInnerLevel * (long)innerPowerLevel) / 100;
+            return attack * (BalanceTable.Current.SkillBasePercent + BalanceTable.Current.SkillPercentPerInnerLevel * (long)innerPowerLevel) / 100;
         }
 
         public bool IsDiscipleDefeated { get; private set; }
@@ -386,7 +387,7 @@ namespace PlumSword.Core.Combat
 
             if (engaged && !_wasEngaged && discipleMoved)
             {
-                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, DiscipleBaseAttackInterval * DiscipleAttackWindUpRatio);
+                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, BalanceTable.Current.DiscipleAttackInterval * DiscipleAttackWindUpRatio);
             }
 
             _wasEngaged = engaged;
@@ -436,8 +437,8 @@ namespace PlumSword.Core.Combat
                 if (!ApplySkillHit(enemies, generation)) return false;
                 SkillUsed?.Invoke();
                 if (generation != _resetGeneration) return false;
-                SkillCooldown = SkillCooldownSeconds;
-                DiscipleAttackCooldown = DiscipleBaseAttackInterval;
+                SkillCooldown = BalanceTable.Current.SkillCooldownSeconds;
+                DiscipleAttackCooldown = BalanceTable.Current.DiscipleAttackInterval;
                 return true;
             }
 
@@ -456,8 +457,8 @@ namespace PlumSword.Core.Combat
                 }
             }
 
-            // 다음 대기는 고정 공격 간격(DiscipleBaseAttackInterval)이다.
-            DiscipleAttackCooldown = DiscipleBaseAttackInterval;
+            // 다음 대기는 수치 표의 공격 간격이다.
+            DiscipleAttackCooldown = BalanceTable.Current.DiscipleAttackInterval;
             return true;
         }
 

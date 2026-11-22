@@ -1,4 +1,5 @@
 using System;
+using PlumSword.Core.Balance;
 
 namespace PlumSword.Core.Realm
 {
@@ -10,11 +11,11 @@ namespace PlumSword.Core.Realm
         {
             switch (realm)
             {
-                case RealmLevel.ThirdRate: return 0;
-                case RealmLevel.SecondRate: return 10;
-                case RealmLevel.FirstRate: return 20;
-                case RealmLevel.Peak: return 30;
-                case RealmLevel.Transcendent: return 40;
+                case RealmLevel.ThirdRate:
+                case RealmLevel.SecondRate:
+                case RealmLevel.FirstRate:
+                case RealmLevel.Peak:
+                case RealmLevel.Transcendent: return BalanceTable.Current.RealmBonusPercent[(int)realm];
                 default: throw new ArgumentOutOfRangeException(nameof(realm));
             }
         }
@@ -23,10 +24,10 @@ namespace PlumSword.Core.Realm
         {
             switch (from)
             {
-                case RealmLevel.ThirdRate: return 30;
-                case RealmLevel.SecondRate: return 50;
-                case RealmLevel.FirstRate: return 70;
-                case RealmLevel.Peak: return 100;
+                case RealmLevel.ThirdRate:
+                case RealmLevel.SecondRate:
+                case RealmLevel.FirstRate:
+                case RealmLevel.Peak: return BalanceTable.Current.RealmKillsRequired[(int)from];
                 case RealmLevel.Transcendent: return 0;
                 default: throw new ArgumentOutOfRangeException(nameof(from));
             }

@@ -1,4 +1,5 @@
 using System;
+using PlumSword.Core.Balance;
 using PlumSword.Core.Currency;
 using PlumSword.Core.Realm;
 
@@ -11,12 +12,6 @@ namespace PlumSword.Core.StatUpgrade
     /// </summary>
     public sealed class StatUpgrades
     {
-        // 수치 (임시값). docs/spec/stat_upgrade.md "수치".
-        private const long BaseCost = 20;
-        private const long CostPerLevel = 5;
-        private const long AttackPerLevel = 2;
-        private const long MaxHealthPerLevel = 20;
-
         private readonly Wallet _wallet;
         private readonly RealmProgress _realm;
         private readonly long _baseAttack;
@@ -73,11 +68,11 @@ namespace PlumSword.Core.StatUpgrade
         /// <summary>잠금 값이 바뀐 뒤에 한 번, 새 값을 담아 보낸다.</summary>
         public event Action<bool> LockedChanged;
 
-        /// <summary>(baseAttack + 2 * 공격력 단계) * (100 + 현재 경지 보너스) / 100.</summary>
-        public long Attack => (_baseAttack + AttackPerLevel * (long)_attackLevel) * (100L + (_realm?.BonusPercent ?? 0)) / 100L;
+        /// <summary>수치 표의 단계당 공격력과 현재 경지 보너스를 적용한다.</summary>
+        public long Attack => (_baseAttack + BalanceTable.Current.AttackPerLevel * (long)_attackLevel) * (100L + (_realm?.BonusPercent ?? 0)) / 100L;
 
-        /// <summary>(baseMaxHealth + 20 * 체력 단계) * (100 + 현재 경지 보너스) / 100.</summary>
-        public long MaxHealth => (_baseMaxHealth + MaxHealthPerLevel * (long)_healthLevel) * (100L + (_realm?.BonusPercent ?? 0)) / 100L;
+        /// <summary>수치 표의 단계당 체력과 현재 경지 보너스를 적용한다.</summary>
+        public long MaxHealth => (_baseMaxHealth + BalanceTable.Current.HealthPerLevel * (long)_healthLevel) * (100L + (_realm?.BonusPercent ?? 0)) / 100L;
 
         /// <summary>잠겨 있으면 true. 처음 값 false.</summary>
         public bool Locked { get; private set; }
@@ -118,10 +113,17 @@ namespace PlumSword.Core.StatUpgrade
             return GetLevel(stat) >= GetMaxLevel(stat);
         }
 
-        /// <summary>다음 강화에 드는 금화. 20 + 5 * 단계. 최대 단계여도 같은 식의 값.</summary>
+        /// <summary>다음 강화에 드는 금화. 수치 표의 해당 비용 곡선을 현재 단계에 적용한다.</summary>
         public long GetCost(StatType stat)
         {
-            return BaseCost + CostPerLevel * (long)GetLevel(stat);
+            int level = GetLevel(stat);
+            switch (stat)
+            {
+                case StatType.Attack: return BalanceTable.Current.AttackCost.Evaluate(level);
+                case StatType.Health: return BalanceTable.Current.HealthCost.Evaluate(level);
+                case StatType.InnerPower: return BalanceTable.Current.InnerPowerCost.Evaluate(level);
+                default: throw InvalidStat(stat);
+            }
         }
 
         /// <summary>잠기지 않았고, 최대 단계가 아니고, 금화가 비용 이상이면 true. 아무것도 바꾸지 않는다.</summary>
