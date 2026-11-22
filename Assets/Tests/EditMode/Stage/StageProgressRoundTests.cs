@@ -50,7 +50,7 @@ namespace PlumSword.Core.Tests.Stage
         [Test]
         public void FifthStageCleared_AdvancesToSecondRoundAtCoveredTransition()
         {
-            Create(1000, 100, 5);
+            Create(1500, 100, 5);
             _stage.Begin();
             _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, 5, 1.0);
@@ -85,7 +85,7 @@ namespace PlumSword.Core.Tests.Stage
             }
             Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 6, 1.0);
             Assert.That(boss.MaxHealth, Is.EqualTo(250));
-            Assert.That(boss.Attack, Is.EqualTo(30));
+            Assert.That(boss.Attack, Is.EqualTo(24));
         }
 
         [Test]
@@ -98,7 +98,7 @@ namespace PlumSword.Core.Tests.Stage
         [Test]
         public void SixthStageFailed_RetriesSameRoundAndResetsBattle()
         {
-            Create(10, 30, 6);
+            Create(10, 24, 6);
             _stage.Begin();
             _stage.Tick(StageProgress.SubstageIntroSeconds);
             Enemy boss = _battle.AddEnemy(EnemyKind.Boss, 6, 1.0);
@@ -113,7 +113,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_battle.Enemies.Count, Is.EqualTo(2));
             foreach (Enemy enemy in _battle.Enemies)
                 Assert.That(enemy.Kind, Is.EqualTo(EnemyKind.Normal));
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(30));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(24));
             Assert.That(_stage.DefeatedNormalCount, Is.Zero);
             Assert.That(_stage.Boss, Is.Null);
         }

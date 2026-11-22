@@ -5,7 +5,7 @@
 
 ## 목표
 
-밸런스에 닿는 수치(강화 비용·레벨당 상승·시작 능력치, 스킬, 몬스터 능력치, 처치 보상, 천마, 경지)를 수치 표 `BalanceTable` 하나에 모으고, 게임 전체가 `BalanceTable.Current`를 읽게 한다. 시뮬레이터(범위 밖)가 이 값을 바꿔 가며 20분 플레이를 맞춘다. 기본값 `BalanceTable.Default`는 지금 게임의 수치와 똑같아서, 이 사양을 구현해도 게임과 기존 테스트의 결과는 바뀌지 않는다. 실제 새 수치는 시뮬레이터로 정한 뒤 별도로 넣는다.
+밸런스에 닿는 수치(강화 비용·레벨당 상승·시작 능력치, 스킬, 몬스터 능력치, 처치 보상, 천마, 경지)를 수치 표 `BalanceTable` 하나에 모으고, 게임 전체가 `BalanceTable.Current`를 읽게 한다. 기본값은 2026-11-22 시뮬레이터로 정한 값이다 (자동 강화 기준 천마 첫 처치 약 21분 30초, 회귀 3회).
 
 출처: `docs/design/milestone_4.md` "목표와 범위"(임시 수치 조정), 2026-11-22 대화.
 
@@ -31,7 +31,7 @@
 
 - **성장 곡선** `GrowthCurve.Evaluate(n)` = `내림((Base + Linear × n) × Growth^n)`. `double`로 계산하고 마지막에 내림해 `long`으로 돌려준다.
 - **구간 순번** `n`: 몬스터와 보상은 `n = (stage − 1) + SubstageStep × (substage − 1)`. `stage`는 지금처럼 전체 진행 번호(`StageProgress.StageNumber`), `substage`는 구간 번호(1~6, 보스는 7)다. 기본값 `SubstageStep = 0`이면 구간과 상관없이 지금 값이 나온다. 예: `SubstageStep = 1/7`이면 1-1의 n은 0, 1-7(보스)은 6/7, 2-1은 1.
-- **천마**: 화면상 스테이지 5(`(stage − 1) % 5 + 1 == 5`)의 보스는 `FinalBossHealth`가 0보다 크면 체력이 그 값이고, 0이면 보스 공식이다. 공격력도 `FinalBossAttack`으로 같다. 기본값은 둘 다 0이라 지금과 같다.
+- **천마**: 화면상 스테이지 5(`(stage − 1) % 5 + 1 == 5`)의 보스는 `FinalBossHealth`가 0보다 크면 체력이 그 값이고, 0이면 보스 공식이다. 공격력도 `FinalBossAttack`으로 같다. 기본값은 1500, 80이다.
 - 몬스터와 보상에 구간을 넘기기 위해, `EnemyStats`와 `StageRewards`에 구간을 받는 메서드를 더하고 `Battle.AddEnemy`에 구간 인자를 더한다 ("연결 지점"). 구간을 받지 않는 기존 메서드는 구간 1로 계산한다. `StageProgress`는 적을 만들 때와 보상을 줄 때 지금 구간(`SubstageNumber`, 보스는 7)을 넘긴다. 오프라인 보상은 지금처럼 `StageRewards.NormalGold(stage)`(구간 1)를 쓴다.
 - 지금 있는 공개 상수(`Battle.DiscipleBaseAttack`, `SkillBasePercent` 등)는 지우지 않는다. 기본값의 설명으로 남기고, 계산에는 쓰지 않는다.
 
@@ -66,16 +66,16 @@
 | `NormalHealth` | `GrowthCurve` | (30, 10, 1.0) | 곡선 검사 |
 | `NormalAttack` | `GrowthCurve` | (5, 2, 1.0) | 곡선 검사 |
 | `BossHealth` | `GrowthCurve` | (100, 30, 1.0) | 곡선 검사 |
-| `BossAttack` | `GrowthCurve` | (10, 4, 1.0) | 곡선 검사 |
+| `BossAttack` | `GrowthCurve` | (4, 4, 1.0) | 곡선 검사 |
 | `NormalAttackInterval`, `BossAttackInterval` | `double` (초) | 2.0, 2.0 | 0보다 큼, 유한 |
-| `FinalBossHealth`, `FinalBossAttack` | `long` | 0, 0 (보스 공식) | 0 이상 |
+| `FinalBossHealth`, `FinalBossAttack` | `long` | 1500, 80 | 0 이상 |
 | `NormalGold` | `GrowthCurve` | (10, 2, 1.0) | 곡선 검사 |
 | `BossGold` | `GrowthCurve` | (50, 10, 1.0) | 곡선 검사 |
 | `RealmKillsRequired` | `int[]` 4개 (삼류→이류, 이류→일류, 일류→절정, 절정→초절정) | {30, 50, 70, 100} | 길이 4, 모두 1 이상 |
 | `RealmBonusPercent` | `int[]` 5개 (삼류~초절정) | {0, 10, 20, 30, 40} | 길이 5, 모두 0 이상 |
 
 - 곡선 검사: `Base`, `Linear`는 0 이상 유한, `Growth`는 1 이상 유한. 곡선 속성이 `null`이어도 `Validate()`는 `ArgumentOutOfRangeException`을 던진다. 배열이 `null`이거나 길이가 다를 때도 같다.
-- 기본값은 모두 지금 게임의 임시값이다. 새 값은 시뮬레이터로 정해 따로 넣는다.
+- 기본값은 2026-11-22 시뮬레이터로 정한 값이다 (자동 강화 기준 천마 첫 처치 약 21분 30초, 회귀 3회).
 - 예: 기본값의 `AttackCost.Evaluate(3)` = 35, `NormalHealth.Evaluate(1)` = 40 (2스테이지 일반 상대), `BossGold.Evaluate(4)` = 90 (1회차 천마).
 - 예: `new GrowthCurve(10, 0, 1.15).Evaluate(3)` = 내림(15.20875) = 15. `new GrowthCurve(1, 0, 2).Evaluate(2000)` = `long.MaxValue`.
 

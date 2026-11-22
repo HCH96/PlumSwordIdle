@@ -22,9 +22,9 @@ namespace PlumSword.Core.Tests.Balance
             Assert.That(t.DiscipleBaseAttack, Is.EqualTo(10)); Assert.That(t.DiscipleBaseMaxHealth, Is.EqualTo(100));
             Assert.That(t.DiscipleAttackInterval, Is.EqualTo(1)); Assert.That(t.SkillBasePercent, Is.EqualTo(200));
             Assert.That(t.SkillPercentPerInnerLevel, Is.EqualTo(10)); Assert.That(t.SkillCooldownSeconds, Is.EqualTo(5)); Assert.That(t.SubstageStep, Is.Zero);
-            Curve(t.NormalHealth, 30, 10, 1); Curve(t.NormalAttack, 5, 2, 1); Curve(t.BossHealth, 100, 30, 1); Curve(t.BossAttack, 10, 4, 1);
+            Curve(t.NormalHealth, 30, 10, 1); Curve(t.NormalAttack, 5, 2, 1); Curve(t.BossHealth, 100, 30, 1); Curve(t.BossAttack, 4, 4, 1);
             Assert.That(t.NormalAttackInterval, Is.EqualTo(2)); Assert.That(t.BossAttackInterval, Is.EqualTo(2));
-            Assert.That(t.FinalBossHealth, Is.Zero); Assert.That(t.FinalBossAttack, Is.Zero);
+            Assert.That(t.FinalBossHealth, Is.EqualTo(1500)); Assert.That(t.FinalBossAttack, Is.EqualTo(80));
             Curve(t.NormalGold, 10, 2, 1); Curve(t.BossGold, 50, 10, 1);
             Assert.That(t.RealmKillsRequired, Is.EqualTo(new[] { 30, 50, 70, 100 }));
             Assert.That(t.RealmBonusPercent, Is.EqualTo(new[] { 0, 10, 20, 30, 40 }));

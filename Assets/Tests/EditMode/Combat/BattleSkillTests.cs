@@ -106,7 +106,7 @@ namespace PlumSword.Core.Tests.Combat
             Enemy boss = battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             battle.Step();
             Assert.AreEqual(99, boss.Health);
-            Assert.AreEqual(90, battle.DiscipleHealth);
+            Assert.AreEqual(96, battle.DiscipleHealth);
             CollectionAssert.AreEqual(new[] { "damage", "skill" }, events);
             Assert.AreEqual(5.0, battle.SkillCooldown, 1e-6);
             Assert.IsFalse(battle.IsSkillReady);

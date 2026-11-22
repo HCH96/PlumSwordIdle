@@ -175,7 +175,7 @@ namespace PlumSword.Core.Tests.Stage
         [Test]
         public void FifthStageCleared_SecondRoundHasNoIntro()
         {
-            Create(start: 5, seen: 4);
+            Create(attack: 1500, start: 5, seen: 4);
             stage.Begin();
             Assert.That(stage.Phase, Is.EqualTo(StagePhase.Intro));
             Assert.That(stage.SeenIntroStage, Is.EqualTo(5));

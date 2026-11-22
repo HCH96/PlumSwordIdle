@@ -12,7 +12,7 @@
 
 - 천마신교는 4·5스테이지로 구성한다. 4스테이지는 다른 스테이지와 같이 일반 구간 1~6(천마신교 일반 상대 마검사·흑갑 호위)과 7구간 보스를 진행한다.
 - 화면상 큰 스테이지가 `StageLayout.FinalDisplayStage`(5)이면 일반 구간이 없다. 큰 스테이지를 배치할 때(`Begin()`, 성공·실패 전환의 가려진 순간 모두) 바로 `SubstageNumber = 7`, 처치 수 0으로 두고 최종 보스 한 명만 제자 앞 24유닛에 배치한다. 일반 상대를 만들지 않고 무리 난수도 뽑지 않는다. 이후 순서(테마 소개 조건, 1.2초 구간 소개, 전투)는 다른 보스 구간과 같다.
-- 최종 보스의 능력치와 보상은 기존 공식에 전체 진행 번호를 넣은 값이다. 1회차는 체력 220, 공격력 26, 보상 90금화이고, 2회차(번호 10)는 370, 46, 140이다. 따로 붙는 보너스는 없다.
+- 최종 보스는 체력 1500, 공격력 80(`BalanceTable.FinalBossHealth`, `FinalBossAttack`), 보상은 기존 공식(1회차 90, 2회차 140)이다. 따로 붙는 보너스는 없다.
 - 5스테이지에서 패배하면 같은 5스테이지를 다시 배치한다. 보스는 체력이 가득한 새 보스이고, 테마 소개는 다시 보이지 않는다. 최종 보스를 혼자 이기면 다음 회차의 1스테이지 1구간으로 간다.
 - 회귀 규칙(`StageProgress`의 `useRegression`)을 켜면 천마 패배는 1스테이지 1구간으로 회귀, 천마 처치는 엔딩이 된다. 게임(`GameRoot`)은 켠다. 자세한 규칙은 `docs/spec/regression.md`.
 - 전체 진행 번호 `StageNumber`는 1 이상이다. 화면상 큰 스테이지는 `(StageNumber - 1) % 5 + 1`, 회차는 `(StageNumber - 1) / 5 + 1`이다. `int.MaxValue`에서 성공하면 번호는 유지한다.
@@ -115,10 +115,10 @@
 이미 구현된 완료 조건 1~39는 기록 파일로 옮겼다. 새 조건은 40번부터 붙인다. 41~46은 지갑 `new Wallet(0)`, 조건마다 적은 공격력·최대 체력의 강화, 최소 난수(`Next(min, max)`가 항상 `min`을 돌려주는 `MinRandom`)로 만든 `StageProgress`를 쓴다. 좌표·비율은 오차 1e-6 안에서 비교한다.
 
 40. `StageText.SubstageLabel(5, 7)` → `"FINAL"`, `(5, 1)` → `"FINAL"`, `(4, 7)` → `"4-7"`, `(1, 1)` → `"1-1"`. `stage` 0·6 또는 `substage` 0·8이면 `ArgumentOutOfRangeException`이다.
-41. 시작 번호 5로 `Begin()` 하면 `SubstageNumber` 7, `IsBossActive` 참, 적은 보스 1명(체력 220, 공격력 26, 위치 = 제자 위치 + 24), `DefeatedNormalCount` 0, `BarRatio` 1.0, `Phase` `SubstageIntro`, `StageStarted` [5]이다.
+41. 시작 번호 5로 `Begin()` 하면 `SubstageNumber` 7, `IsBossActive` 참, 적은 보스 1명(체력 1500, 공격력 80, 위치 = 제자 위치 + 24), `DefeatedNormalCount` 0, `BarRatio` 1.0, `Phase` `SubstageIntro`, `StageStarted` [5]이다.
 42. 시작 번호 10이면 `Begin()` 뒤 보스 1명의 체력 370, 공격력 46이고, 이 보스를 이기면 금화가 140 는다.
 43. 시작 번호 5에서 보스를 혼자 이기면 금화 +90, `StageCleared` [5]이다. 페이드 1.0초 뒤 `StageNumber` 6, `DisplayStageNumber` 1, `SubstageNumber` 1, 일반 상대 2명이다.
-44. 시작 번호 5에서 제자가 쓰러지면 `StageFailed` [5]이다. 페이드 1.0초 뒤 `StageNumber` 5, `SubstageNumber` 7, 체력이 220인 보스 1명만 있고, `Phase`는 `SubstageIntro`(테마 소개 없음)이다.
+44. 시작 번호 5에서 제자가 쓰러지면 `StageFailed` [5]이다. 페이드 1.0초 뒤 `StageNumber` 5, `SubstageNumber` 7, 체력이 1500인 보스 1명만 있고, `Phase`는 `SubstageIntro`(테마 소개 없음)이다.
 45. 시작 번호 4는 기존과 같이 1구간에 일반 상대 2명으로 시작한다. 세 구간을 마치면 `BarRatio` 0.5, 여섯 구간 뒤에는 7구간 보스이다.
 46. 시작 번호 5·본 소개 4로 `Begin()` 하면 `Intro` 3초 → `SubstageIntro` 1.2초 → `Playing` 순서이고, 적은 처음부터 보스 1명뿐이다.
 47. (플레이 모드) 5스테이지 화면: 진행 표시 번호와 구간 소개 패가 `FINAL`, `Marker1~6`·`BossMarker`가 비활성, 진행 표시는 활성, 보스 이름 `HEAVENLY DEMON`, 체력 바 채움 `anchorMax.x` 1이다.
