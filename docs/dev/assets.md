@@ -18,6 +18,8 @@
 
 `Art/UI/Substage/`의 정지 이미지. 1프레임, 가운데 기준점이며 방향과 fps는 해당 없다. 사용자가 시안을 승인했으며 1스테이지 진행 UI에 적용했다. `header` 1536×505, `completed` 905×910, `current` 828×857, `empty` 547×557, `boss` 921×1024px이다. [시안과 원본](../../art/source/substage_ui/index.md)을 보관한다. 금빛 박동은 코드로 그리며 각 이미지 자체는 정지 그림이다.
 
+`Art/UI/Substage/Label/`에는 빈 제목판 `header_blank`, 스테이지 제목 `title_1`~`title_5`, 보스 이름 `boss_name_1`~`boss_name_5`, 번호 시트 `stage_numbers`가 있다. 번호 시트는 2132×300px이며 왼쪽 위 기준 글자 윗변 8, 높이 290, 0~9와 하이픈의 왼쪽 좌표는 20, 225, 397, 594, 784, 985, 1190, 1382, 1574, 1766, 1962, 너비는 185, 152, 177, 170, 181, 185, 172, 172, 172, 176, 150px이다. 글자 간 18px 겹친다. [원본](../../art/source/stage_label/)을 보관한다.
+
 ## 오프라인 보상 UI (2026-11-20 적용)
 
 `Art/UI/OfflineReward/`의 정지 이미지. 가운데 기준점, 1프레임이며 방향과 fps는 해당 없다. `window`는 1536×1024, `reward_plaque`와 `claim_button`은 각각 2172×724px이다. 원본 캔버스의 투명 여백을 포함해 배치하고 Trilinear·밉맵을 사용한다. 금화는 `Art/UI/StatUpgrade/coin`을 재사용한다. `title_label`, `elapsed_label`, `applied_label`, `maximum_label`, `claim_label`, `retry_label`, `save_failed_label`은 한글 그림 글자이며, 시간은 글자로 표시하고 금화 숫자는 `Art/UI/damage_numbers` 그림에서 잘라 표시한다. [시안과 원본](../../art/source/offline_reward/index.md).

@@ -62,7 +62,7 @@ namespace PlumSword.Game.Tests.Stage
             Assert.That(Label(canvas.transform.Find("SubstageIntroBanner/SubstageNumber")), Is.EqualTo("FINAL"));
             AssertMarkers(preview, false);
             var bossName = canvas.transform.Find("BossName");
-            Assert.That(bossName.gameObject.activeSelf, Is.True);
+            Assert.That(bossName.gameObject.activeSelf, Is.False);
             Assert.That(Label(bossName), Is.EqualTo("HEAVENLY DEMON"));
             Assert.That(((RectTransform)canvas.transform.Find("StageBar/Fill")).anchorMax.x, Is.EqualTo(1f));
         }
@@ -88,7 +88,7 @@ namespace PlumSword.Game.Tests.Stage
             Assert.That(preview.gameObject.activeSelf, Is.True);
             AssertMarkers(preview, false);
             Assert.That(Label(preview.Find("SubstageNumber")), Is.EqualTo(displayStage + "-7"));
-            Assert.That(canvas.transform.Find("BossName").gameObject.activeSelf, Is.True);
+            Assert.That(canvas.transform.Find("BossName").gameObject.activeSelf, Is.False);
             Assert.That(canvas.transform.Find("StageBar").gameObject.activeSelf, Is.True);
         }
 

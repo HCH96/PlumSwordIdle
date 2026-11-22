@@ -120,7 +120,7 @@ namespace PlumSword.Game.Tests.Stage
                 Assert.That(frame.gameObject.activeSelf, Is.False);
                 Assert.That(fill.transform.parent.gameObject.activeSelf, Is.True);
                 Assert.That(title.gameObject.activeSelf, Is.False);
-                Assert.That(bossName.activeSelf, Is.True);
+                Assert.That(bossName.activeSelf, Is.False);
                 Assert.That(textType.GetProperty("text").GetValue(bossName.GetComponent(textType)), Is.EqualTo(StageText.ThemedBossName(displayStage)));
                 Assert.That(((RectTransform)fill.transform).anchorMax.x, Is.EqualTo(1f));
                 Canvas.ForceUpdateCanvases();

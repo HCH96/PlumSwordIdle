@@ -15,6 +15,10 @@ namespace PlumSword.Game.Stage
         private Sprite completed, active, empty;
         private TextMeshProUGUI number;
         private RectTransform trackFill;
+        private GameObject track, trackHighlight;
+        private StageLabelImages labelArt;
+        private Image stageTitle, bossNameArt;
+        private RectTransform numberArt;
 
         public static SubstagePreview Create(Canvas canvas)
         {
@@ -24,6 +28,7 @@ namespace PlumSword.Game.Stage
             var completed = Resources.Load<Sprite>("Art/UI/Substage/completed");
             var boss = Resources.Load<Sprite>("Art/UI/Substage/boss");
             if (header == null || active == null || empty == null || completed == null || boss == null) return null;
+            var labelArt = StageLabelImages.Load(true);
 
             var root = new GameObject("SubstagePreview", typeof(RectTransform));
             var rect = (RectTransform)root.transform;
@@ -33,7 +38,7 @@ namespace PlumSword.Game.Stage
             var preview = root.AddComponent<SubstagePreview>();
             preview.completed = completed; preview.active = active; preview.empty = empty;
             preview.markers = new Image[StageLayout.NormalSubstageCount];
-            ImageAt(rect, "Header", header, new Vector2(0, -42), new Vector2(260, 85));
+            ImageAt(rect, "Header", labelArt != null ? labelArt.Header : header, new Vector2(0, -42), new Vector2(260, 85));
 
             var numberObj = new GameObject("SubstageNumber", typeof(RectTransform), typeof(TextMeshProUGUI));
             var numberRect = (RectTransform)numberObj.transform;
@@ -42,10 +47,21 @@ namespace PlumSword.Game.Stage
             var number = numberObj.GetComponent<TextMeshProUGUI>(); preview.number = number;
             number.text = "1-1"; number.fontSize = 22; number.alignment = TextAlignmentOptions.Center;
             number.color = new Color(1f, .87f, .77f); number.raycastTarget = false;
+            if (labelArt != null)
+            {
+                preview.labelArt = labelArt;
+                var top = new Vector2(.5f, 1f);
+                preview.stageTitle = StageLabelImages.MakeImage(rect, "StageTitle", top, new Vector2(0, -29.3f));
+                preview.numberArt = StageLabelImages.MakeRect(rect, "SubstageNumberArt", top, new Vector2(0, -61f));
+                preview.bossNameArt = StageLabelImages.MakeImage(rect, "BossNameArt", top, new Vector2(0, -61f));
+                numberObj.SetActive(false);
+            }
 
             var rail = ImageAt(rect, "Track", null, new Vector2(0, -96), new Vector2(240, 4));
+            preview.track = rail.gameObject;
             rail.color = new Color(.45f, .24f, .19f, .95f);
             var line = ImageAt(rect, "TrackHighlight", null, new Vector2(0, -95.5f), new Vector2(240, 1));
+            preview.trackHighlight = line.gameObject;
             line.color = new Color(.83f, .65f, .42f, .9f);
             var fill = ImageAt(rect, "Progress", null, new Vector2(-120, -96), new Vector2(0, 2));
             fill.rectTransform.pivot = new Vector2(0, .5f);
@@ -66,6 +82,11 @@ namespace PlumSword.Game.Stage
         public void SetProgress(int stage, int substage)
         {
             number.text = StageText.SubstageLabel(stage, substage);
+            if (labelArt != null)
+            {
+                StageLabelImages.SetImage(stageTitle, labelArt.Titles[stage - 1], 13.2f);
+                labelArt.SetNumber(numberArt, bossNameArt, stage, substage, .5f * 260f / 1536f, 20f);
+            }
             bossMarker.rectTransform.localScale = Vector3.one;
             bossMarker.color = Color.white;
             for (int i = 0; i < markers.Length; i++)
@@ -85,6 +106,9 @@ namespace PlumSword.Game.Stage
         {
             foreach (var marker in markers) marker.gameObject.SetActive(visible);
             bossMarker.gameObject.SetActive(visible);
+            track.SetActive(visible);
+            trackHighlight.SetActive(visible);
+            trackFill.gameObject.SetActive(visible);
         }
 
         private static Image ImageAt(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
