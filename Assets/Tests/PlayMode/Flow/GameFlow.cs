@@ -19,7 +19,7 @@ namespace PlumSword.Game.Tests.Flow
             return game != null ? game.GetComponent<GameRoot>() : null;
         }
 
-        public static IEnumerator Relaunch(MemorySaveStore store, StartEntry entry)
+        public static IEnumerator Relaunch(MemorySaveStore store, StartEntry entry, bool autoUpgrade = false)
         {
             var previous = FindRoot();
             Assert.That(previous, Is.Not.Null, "재생성할 게임 루트가 없습니다.");
@@ -41,11 +41,12 @@ namespace PlumSword.Game.Tests.Flow
                 GameRoot current = null;
                 for (var frame = 0; frame < 300; frame++)
                 {
-                    yield return null;
                     current = FindRoot();
                     if (current != null && current != previous) break;
+                    yield return null;
                 }
                 Assert.That(current != null && current != previous, Is.True, "300프레임 안에 새 게임 루트가 생기지 않았습니다.");
+                if (!autoUpgrade) current.AutoUpgrade.SetEnabled(false);
             }
             finally
             {
@@ -58,12 +59,13 @@ namespace PlumSword.Game.Tests.Flow
         public static IEnumerator ResetToFreshLaunch()
         {
             Time.timeScale = 1f;
-            yield return Relaunch(null, StartEntry.Launch);
+            yield return Relaunch(null, StartEntry.Launch, true);
             GameRoot.BatchSaveStore = null;
         }
 
         public static IEnumerator PowerUp(GameRoot root, int levels)
         {
+            root.AutoUpgrade.SetEnabled(false);
             foreach (var stat in new[] { StatType.Attack, StatType.Health })
             {
                 for (var level = 0; level < levels; level++)
