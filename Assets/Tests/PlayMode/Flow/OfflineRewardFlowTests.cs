@@ -3,6 +3,7 @@ using System.Collections;
 using NUnit.Framework;
 using PlumSword.Core.OfflineReward;
 using PlumSword.Core.Save;
+using PlumSword.Core.Stage;
 using PlumSword.Core.StartMenu;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -56,9 +57,14 @@ namespace PlumSword.Game.Tests.Flow
             Assert.That(saved.Gold, Is.EqualTo(4420), "수령 후 저장 금화");
             Assert.That(saved.SavedAtUtcTicks, Is.GreaterThanOrEqualTo(beforeClaim), "수령 후 저장 시각");
             Assert.That(root.UiCanvas.transform.Find("OfflineRewardOverlay"), Is.Null, "수령 후 창 닫힘");
-            Assert.That(root.Battle.Paused, Is.False, "수령 후 전투 재개");
             Assert.That(root.StageProgress.HasBegun, Is.True, "수령 후 스테이지 시작");
             Assert.That(root.StageProgress.StageNumber, Is.EqualTo(2), "수령 후 스테이지 번호");
+            Assert.That(root.StageProgress.Phase, Is.EqualTo(StagePhase.SubstageIntro), "수령 후 구간 소개");
+            yield return GameFlow.WaitUntil(
+                () => root.StageProgress.Phase == StagePhase.Playing,
+                10f,
+                () => "10초 안에 구간 소개가 끝나지 않았습니다. 현재 단계: " + root.StageProgress.Phase);
+            Assert.That(root.Battle.Paused, Is.False, "구간 소개 후 전투 재개");
 
             var balanceBeforeRetry = root.Wallet.Balance;
             Assert.That(root.OfflineRewardClaim.TryClaim(DateTime.UtcNow.Ticks), Is.True, "중복 수령 호출 결과");
