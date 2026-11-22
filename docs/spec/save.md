@@ -142,6 +142,8 @@ savedAtUtcTicks=638000000000000000
 
 ## 연결 지점
 
+저장 칸 `regressionCount`·`playTimeMs`·`autoUpgrade` 세 줄, `ISaveStore.TryDelete()`, `AutoSave.Disable()`은 `docs/spec/regression.md`의 "연결 지점"을 따른다.
+
 ### 제공하는 것
 
 ```csharp
