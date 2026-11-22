@@ -12,6 +12,9 @@ namespace PlumSword.Game.Stage
         private CanvasGroup _group;
         private TextMeshProUGUI _number;
         private float _elapsed;
+        private StageLabelImages _labelArt;
+        private RectTransform _numberArt;
+        private Image _bossNameArt;
 
         public static SubstageIntroBanner Create(Canvas canvas)
         {
@@ -53,6 +56,14 @@ namespace PlumSword.Game.Stage
             banner._number.alignment = TextAlignmentOptions.Center;
             banner._number.textWrappingMode = TextWrappingModes.NoWrap;
             banner._number.raycastTarget = false;
+            banner._labelArt = StageLabelImages.Load(false);
+            if (banner._labelArt != null)
+            {
+                var center = new Vector2(.5f, .5f);
+                banner._numberArt = StageLabelImages.MakeRect(rect, "SubstageNumberArt", center, new Vector2(0, -5.5f));
+                banner._bossNameArt = StageLabelImages.MakeImage(rect, "BossNameArt", center, new Vector2(0, -5.5f));
+                numberObject.SetActive(false);
+            }
             root.SetActive(false);
             return banner;
         }
@@ -60,6 +71,8 @@ namespace PlumSword.Game.Stage
         public void Show(int stage, int substage)
         {
             _number.text = StageText.SubstageLabel(stage, substage);
+            if (_labelArt != null)
+                _labelArt.SetNumber(_numberArt, _bossNameArt, stage, substage, .78f * 360f / 2172f, 29f);
             _elapsed = 0f;
             gameObject.SetActive(true);
             ApplyAnimation();
