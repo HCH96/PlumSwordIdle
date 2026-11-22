@@ -212,6 +212,7 @@ namespace PlumSword.Game.StatUpgrade
 - 전투 기능이 쓰는 방법: 기본 공격·스킬 피해를 줄 때 `Attack`, 스테이지 시작 때의 체력으로 `MaxHealth`를 읽는다. `Upgraded`에서 `StatType.Health`를 받으면 강화 전후 `MaxHealth`의 차이만큼 현재 체력을 늘린다 (전투가 직전의 최대 체력을 기억해 둔다). 스킬 배율에는 `GetLevel(StatType.InnerPower)`를 읽는다. 공격 간격은 읽지 않는다 (전투의 `Battle.DiscipleBaseAttackInterval`).
 - 스테이지 기능이 쓰는 방법: 페이드아웃을 시작할 때 `SetLocked(true)`, 페이드인이 끝나면 `SetLocked(false)`.
 - 저장 기능이 쓰는 방법: 저장할 때 `GetLevel`로 세 단계를 읽고, 불러올 때 생성자의 단계 인자 셋에 넣는다 ("저장").
+- 자동 강화는 `docs/spec/auto_upgrade.md`를 따른다.
 
 ### 필요한 것
 

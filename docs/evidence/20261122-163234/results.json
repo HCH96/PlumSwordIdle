@@ -1,0 +1,359 @@
+{
+  "loop": "loop/20261122-163234",
+  "bundle": "auto_upgrade",
+  "merged_at": "2026-11-22 16:46",
+  "tag": "loop-merged/20261122-163234",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 1005,
+      "passed": 1005,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 177,
+      "passed": 177,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [],
+    "stats": {
+      "files_changed": 10,
+      "files": [
+        "Assets/Scripts/Core/StatUpgrade/AutoUpgrade.cs",
+        "Assets/Scripts/Core/StatUpgrade/AutoUpgradeText.cs",
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/StatUpgrade/AutoUpgradeView.cs",
+        "Assets/Tests/EditMode/StatUpgrade/AutoUpgradeTests.cs",
+        "Assets/Tests/PlayMode/Flow/GameFlow.cs",
+        "Assets/Tests/PlayMode/StatUpgrade/AutoUpgradeViewTests.cs",
+        "docs/history/091_auto_upgrade.md",
+        "docs/history/092_auto_upgrade_view.md",
+        "docs/spec/stat_upgrade.md"
+      ],
+      "tests_before": 795,
+      "tests_after": 813,
+      "new_tests": [
+        "AutoUpgradeTests.BalanceChanged_AttackMoreExpensive_BuysHealth",
+        "AutoUpgradeTests.BalanceChanged_Disabled_DoesNotBuy",
+        "AutoUpgradeTests.BalanceChanged_FreeUpgrades_StopsAtThousand",
+        "AutoUpgradeTests.BalanceChanged_Hundred_BuysCheapestInTieOrder",
+        "AutoUpgradeTests.BalanceChanged_Twenty_BuysAttack",
+        "AutoUpgradeTests.BuyAll_NoGold_ReturnsZero",
+        "AutoUpgradeTests.BuyAll_ReentrantBalanceNotification_ReturnsZero",
+        "AutoUpgradeTests.Dispose_Twice_UnsubscribesFromBalanceAndUnlock",
+        "AutoUpgradeTests.Label_State_ReturnsText",
+        "AutoUpgradeTests.New_NullArguments_Throws",
+        "AutoUpgradeTests.New_WithGold_DefaultEnabledAndDoesNotBuy",
+        "AutoUpgradeTests.SetEnabled_AlreadyEnabled_DoesNotNotify",
+        "AutoUpgradeTests.SetEnabled_False_StopsPurchases",
+        "AutoUpgradeTests.SetEnabled_True_NotifiesBeforeBuying",
+        "AutoUpgradeTests.Unlock_WithGold_BuysAfterUnlock",
+        "AutoUpgradeViewTests.Click_Disabled_EnablesAndUpdatesLabel",
+        "AutoUpgradeViewTests.FirstScene_GameRoot_StartsWithAutoUpgradeEnabled",
+        "AutoUpgradeViewTests.Initialize_Disabled_ShowsButtonAndLabel"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": [
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/StatUpgrade/AutoUpgradeView.cs"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "doc": "091_auto_upgrade.md",
+      "branch": "task/091_auto_upgrade",
+      "agents": "codex(시도 1)",
+      "summary": "자동 강화의 최저 비용 구매, 재진입 방지와 버튼 글자를 구현하고 완료 조건별 테스트를 추가했다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "AutoUpgrade와 AutoUpgradeText가 사양의 연결 지점대로 Core에 구현됐습니다. 14개 조건마다 상황과 기대 숫자를 직접 확인하는 에딧 모드 테스트가 있고, 하지 말 것 침범이나 화면 코드의 계산은 없습니다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/StatUpgrade/AutoUpgradeTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "AutoUpgradeTests 전체 (조건 1~14 각각 대응 테스트 확인, 통과 여부는 루프 실행 결과)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "1. `new AutoUpgrade(upgrades, wallet)`의 `Enabled`는 `true`이고, 만들 때 금화와 단계는 바뀌지 않는다.",
+            "test": "AutoUpgradeTests.New_WithGold_DefaultEnabledAndDoesNotBuy",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "2. 켜진 상태에서 `wallet.Add(20)`이면 무력 단계 1, 체력·내공 0, 금화 0이다.",
+            "test": "AutoUpgradeTests.BalanceChanged_Twenty_BuysAttack",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "3. 켜진 상태에서 `wallet.Add(100)`이면 무력·체력·내공 단계가 각각 2, 1, 1이고 금화는 15다 (20 + 20 + 20 + 25를 산 뒤 남은 15로는 다음 비용 25를 못 산다).",
+            "test": "AutoUpgradeTests.BalanceChanged_Hundred_BuysCheapestInTieOrder",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "4. 꺼진 상태(`enabled: false`)에서 `wallet.Add(100)`이면 세 단계는 0이고 금화는 100이다.",
+            "test": "AutoUpgradeTests.BalanceChanged_Disabled_DoesNotBuy",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "5. 4번 상태에서 `SetEnabled(true)`를 부르면 `EnabledChanged`가 `true`를 담아 1번 오고, 그 뒤 세 단계는 2, 1, 1, 금화는 15다.",
+            "test": "AutoUpgradeTests.SetEnabled_True_NotifiesBeforeBuying",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "6. `upgrades.SetLocked(true)` 뒤 `wallet.Add(20)`이면 단계는 모두 0, 금화 20이다. 이어서 `SetLocked(false)`면 무력 단계 1, 금화 0이다.",
+            "test": "AutoUpgradeTests.Unlock_WithGold_BuysAfterUnlock",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "7. 금화 0에서 `BuyAll()`은 0을 돌려준다.",
+            "test": "AutoUpgradeTests.BuyAll_NoGold_ReturnsZero",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "8. `new StatUpgrades(wallet, 10, 100, 1, 0, 0)`(무력 비용 25)에서 `wallet.Add(20)`이면 체력 단계가 1이 된다 (더 싼 것 먼저).",
+            "test": "AutoUpgradeTests.BalanceChanged_AttackMoreExpensive_BuysHealth",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "9. `SetEnabled(true)`를 켜진 상태에서 부르면 `EnabledChanged`는 0번 온다.",
+            "test": "AutoUpgradeTests.SetEnabled_AlreadyEnabled_DoesNotNotify",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "10. `SetEnabled(false)` 뒤 `wallet.Add(100)`이면 사지 않는다.",
+            "test": "AutoUpgradeTests.SetEnabled_False_StopsPurchases",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "11. 수치 표의 세 비용을 (0, 0, 1)로 바꾸고 `wallet.Add(1)`이면 이번 알림의 구매 수는 1000이다 (세 단계 합 1000). 테스트 끝에 표를 `Default`로 되돌린다.",
+            "test": "AutoUpgradeTests.BalanceChanged_FreeUpgrades_StopsAtThousand (TearDown에서 Default로 되돌림)",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "12. `new AutoUpgrade(null, wallet)`과 `new AutoUpgrade(upgrades, null)`은 각각 `ArgumentNullException`을 던진다.",
+            "test": "AutoUpgradeTests.New_NullArguments_Throws",
+            "verdict": "있음"
+          },
+          {
+            "id": 14,
+            "condition": "13. `Dispose()` 뒤 `wallet.Add(100)`이면 사지 않는다. `Dispose()`를 두 번 불러도 예외가 없다.",
+            "test": "AutoUpgradeTests.Dispose_Twice_UnsubscribesFromBalanceAndUnlock",
+            "verdict": "있음"
+          },
+          {
+            "id": 15,
+            "condition": "14. `AutoUpgradeText.Label(true)`는 `\"자동 강화 켜짐\"`, `Label(false)`는 `\"자동 강화 꺼짐\"`이다.",
+            "test": "AutoUpgradeTests.Label_State_ReturnsText (TestCase 2개)",
+            "verdict": "있음"
+          },
+          {
+            "id": 16,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "-",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "BuyAll 반복 조건에 Enabled를 다시 확인하는 부분(구매 알림 도중 꺼지면 멈춤)과 TryUpgrade가 실패하면 끝내는 부분은 보고서의 가정에 적혀 있습니다. 사양과 어긋나지 않습니다 (Assets/Scripts/Core/StatUpgrade/AutoUpgrade.cs:43,58)."
+          },
+          {
+            "severity": "note",
+            "text": "Dispose 뒤에도 Enabled가 true면 BuyAll()을 직접 부를 때 여전히 삽니다. 사양은 '구독을 끊는다'만 요구하므로 문제는 아닙니다 (AutoUpgrade.cs:69-73)."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1005,
+          "passed": 1005,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 174,
+          "passed": 174,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "AutoUpgradeTests.BalanceChanged_AttackMoreExpensive_BuysHealth",
+        "AutoUpgradeTests.BalanceChanged_Disabled_DoesNotBuy",
+        "AutoUpgradeTests.BalanceChanged_FreeUpgrades_StopsAtThousand",
+        "AutoUpgradeTests.BalanceChanged_Hundred_BuysCheapestInTieOrder",
+        "AutoUpgradeTests.BalanceChanged_Twenty_BuysAttack",
+        "AutoUpgradeTests.BuyAll_NoGold_ReturnsZero",
+        "AutoUpgradeTests.BuyAll_ReentrantBalanceNotification_ReturnsZero",
+        "AutoUpgradeTests.Dispose_Twice_UnsubscribesFromBalanceAndUnlock",
+        "AutoUpgradeTests.Label_State_ReturnsText",
+        "AutoUpgradeTests.New_NullArguments_Throws",
+        "AutoUpgradeTests.New_WithGold_DefaultEnabledAndDoesNotBuy",
+        "AutoUpgradeTests.SetEnabled_AlreadyEnabled_DoesNotNotify",
+        "AutoUpgradeTests.SetEnabled_False_StopsPurchases",
+        "AutoUpgradeTests.SetEnabled_True_NotifiesBeforeBuying",
+        "AutoUpgradeTests.Unlock_WithGold_BuysAfterUnlock"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "구매 알림을 받는 외부 코드가 구매 도중 자동 강화를 끄면 현재 구매를 마친 뒤 반복을 중단한다.",
+        "선택 후 `TryUpgrade`가 실패하면 무한 반복을 피하도록 이번 구매를 종료한다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "092_auto_upgrade_view.md",
+      "branch": "task/092_auto_upgrade_view",
+      "agents": "codex(시도 1)",
+      "summary": "자동 강화 버튼과 GameRoot 조립 및 수명 관리를 추가하고 흐름 테스트 도우미와 플레이 모드 테스트를 작성했습니다. Unity 테스트는 루프 판정을 기다립니다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "AutoUpgradeView, GameRoot 조립(속성·Awake 생성·화면 한 줄·OnDestroy의 Dispose), 흐름 테스트 도우미 변경이 요구사항대로 들어갔습니다. 15·16·17번 조건은 각각 위치·크기·글자, 클릭 뒤 Enabled·글자, 첫 씬 루트의 AutoUpgrade 상태를 직접 검사합니다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "화면 코드가 컴파일되고 기존 테스트가 모두 통과한다.",
+            "test": "루프 실행 결과",
+            "verdict": "루프가 판정"
+          },
+          {
+            "id": 2,
+            "condition": "Assets/Tests/PlayMode/StatUpgrade/AutoUpgradeViewTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다. 쓰는 법은 `docs/dev/architecture.md` \"테스트\" 절을 따른다 (15·16번은 테스트가 직접 만든 캔버스와 `AutoUpgrade`로, 17번은 첫 씬을 불러와 `[Game]`으로).",
+            "test": "AutoUpgradeViewTests: 15·16번은 직접 만든 Canvas와 AutoUpgrade(false)로, 17번은 LoadSceneAsync(0) 뒤 [Game]으로 검사",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "15. 꺼진 `AutoUpgrade`로 `AutoUpgradeView.Initialize`를 부르면 캔버스 아래 `AutoUpgradeButton`이 있고 `anchoredPosition`은 (216, 86), 크기는 (96, 26), `Label` 글자는 `\"자동 강화 꺼짐\"`이다.",
+            "test": "AutoUpgradeViewTests.Initialize_Disabled_ShowsButtonAndLabel",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "16. 그 버튼을 누르면 `Enabled`는 `true`이고 `Label` 글자는 `\"자동 강화 켜짐\"`이다.",
+            "test": "AutoUpgradeViewTests.Click_Disabled_EnablesAndUpdatesLabel",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "17. 첫 씬을 불러오면 `[Game]`의 `GameRoot.AutoUpgrade`가 `null`이 아니고 `Enabled`는 `true`다.",
+            "test": "AutoUpgradeViewTests.FirstScene_GameRoot_StartsWithAutoUpgradeEnabled",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "18. 게임을 실행하고 10초 뒤 화면에 금화 현판 오른쪽에 `자동 강화 켜짐` 버튼이 현판과 겹치지 않게 보인다 (갈무리로 확인). 금화가 쌓이는 대로 강화 레벨이 저절로 오르는지는 에디터에서 실행해 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "GameFlow.Relaunch의 대기 루프에서 `yield return null`을 확인 뒤로 옮겼습니다 (Assets/Tests/PlayMode/Flow/GameFlow.cs:42-47). '새 루트를 찾은 즉시(대기 프레임 전)'라는 요구에 맞는 변경입니다. 이전 루트는 SetActive(false)라서 Find에 잡히지 않으므로 기존 동작은 깨지지 않지만, 보고서에 이 변경이 적혀 있지 않습니다."
+          },
+          {
+            "severity": "note",
+            "text": "17번 테스트가 첫 씬을 불러온 뒤 ResetToFreshLaunch로 루트를 새로 만들고 나서 검사합니다 (AutoUpgradeViewTests.cs:68-75). 앞선 테스트가 자동 강화를 꺼 두었을 수 있어서 새로 만든 것으로 보이며, 새로 만든 루트의 Awake 기본값을 검사하므로 조건의 뜻에는 맞습니다."
+          },
+          {
+            "severity": "note",
+            "text": "GameRoot.AutoUpgrade 속성에는 다른 속성과 달리 <summary> 주석이 없습니다 (Assets/Scripts/Game/GameRoot.cs:57). 테스트는 Label 글자를 리플렉션으로 읽습니다 (AutoUpgradeViewTests.cs:62-66)."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1005,
+          "passed": 1005,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 177,
+          "passed": 177,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "AutoUpgradeViewTests.Click_Disabled_EnablesAndUpdatesLabel",
+        "AutoUpgradeViewTests.FirstScene_GameRoot_StartsWithAutoUpgradeEnabled",
+        "AutoUpgradeViewTests.Initialize_Disabled_ShowsButtonAndLabel"
+      ],
+      "screen_files": [
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/StatUpgrade/AutoUpgradeView.cs"
+      ],
+      "human_conditions": [
+        "18. 게임을 실행하고 10초 뒤 화면에 금화 현판 오른쪽에 `자동 강화 켜짐` 버튼이 현판과 겹치지 않게 보인다 (갈무리로 확인). 금화가 쌓이는 대로 강화 레벨이 저절로 오르는지는 에디터에서 실행해 확인한다."
+      ],
+      "gate_warnings": [],
+      "assumptions": [
+        "폰트를 불러올 수 없으면 기존 TMP 기본 글꼴로 표시한다. 버튼을 다시 초기화하면 이전 버튼과 구독을 정리한다.",
+        "화면과 연결 지점은 기존 사양과 같아 사양 변경은 없다."
+      ],
+      "human_report": [
+        "게임을 실행하고 10초 뒤 화면에 금화 현판 오른쪽에 `자동 강화 켜짐` 버튼이 현판과 겹치지 않게 보이는지 갈무리로 확인한다. 금화가 쌓이는 대로 강화 레벨이 저절로 오르는지 에디터에서 실행해 확인한다."
+      ],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}

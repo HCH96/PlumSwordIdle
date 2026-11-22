@@ -54,6 +54,8 @@ namespace PlumSword.Game
         /// <summary>게임에 하나뿐인 능력치 강화. 전투·스테이지 기능은 조립할 때 이것을 넘겨받는다.</summary>
         public PlumSword.Core.StatUpgrade.StatUpgrades StatUpgrades { get; private set; }
 
+        public PlumSword.Core.StatUpgrade.AutoUpgrade AutoUpgrade { get; private set; }
+
         /// <summary>게임에 하나뿐인 전투. Tick 은 CombatView 만 부른다. 스테이지 기능은 이것으로 적을 놓는다.</summary>
         public PlumSword.Core.Combat.Battle Battle { get; private set; }
 
@@ -86,6 +88,7 @@ namespace PlumSword.Game
                 PlumSword.Core.Balance.BalanceTable.Current.DiscipleBaseMaxHealth,
                 data != null ? data.AttackLevel : 0,
                 data != null ? data.HealthLevel : 0, data != null ? data.InnerPowerLevel : 0, Realm);
+            AutoUpgrade = new PlumSword.Core.StatUpgrade.AutoUpgrade(StatUpgrades, Wallet, true);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades, Realm, true);
             Battle.EnemyDefeated += enemy => Realm.RecordKill();
 
@@ -96,6 +99,7 @@ namespace PlumSword.Game
             // 기능별 화면 (기능이 늘면 여기에 한 줄씩 추가한다)
             CreateCurrencyView();
             CreateStatUpgradeView();
+            CreateAutoUpgradeView();
             CreateRealmView();
             CreateCombatView();
             CreateRealmAuraView();
@@ -266,6 +270,18 @@ namespace PlumSword.Game
             viewObject.transform.SetParent(transform, false);
             viewObject.AddComponent<PlumSword.Game.StatUpgrade.StatUpgradeView>()
                 .Initialize(StatUpgrades, Wallet, UiCanvas);
+        }
+
+        private void CreateAutoUpgradeView()
+        {
+            var viewObject = new GameObject("[AutoUpgradeView]");
+            viewObject.transform.SetParent(transform, false);
+            viewObject.AddComponent<PlumSword.Game.StatUpgrade.AutoUpgradeView>().Initialize(AutoUpgrade, UiCanvas);
+        }
+
+        private void OnDestroy()
+        {
+            AutoUpgrade?.Dispose();
         }
 
         private void CreateRealmView()
