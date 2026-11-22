@@ -53,10 +53,14 @@
 - `public const int StageLayout.FinalDisplayStage = 5`: 일반 구간 없이 최종 보스만 나오는 화면상 큰 스테이지 번호.
 - `StageRewards.NormalGold(int)`와 `BossGold(int)`는 1 미만에 예외를 던진다. `StageText`는 기존 회차·테마·보스 이름과 영문 테마 소개를 제공한다. 1스테이지 소개는 `Mount Hua and Jongnam disciples spar in Mount Hua's training yard.`이다.
 - `public static string StageText.SubstageLabel(int stage, int substage)`: `stage`가 5면 `"FINAL"`, 아니면 `"{stage}-{substage}"`를 문화권과 무관하게 만든다. `stage`가 1~5 밖이거나 `substage`가 1~7 밖이면 `ArgumentOutOfRangeException`을 던진다.
+- `StageLabelArt`는 제목판·번호 시트 경로 상수 `HeaderBlankPath`, `NumberSheetPath`와 스테이지 1~5의 그림 경로 `TitlePath(int stage)`, `BossNamePath(int stage)`를 제공한다. 경로의 번호는 문화권과 무관하며 범위 밖은 예외다.
+- `UsesBossName(int stage, int substage)`는 5스테이지 또는 7구간에서 참이고, `NumberGlyphs(int stage, int substage)`는 일반 구간에 새 배열 `{stage, HyphenGlyph, substage}`를 반환한다. 스테이지는 1~5, 구간은 1~7이며 번호 배열은 스테이지 1~4와 구간 1~6만 허용한다. 잘못된 값은 `ArgumentOutOfRangeException`이다.
+- `HyphenGlyph = 10`, `GlyphTop = 8`, `GlyphHeight = 290`, `GlyphOverlap = 18`. `GlyphLeft(int glyph)`와 `GlyphWidth(int glyph)`는 시트 왼쪽 위 기준 0~10 글자의 좌표와 너비를 반환하고 범위 밖은 예외다. `LabelWidth(int[] glyphs, double scale)`와 `GlyphCenterX(int[] glyphs, int index, double scale)`는 글자 폭과 겹침을 반영한 전체 너비와 가운데 정렬 좌표를 반환한다. 빈 배열의 너비는 0이고 null, 유효하지 않은 글자·인덱스, 양의 유한수가 아닌 배율은 예외다.
 - 전투는 `Battle.AddEnemy`, `EnemyDefeated`, `EnemyDamaged`, `DiscipleDefeated`, `Reset`, `SetPaused`, `SetHoldPosition`으로 연결하고, 강화는 `SetLocked`, 저장은 `StageStarted`, `StageNumber`, `SeenIntroStage`로 연결한다.
 
 ## 화면
 
+- 진행 표시와 구간 시작 패의 제목·번호·보스 이름은 그림 글자(`StageLabelArt`)를 쓴다. 보스 구간과 5스테이지는 번호 대신 보스 이름 그림을 쓴다. 화면 적용은 후속 작업이다.
 - 모든 스테이지와 회차에 1스테이지의 매화 제목판과 진행 표시를 공통으로 사용하고, 화면상 스테이지와 구간에 맞는 `1-1`~`4-7`, `FINAL` 등의 번호, 여섯 매화 표식과 보스 표식을 표시한다. 완료 표식은 분홍 매화, 현재 표식은 금빛으로 표시하고 박동한다. 보스 구간에서는 해당 스테이지의 보스 이름과 현재 체력을 기존 붉은 체력 바로 표시한다.
 - 1~5스테이지 모두 `IsBossActive`인 동안에는 진행 표시의 매화 표식 6개(`Marker1~6`)와 보스 표식(`BossMarker`)을 비활성화한다. 진행 표시 패, 번호 글자, 보스 이름, 붉은 체력 바는 그대로 보인다. 일반 구간에서는 표식을 다시 보인다.
 - **보스 체력 틀**: `IsBossActive`인 동안 화면상 스테이지 번호 n의 `Art/UI/boss_health_frame_{n}`(2172×724px 투명 틀, 1~5)이 있으면 `BossHealthFrame` 이미지를 위쪽 가운데 기준으로 300×100 UI 단위(임시), 중심 (0, −126)에 표시한다. 입력은 가로채지 않는다. 이때 `StageBar`(어두운 바탕과 `Fill`)를 틀의 게이지 칸에 맞춘다. 게이지 칸은 원본 픽셀(왼쪽 위 기준, 끝 포함)로 아래 표와 같고, `k = 300 / 2172`이다. 바의 너비 `(오른쪽 − 왼쪽 + 1)·k`, 높이 `(아래 − 위 + 1)·k`, 중심 x `((왼쪽 + 오른쪽 + 1)/2 − 1086)·k`, 중심 y `−126 − ((위 + 아래 + 1)/2 − 362)·k`이다. 채움 색(`BossFillColor`)과 `BarRatio` 동작은 그대로다. 보스 이름은 기존 위치 (0, −111)에 두고 틀보다 위에 그린다. 틀은 보스가 사라지고 다음 큰 스테이지가 배치될 때 숨긴다. 해당 틀이 없으면 틀 없이 기존 180×7 바를 쓴다. 일반 구간의 바 위치·크기는 바뀌지 않는다.
