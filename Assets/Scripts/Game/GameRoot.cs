@@ -340,7 +340,7 @@ namespace PlumSword.Game
         {
             StageProgress = new PlumSword.Core.Stage.StageProgress(
                 Wallet, StatUpgrades, Battle, new System.Random(), startStage, seenIntroStage,
-                PlumSword.Core.Stage.StageProgress.DefaultClearWaitSeconds, true, regressionCount);
+                PlumSword.Core.Stage.StageProgress.DefaultClearWaitSeconds, true, regressionCount, showThemeIntro: false);
 
             var viewObject = new GameObject("[StageView]");
             viewObject.transform.SetParent(transform, false);

@@ -113,6 +113,37 @@ namespace PlumSword.Core.Tests.Stage
         }
 
         [Test]
+        public void Begin_ThemeIntroDisabled_StartsSubstageWithoutDelay()
+        {
+            Create();
+            var stage = new StageProgress(_wallet, _upgrades, _battle, new MinRandom(),
+                startStage: 2, seenIntroStage: 0, showThemeIntro: false);
+            stage.Begin();
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            Assert.That(stage.IsIntroShowing, Is.False);
+            stage.Tick(StageProgress.SubstageIntroSeconds);
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.Playing));
+        }
+
+        [Test]
+        public void Transition_ThemeIntroDisabled_StartsNextSubstageAfterFade()
+        {
+            _wallet = new Wallet(0);
+            _upgrades = new StatUpgrades(_wallet, 1000, 100);
+            _battle = new Battle(_upgrades);
+            var stage = new StageProgress(_wallet, _upgrades, _battle, new MinRandom(),
+                seenIntroStage: 0, showThemeIntro: false);
+            stage.Begin();
+            stage.Tick(StageProgress.SubstageIntroSeconds);
+            _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
+            _battle.Step();
+            stage.Tick(StageProgress.FadeSeconds * 2);
+            Assert.That(stage.StageNumber, Is.EqualTo(2));
+            Assert.That(stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
+            Assert.That(stage.IsIntroShowing, Is.False);
+        }
+
+        [Test]
         public void StagePhase_Values_PreserveExistingNumbers()
         {
             Assert.That((int)StagePhase.Playing, Is.EqualTo(0));

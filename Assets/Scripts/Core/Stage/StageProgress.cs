@@ -24,6 +24,7 @@ namespace PlumSword.Core.Stage
         private readonly StatUpgrades _upgrades;
         private readonly Battle _battle;
         private readonly Random _random;
+        private readonly bool _showThemeIntro;
         private readonly HashSet<Enemy> _substageEnemies = new HashSet<Enemy>();
 
 /// <summary>페이드 시간 비교의 허용 오차. 페이드 시간 ≥ FadeSeconds − FadeTolerance 이면 끝난 것으로 본다.</summary>
@@ -49,12 +50,13 @@ namespace PlumSword.Core.Stage
         /// startStage: 1 보다 작으면 1 로 만든다 (예외 없음).
         /// 생성자는 전투·지갑·강화를 건드리지 않고 알림을 보내지 않는다.
         /// </summary>
-        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0, bool useRegression = false, int regressionCount = 0)
+        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0, bool useRegression = false, int regressionCount = 0, bool showThemeIntro = true)
         {
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
             _battle = battle ?? throw new ArgumentNullException(nameof(battle));
             _random = random ?? throw new ArgumentNullException(nameof(random));
+            _showThemeIntro = showThemeIntro;
             if (double.IsNaN(clearWaitSeconds) || double.IsInfinity(clearWaitSeconds) || clearWaitSeconds < 0.0)
                 throw new ArgumentOutOfRangeException(nameof(clearWaitSeconds));
             ClearWaitSeconds = clearWaitSeconds;
@@ -277,7 +279,7 @@ namespace PlumSword.Core.Stage
         /// </summary>
         private bool ShouldShowIntro()
         {
-            if (RoundNumber != 1 || DisplayStageNumber <= SeenIntroStage) return false;
+            if (!_showThemeIntro || RoundNumber != 1 || DisplayStageNumber <= SeenIntroStage) return false;
             SeenIntroStage = DisplayStageNumber;
             return true;
         }
