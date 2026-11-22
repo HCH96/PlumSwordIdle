@@ -378,7 +378,8 @@ namespace PlumSword.Game.Stage
 
         private void OnChanged()
         {
-            if (_stage.Phase == StagePhase.FadingOut && _previousPhase == StagePhase.Playing && !_failedTransition)
+            if (_stage.Phase == StagePhase.FadingOut
+                && (_previousPhase == StagePhase.Playing || _previousPhase == StagePhase.ClearWait) && !_failedTransition)
             {
                 if (_stage.DisplayStageNumber == 1 && HasJongnamDownSheets())
                     _defeatAnimationRemaining = JongnamSprites.DownDuration;
@@ -407,6 +408,8 @@ namespace PlumSword.Game.Stage
                     && _stage.SubstageNumber > StageLayout.NormalSubstageCount
                     && HasDownSheet(FinalBossDownPath, 104, 25))
                     _defeatAnimationRemaining = 25 * JongnamSprites.DownFrameSeconds;
+                if (_previousPhase == StagePhase.ClearWait)
+                    _defeatAnimationRemaining = Mathf.Max(0f, _defeatAnimationRemaining - (float)_stage.ClearWaitSeconds);
             }
             if (_stage.Phase != StagePhase.FadingOut) _failedTransition = false;
             _previousPhase = _stage.Phase;
