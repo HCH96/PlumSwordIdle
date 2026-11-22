@@ -32,3 +32,4 @@
 | `20261122-135729` | stage_hud | 2026-11-22 14:19 | 3건 | EditMode 945/945, PlayMode 172/172 | claude (교차) | 6건 | [report.md](20261122-135729/report.md) |
 | `20261122-160726` | balance | 2026-11-22 16:32 | 4건 | EditMode 989/989, PlayMode 174/174 | claude (교차) | 0건 | [report.md](20261122-160726/report.md) |
 | `20261122-163234` | auto_upgrade | 2026-11-22 16:46 | 2건 | EditMode 1005/1005, PlayMode 177/177 | claude (교차) | 2건 | [report.md](20261122-163234/report.md) |
+| `20261122-164616` | regression | 2026-11-22 17:12 | 4건 | EditMode 1047/1047, PlayMode 181/181 | claude (교차) | 5건 | [report.md](20261122-164616/report.md) |
