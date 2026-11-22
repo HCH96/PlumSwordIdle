@@ -1,0 +1,676 @@
+{
+  "loop": "loop/20261122-164616",
+  "bundle": "regression",
+  "merged_at": "2026-11-22 17:12",
+  "tag": "loop-merged/20261122-164616",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 1047,
+      "passed": 1047,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 181,
+      "passed": 181,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [
+      "`Assets/Tests/PlayMode/Flow/FullRoundFlowTests.cs` — 있던 검사(Assert) 5줄을 지우거나 바꿈 (작업 096_ending_view)\n  - 지워짐: `Assert.That(root.StageProgress.RoundNumber, Is.EqualTo(2), \"천마 처치 후 2회차여야 합니다.\");`\n  - 지워짐: `Assert.That(root.StageProgress.DisplayStageNumber, Is.EqualTo(1), \"2회차의 표시 스테이지는 1이어야 합니다.\");`\n  - 지워짐: `Assert.That(root.StageProgress.SubstageNumber, Is.EqualTo(1), \"2회차는 첫 구간에서 시작해야 합니다.\");`\n  - 지워짐: `Assert.That(saved.Status, Is.EqualTo(SaveLoadStatus.Loaded), \"자동 저장을 읽을 수 있어야 합니다.\");`\n  - 지워짐: `Assert.That(saved.Data.StageNumber, Is.EqualTo(6), \"자동 저장에 다음 회차 스테이지가 기록되어야 합니다.\");`\n  - 새로 들어옴: `Assert.That(root.StageProgress.Phase, Is.EqualTo(StagePhase.Cleared));`\n  - 새로 들어옴: `Assert.That(root.StageProgress.StageNumber, Is.EqualTo(5));`\n  - 새로 들어옴: `Assert.That(root.StageProgress.RegressionCount, Is.EqualTo(0));`\n  - 새로 들어옴: `Assert.That(root.transform.Find(\"[EndingView]\"), Is.Not.Null);`\n  - 새로 들어옴: `Assert.That(store.Text, Is.Null);`\n  - 새로 들어옴: `Assert.That(root.AutoSave.Enabled, Is.False);`"
+    ],
+    "stats": {
+      "files_changed": 33,
+      "files": [
+        "Assets/Scripts/Core/Save/AutoSave.cs",
+        "Assets/Scripts/Core/Save/ISaveStore.cs",
+        "Assets/Scripts/Core/Save/MemorySaveStore.cs",
+        "Assets/Scripts/Core/Save/SaveCodec.cs",
+        "Assets/Scripts/Core/Save/SaveData.cs",
+        "Assets/Scripts/Core/Stage/EndingText.cs",
+        "Assets/Scripts/Core/Stage/PlayTime.cs",
+        "Assets/Scripts/Core/Stage/StagePhase.cs",
+        "Assets/Scripts/Core/Stage/StageProgress.cs",
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/Save/FileSaveStore.cs",
+        "Assets/Scripts/Game/Stage/EndingView.cs",
+        "Assets/Tests/EditMode/Save/FakeSaveStore.cs",
+        "Assets/Tests/EditMode/Save/SaveCodecTests.cs",
+        "Assets/Tests/EditMode/Save/SaveRegressionFieldsTests.cs",
+        "Assets/Tests/EditMode/Stage/EndingTextTests.cs",
+        "Assets/Tests/EditMode/Stage/PlayTimeTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressRegressionTests.cs",
+        "Assets/Tests/PlayMode/Flow/FullRoundFlowTests.cs",
+        "Assets/Tests/PlayMode/OfflineReward/OfflineRewardViewTests.cs",
+        "Assets/Tests/PlayMode/Save/FileSaveStoreTests.cs",
+        "Assets/Tests/PlayMode/Save/SaveViewTests.cs",
+        "Assets/Tests/PlayMode/Stage/EndingViewTests.cs",
+        "Assets/Tests/PlayMode/Stage/GameRootRegressionTests.cs",
+        "Assets/Tests/PlayMode/StartMenu/SettingsViewTests.cs",
+        "docs/history/093_stage_regression.md",
+        "docs/history/094_play_time_ending_text.md",
+        "docs/history/095_save_regression_fields.md",
+        "docs/history/096_ending_view.md",
+        "docs/spec/regression.md",
+        "docs/spec/save.md",
+        "docs/spec/stage.md",
+        "docs/spec/start_menu.md"
+      ],
+      "tests_before": 813,
+      "tests_after": 842,
+      "new_tests": [
+        "EndingTextTests.PlayTime_InvalidSeconds_Throws",
+        "EndingTextTests.PlayTime_ValidSeconds_FormatsMinutesAndSeconds",
+        "EndingTextTests.Text_CustomCulture_UsesInvariantNumbers",
+        "EndingTextTests.Text_RegressionCountsAndConstants_ReturnExpectedStrings",
+        "EndingViewTests.Initialize_ShowsEndingAndReturnsOnce",
+        "FileSaveStoreTests.TryDelete_ExistingAndMissingFiles_Succeeds",
+        "GameRootRegressionTests.FirstScene_EnablesRegressionAndCreatesPlayTime",
+        "GameRootRegressionTests.FreshGame_AfterTwoSeconds_AccumulatesPlayTime",
+        "PlayTimeTests.Add_InvalidDelta_ThrowsAndPreservesTime",
+        "PlayTimeTests.Add_ValidDeltas_AccumulatesSecondsAndMilliseconds",
+        "PlayTimeTests.Constructor_InvalidInitialSeconds_StartsAtZero",
+        "PlayTimeTests.Milliseconds_FractionalMilliseconds_RoundsDown",
+        "SaveRegressionFieldsTests.AutoSave_OptionalFields_AreWritten",
+        "SaveRegressionFieldsTests.Capture_NewValuesAndNullOptions_CopiesExpectedValues",
+        "SaveRegressionFieldsTests.Decode_InvalidNewField_IsCorrupt",
+        "SaveRegressionFieldsTests.Decode_NonzeroAutoUpgrade_IsTrue",
+        "SaveRegressionFieldsTests.Decode_OldVersionTwo_DefaultsNewFields",
+        "SaveRegressionFieldsTests.Disable_StopsWritesUntilEnabled",
+        "SaveRegressionFieldsTests.EncodeDecode_NegativeValues_ArePreserved",
+        "SaveRegressionFieldsTests.EncodeDecode_RegressionFields_RoundTrips",
+        "SaveRegressionFieldsTests.MemoryStore_Delete_ClearsText",
+        "StageProgressRegressionTests.Constructor_NormalizesStageOnlyForRegression",
+        "StageProgressRegressionTests.DefaultRegression_FifthStageDefeatRetries",
+        "StageProgressRegressionTests.EarlierStageDefeat_RetriesWithoutRegression",
+        "StageProgressRegressionTests.FifthStageDefeat_IncrementsWithoutOverflow",
+        "StageProgressRegressionTests.FifthStageDefeat_RegressesInOrderAndPreservesResources",
+        "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+        "StageProgressRegressionTests.FifthStageVictory_ZeroWaitClearsImmediately",
+        "StageProgressRegressionTests.RegressionDisabled_FifthStageVictoryAdvances"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": [
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/Save/FileSaveStore.cs",
+        "Assets/Scripts/Game/Stage/EndingView.cs"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "doc": "093_stage_regression.md",
+      "branch": "task/093_stage_regression",
+      "agents": "codex(시도 1)",
+      "summary": "천마 패배 시 선택적 회귀와 천마 처치 후 종료 상태를 구현하고 회귀 테스트 및 스테이지 사양을 추가했다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "회귀 규칙(시작 번호 정규화, 천마 패배 시 1로 회귀·횟수 증가·상한, 알림 순서)과 천마 처치 후 Cleared 종료가 요구사항대로 구현됐고, 완료 조건마다 숫자까지 확인하는 테스트가 있다. useRegression false 경로는 바뀌지 않았고 하지 말 것 범위도 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Stage/StageProgressRegressionTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "StageProgressRegressionTests (아래 조건별 매핑)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "1. `upgrades = new StatUpgrades(wallet, 1, 1)`, `new StageProgress(wallet, upgrades, battle, new MinRandom(), 5, 5, 0.0, true)`로 결판까지 가면 `Phase`는 `FadingOut`, `StageFailed`는 5를 담아 1번, `Regressed`는 1을 담아 1번 온다.",
+            "test": "StageProgressRegressionTests.FifthStageDefeat_RegressesInOrderAndPreservesResources",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "2. 1번에서 알림 순서는 `StageFailed` → `Regressed` → `Changed`다.",
+            "test": "StageProgressRegressionTests.FifthStageDefeat_RegressesInOrderAndPreservesResources",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "3. 1번 뒤 `Tick(0.5)`이면 `StageNumber`는 1, `SubstageNumber`는 1, `RegressionCount`는 1이다.",
+            "test": "StageProgressRegressionTests.FifthStageDefeat_RegressesInOrderAndPreservesResources",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "4. 1번 전후로 `wallet.Balance`와 `upgrades`의 세 단계는 같다.",
+            "test": "StageProgressRegressionTests.FifthStageDefeat_RegressesInOrderAndPreservesResources",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "5. 1번과 같되 `useRegression`을 주지 않으면(`false`) `Tick(0.5)` 뒤 `StageNumber`는 5이고 `Regressed`는 0번, `RegressionCount`는 0이다.",
+            "test": "StageProgressRegressionTests.DefaultRegression_FifthStageDefeatRetries",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "6. `useRegression` `true`, 시작 번호 3에서 제자가 쓰러지면 `Tick(0.5)` 뒤 `StageNumber`는 3이고 `Regressed`는 0번이다.",
+            "test": "StageProgressRegressionTests.EarlierStageDefeat_RetriesWithoutRegression",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "7. `regressionCount: 2`로 만들고 1번처럼 지면 `Regressed`는 3을 담아 온다.",
+            "test": "StageProgressRegressionTests.FifthStageDefeat_IncrementsWithoutOverflow(2, 3)",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "8. `regressionCount: -4`로 만들면 `RegressionCount`는 0이다.",
+            "test": "StageProgressRegressionTests.Constructor_NormalizesStageOnlyForRegression",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "9. `useRegression` `true`, 시작 번호 7이면 `StageNumber`는 2이고, 시작 번호 10이면 5다.",
+            "test": "StageProgressRegressionTests.Constructor_NormalizesStageOnlyForRegression(7,true,2)/(10,true,5)",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "10. `useRegression` `false`, 시작 번호 7이면 `StageNumber`는 7이다.",
+            "test": "StageProgressRegressionTests.Constructor_NormalizesStageOnlyForRegression(7,false,7)",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "11. `upgrades = new StatUpgrades(wallet, 100000, 100000)`, `new StageProgress(wallet, upgrades, battle, new MinRandom(), 5, 5, 1.5, true)`로 결판까지 가면 `Phase`는 `ClearWait`, `StageCleared`는 5를 담아 1번 왔다.",
+            "test": "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "12. 11번 뒤 `Tick(1.4)`이면 `Phase`는 `ClearWait`이고 `GameCleared`는 0번이다.",
+            "test": "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+            "verdict": "있음"
+          },
+          {
+            "id": 14,
+            "condition": "13. 11번 뒤 `Tick(1.6)`이면 `Phase`는 `Cleared`, `GameCleared`는 1번, `battle.Paused`는 `true`, `upgrades.Locked`는 `true`다.",
+            "test": "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+            "verdict": "있음"
+          },
+          {
+            "id": 15,
+            "condition": "14. 13번 뒤 `Tick(10)`을 부르면 `Phase`는 `Cleared`, `StageNumber`는 5 그대로이고 `GameCleared`는 1번 그대로다.",
+            "test": "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+            "verdict": "있음"
+          },
+          {
+            "id": 16,
+            "condition": "15. 11번과 같되 대기 0.0이면 결판 즉시 `Phase`는 `Cleared`이고 `GameCleared`는 1번이다.",
+            "test": "StageProgressRegressionTests.FifthStageVictory_ZeroWaitClearsImmediately",
+            "verdict": "있음"
+          },
+          {
+            "id": 17,
+            "condition": "16. 11번에서 (13번처럼 `Tick(1.6)` 할 때) `GameCleared` 안에서 읽은 `Phase`는 `Cleared`이고, `GameCleared`는 `Changed`보다 먼저 온다.",
+            "test": "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+            "verdict": "있음"
+          },
+          {
+            "id": 18,
+            "condition": "17. 11번과 같되 `useRegression` `false`면 `Tick(1.5)`, `Tick(0.5)` 뒤 `StageNumber`는 6이고 `GameCleared`는 0번이다.",
+            "test": "StageProgressRegressionTests.RegressionDisabled_FifthStageVictoryAdvances",
+            "verdict": "있음"
+          },
+          {
+            "id": 19,
+            "condition": "(추가) `RegressionCount`가 `int.MaxValue`인 진행(`regressionCount: int.MaxValue`)에서 1번처럼 지면 `Regressed`는 `int.MaxValue`를 담아 오고 `RegressionCount`는 `int.MaxValue`다.",
+            "test": "StageProgressRegressionTests.FifthStageDefeat_IncrementsWithoutOverflow(int.MaxValue, int.MaxValue)",
+            "verdict": "있음"
+          },
+          {
+            "id": 20,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프의 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "13번 조건은 '11번 뒤 Tick(1.6)'인데, 테스트는 Tick(1.4) 뒤에 Tick(1.6)을 불러 누적 3.0초에서 확인한다 (StageProgressRegressionTests.cs:131-134). 1.6초만으로도 대기 1.5초를 넘으므로 판정 뜻은 같다."
+          },
+          {
+            "severity": "note",
+            "text": "새 이벤트 Regressed·GameCleared와 속성 UseRegression·RegressionCount에 다른 멤버처럼 XML 주석이 없다 (StageProgress.cs:87-88, 104-105)."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1016,
+          "passed": 1016,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 177,
+          "passed": 177,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "StageProgressRegressionTests.Constructor_NormalizesStageOnlyForRegression",
+        "StageProgressRegressionTests.DefaultRegression_FifthStageDefeatRetries",
+        "StageProgressRegressionTests.EarlierStageDefeat_RetriesWithoutRegression",
+        "StageProgressRegressionTests.FifthStageDefeat_IncrementsWithoutOverflow",
+        "StageProgressRegressionTests.FifthStageDefeat_RegressesInOrderAndPreservesResources",
+        "StageProgressRegressionTests.FifthStageVictory_WaitsThenClearsInOrderAndStaysCleared",
+        "StageProgressRegressionTests.FifthStageVictory_ZeroWaitClearsImmediately",
+        "StageProgressRegressionTests.RegressionDisabled_FifthStageVictoryAdvances"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "094_play_time_ending_text.md",
+      "branch": "task/094_play_time_ending_text",
+      "agents": "codex(시도 1)",
+      "summary": "총 플레이 시간 누적과 엔딩 글자 생성 및 에딧 모드 테스트를 추가했다. Unity 테스트 판정은 루프가 수행한다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "PlayTime과 EndingText가 사양의 연결 지점과 수치대로 순수 C#으로 구현됐다. 완료 조건 18~24마다 기대값을 직접 확인하는 에딧 모드 테스트가 있다. 하지 말 것으로 정한 범위는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Stage/PlayTimeTests.cs`와 `Assets/Tests/EditMode/Stage/EndingTextTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "PlayTimeTests, EndingTextTests 두 파일에 조건 18~24의 테스트가 모두 있음 (통과 여부는 루프가 실행)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "18. `new PlayTime()`의 `Seconds`는 0이다. `Add(1.5)`를 두 번 부르면 3.0이고 `Milliseconds`는 3000이다.",
+            "test": "PlayTimeTests.Add_ValidDeltas_AccumulatesSecondsAndMilliseconds",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "19. `new PlayTime(12.3456)`의 `Milliseconds`는 12345다.",
+            "test": "PlayTimeTests.Milliseconds_FractionalMilliseconds_RoundsDown",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "20. `Add(-1)`, `Add(double.NaN)`, `Add(double.PositiveInfinity)`는 각각 `ArgumentOutOfRangeException`을 던지고 `Seconds`는 그대로다.",
+            "test": "PlayTimeTests.Add_InvalidDelta_ThrowsAndPreservesTime (-1, NaN, +∞, -∞)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "21. `new PlayTime(-5)`와 `new PlayTime(double.NaN)`의 `Seconds`는 0이다.",
+            "test": "PlayTimeTests.Constructor_InvalidInitialSeconds_StartsAtZero",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "22. `EndingText.PlayTime(754.9)`는 `\"플레이 시간 12:34\"`, `PlayTime(0)`은 `\"플레이 시간 00:00\"`, `PlayTime(3725)`는 `\"플레이 시간 62:05\"`다.",
+            "test": "EndingTextTests.PlayTime_ValidSeconds_FormatsMinutesAndSeconds",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "23. `EndingText.PlayTime(-1)`은 `ArgumentOutOfRangeException`을 던진다.",
+            "test": "EndingTextTests.PlayTime_InvalidSeconds_Throws",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "24. `EndingText.Regressions(3)`은 `\"회귀 3회\"`, `Regressions(0)`은 `\"회귀 0회\"`다. `Title`은 `\"천마 토벌\"`, `ReturnButton`은 `\"처음으로\"`다.",
+            "test": "EndingTextTests.Text_RegressionCountsAndConstants_ReturnExpectedStrings",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프의 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "구현 에이전트가 직접 지은 .meta guid(3f728c2e1a3e4c07914d859de6a3f101~104)는 번호만 이어지는 규칙적인 값이다. 형식은 맞지만 다른 파일과 겹치지 않는지는 유니티 가져오기 때 확인된다 (Assets/Scripts/Core/Stage/PlayTime.cs.meta:2 등)."
+          },
+          {
+            "severity": "note",
+            "text": "EndingTextTests.Text_CustomCulture_UsesInvariantNumbers 는 NegativeSign 만 바꿔 검사한다. 문화권과 무관하게 숫자를 만드는지에 대한 보조 검사라서 완료 조건에는 영향이 없다 (Assets/Tests/EditMode/Stage/EndingTextTests.cs:38)."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1036,
+          "passed": 1036,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 177,
+          "passed": 177,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "EndingTextTests.PlayTime_InvalidSeconds_Throws",
+        "EndingTextTests.PlayTime_ValidSeconds_FormatsMinutesAndSeconds",
+        "EndingTextTests.Text_CustomCulture_UsesInvariantNumbers",
+        "EndingTextTests.Text_RegressionCountsAndConstants_ReturnExpectedStrings",
+        "PlayTimeTests.Add_InvalidDelta_ThrowsAndPreservesTime",
+        "PlayTimeTests.Add_ValidDeltas_AccumulatesSecondsAndMilliseconds",
+        "PlayTimeTests.Constructor_InvalidInitialSeconds_StartsAtZero",
+        "PlayTimeTests.Milliseconds_FractionalMilliseconds_RoundsDown"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "사양에서 정의하지 않은 극단적인 누적 시간의 부동소수점 및 long 범위 초과는 별도 상한을 두지 않고 기본 숫자 연산에 따른다.",
+        "공개 연결 지점과 기존 사양은 변경하지 않았다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "095_save_regression_fields.md",
+      "branch": "task/095_save_regression_fields",
+      "agents": "codex(시도 1)",
+      "summary": "판 2 저장에 회귀 횟수·플레이 시간·자동 강화 상태를 추가하고 저장 삭제와 자동 저장 끄기를 구현했다. 호환성 및 삭제 회귀 테스트와 저장 사양을 갱신했다. Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "요구사항(세 줄 저장·읽기, TryDelete, Disable, Capture·AutoSave 선택 인자, 가짜 저장소 갱신, 사양 갱신)이 모두 코드에 있고, 25~30번과 플레이 모드 조건마다 상황과 기대값을 직접 검사하는 테스트가 있다. 판 번호, GameRoot, 다른 기능 내부 코드는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Save/SaveRegressionFieldsTests.cs`에 아래 25~30번 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "SaveRegressionFieldsTests (25~30번 각 테스트 존재, 통과 여부는 루프 실행)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "25. `new SaveData(…, regressionCount: 3, playTimeMs: 754900, autoUpgrade: false)`을 `Encode`하면 마지막 세 줄이 `regressionCount=3`, `playTimeMs=754900`, `autoUpgrade=0`이고, `Decode`하면 같은 세 값이 나온다.",
+            "test": "SaveRegressionFieldsTests.EncodeDecode_RegressionFields_RoundTrips",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "26. 세 줄이 없는 판 2 글자를 `Decode`하면 `Loaded`이고 `RegressionCount` 0, `PlayTimeMs` 0, `AutoUpgrade` `true`다.",
+            "test": "SaveRegressionFieldsTests.Decode_OldVersionTwo_DefaultsNewFields",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "27. `playTimeMs=abc` 줄이 있으면 `Corrupt`다. `autoUpgrade=5`는 `true`로 읽는다.",
+            "test": "SaveRegressionFieldsTests.Decode_InvalidNewField_IsCorrupt(\"playTimeMs=abc\\n\"), Decode_NonzeroAutoUpgrade_IsTrue",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "28. `Capture`에 `RegressionCount` 2인 `StageProgress`, `Seconds` 12.5인 `PlayTime`, 꺼진 `AutoUpgrade`를 넘기면 `RegressionCount` 2, `PlayTimeMs` 12500, `AutoUpgrade` `false`다. 둘을 `null`로 넘기면 0, `true`다.",
+            "test": "SaveRegressionFieldsTests.Capture_NewValuesAndNullOptions_CopiesExpectedValues",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "29. `MemorySaveStore`에 `TryWrite(\"a\")` 뒤 `TryDelete()`는 `true`이고 `Text`는 `null`이다.",
+            "test": "SaveRegressionFieldsTests.MemoryStore_Delete_ClearsText",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "30. `AutoSave.Disable()` 뒤 금화가 바뀌고 `Flush`를 불러도 저장소에 쓰지 않는다.",
+            "test": "SaveRegressionFieldsTests.Disable_StopsWritesUntilEnabled",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "추가) `Assets/Tests/PlayMode/Save/FileSaveStoreTests.cs`에 테스트를 더한다: 임시 폴더의 `FileSaveStore`에 `TryWrite(\"abc\")` 뒤 `TryDelete()`는 `true`이고 `save.dat`는 없다. 파일이 없는 상태에서 `TryDelete()`도 `true`다.",
+            "test": "FileSaveStoreTests.TryDelete_ExistingAndMissingFiles_Succeeds",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "`SaveCodecTests.Encode_StandardData_ProducesExactText`가 요구사항의 새 `Standard` 값으로 통과한다.",
+            "test": "SaveCodecTests.Encode_StandardData_ProducesExactText (Standard 상수가 요구사항 값과 정확히 같음)",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "Capture_NewValuesAndNullOptions_CopiesExpectedValues(SaveRegressionFieldsTests.cs:63)의 null 경우는 PlayTimeMs 0, AutoUpgrade true만 검사한다. 조건의 '0, true'와 맞으므로 문제는 아니다."
+          },
+          {
+            "severity": "note",
+            "text": "docs/spec/save.md의 AutoSave 주석이 'realm 은 구독하지 않는다'에서 'realm.ProgressChanged 를 구독한다'로 바뀌었다. 실제 코드(AutoSave.cs:35)와 맞추는 문서 정정이며 동작 변경은 아니다."
+          },
+          {
+            "severity": "note",
+            "text": "Disable은 IsDirty와 재시도 대기를 그대로 둔다(보고서의 가정). 작업 문서의 '지금 Enabled 검사 그대로' 요구와 regression.md의 Disable 설명과 어긋나지 않는다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1047,
+          "passed": 1047,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 178,
+          "passed": 178,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "FileSaveStoreTests.TryDelete_ExistingAndMissingFiles_Succeeds",
+        "SaveRegressionFieldsTests.AutoSave_OptionalFields_AreWritten",
+        "SaveRegressionFieldsTests.Capture_NewValuesAndNullOptions_CopiesExpectedValues",
+        "SaveRegressionFieldsTests.Decode_InvalidNewField_IsCorrupt",
+        "SaveRegressionFieldsTests.Decode_NonzeroAutoUpgrade_IsTrue",
+        "SaveRegressionFieldsTests.Decode_OldVersionTwo_DefaultsNewFields",
+        "SaveRegressionFieldsTests.Disable_StopsWritesUntilEnabled",
+        "SaveRegressionFieldsTests.EncodeDecode_NegativeValues_ArePreserved",
+        "SaveRegressionFieldsTests.EncodeDecode_RegressionFields_RoundTrips",
+        "SaveRegressionFieldsTests.MemoryStore_Delete_ClearsText"
+      ],
+      "screen_files": [
+        "Assets/Scripts/Game/Save/FileSaveStore.cs"
+      ],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "`Disable`은 기존 변경 표시와 재시도 대기를 지우지 않으며, 다시 켜면 기존 상태를 이어간다. 기존 `Enabled` 검사만 바꾸라는 요구를 따랐다.",
+        "명시된 네 가짜 저장소 외에 추가 `ISaveStore` 구현은 없다. 공개 연결 지점은 회귀 사양과 같다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "096_ending_view.md",
+      "branch": "task/096_ending_view",
+      "agents": "codex(시도 1)",
+      "summary": "회귀·플레이 시간·엔딩 화면과 저장 삭제를 연결하고 플레이 모드 및 흐름 테스트와 사양을 갱신했습니다. Unity 테스트는 루프 판정을 기다립니다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "EndingView 화면, GameRoot 의 PlayTime·회귀 규칙·저장된 세 값·엔딩 조립(자동 저장 끄기 → 저장 지우기 → 엔딩)이 요구사항대로 들어갔고, 완료 조건마다 그것을 직접 검사하는 테스트가 있다. FullRoundFlowTests 에서 지워진 2회차·저장 검사는 작업 문서가 바꾸라고 한 것이고, 검사 수는 14개에서 15개로 늘어 뜻이 약해지지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "화면 코드가 컴파일되고 기존 테스트가 모두 통과한다 (`FullRoundFlowTests`는 요구사항에 적은 본문으로).",
+            "test": "루프의 컴파일·전체 테스트 실행",
+            "verdict": "루프가 판정"
+          },
+          {
+            "id": 2,
+            "condition": "31. `Assets/Tests/PlayMode/Stage/EndingViewTests.cs`: `EndingView.Initialize(canvas, 754.9, 3, onReturn)`이면 `EndingPanel`, `EndingTitle`(`\"천마 토벌\"`), `EndingPlayTime`(`\"플레이 시간 12:34\"`), `EndingRegressions`(`\"회귀 3회\"`), `EndingReturnButton`이 있고, 버튼을 누르면 `onReturn`이 1번 불린다.",
+            "test": "EndingViewTests.Initialize_ShowsEndingAndReturnsOnce",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "32. `Assets/Tests/PlayMode/Stage/GameRootRegressionTests.cs`: 첫 씬을 불러오면 `GameRoot.StageProgress.UseRegression`은 `true`이고 `GameRoot.PlayTime`은 `null`이 아니다.",
+            "test": "GameRootRegressionTests.FirstScene_EnablesRegressionAndCreatesPlayTime",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "33. 같은 파일: 첫 씬에서 게임을 시작해(`GameFlow.ResetToFreshLaunch()` 뒤) 실제 시간 2초가 지나면 `GameRoot.PlayTime.Seconds`는 1.0보다 크다.",
+            "test": "GameRootRegressionTests.FreshGame_AfterTwoSeconds_AccumulatesPlayTime",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "34. `FullRoundFlowTests.FreshLaunch_DefeatFinalBoss_ShowsEndingAndClearsSave`: 지금처럼 강하게 강화해 진행하면 천마 처치 뒤 `Phase`가 `Cleared`가 되고, `[EndingView]`가 있으며, 배치 저장소의 `Text`는 `null`이다 (요구사항의 검사 15개).",
+            "test": "FullRoundFlowTests.FreshLaunch_DefeatFinalBoss_ShowsEndingAndClearsSave",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "35. 에디터에서 약한 상태로 천마에게 지면 1-1로 돌아가고 금화·강화 레벨·경지가 그대로다. 에디터에서 실행해 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          },
+          {
+            "id": 7,
+            "condition": "36. 천마를 이기면 엔딩 화면에 `천마 토벌`, 플레이 시간, 회귀 횟수가 보이고, `처음으로`를 누르면 시작 화면에 이어하기 없이 처음 시작만 있다. 에디터에서 실행해 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "FullRoundFlowTests.cs:59-67 에 새로 넣은 검사 6개에는 실패 메시지가 없다. 원래 검사들에는 메시지가 붙어 있었다. 동작에는 영향이 없다."
+          },
+          {
+            "severity": "note",
+            "text": "EndingView.cs:48 버튼 바탕으로 시작 버튼 그림을 그대로 쓴다. 그 그림에 원래 글자가 들어 있으면 `처음으로` 글자와 겹칠 수 있다. 보고서의 '사람이 확인할 것'에 이미 적혀 있다."
+          },
+          {
+            "severity": "note",
+            "text": "공개 속성 이름 `Ending`, 글자 영역 크기(600×48, 600×28), 버튼 글자 자식 이름 `Label`은 보고서의 가정에 적혀 있고, regression.md 의 연결 지점·화면 절에도 반영되어 있다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1047,
+          "passed": 1047,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 181,
+          "passed": 181,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "EndingViewTests.Initialize_ShowsEndingAndReturnsOnce",
+        "GameRootRegressionTests.FirstScene_EnablesRegressionAndCreatesPlayTime",
+        "GameRootRegressionTests.FreshGame_AfterTwoSeconds_AccumulatesPlayTime"
+      ],
+      "screen_files": [
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/Stage/EndingView.cs"
+      ],
+      "human_conditions": [
+        "35. 에디터에서 약한 상태로 천마에게 지면 1-1로 돌아가고 금화·강화 레벨·경지가 그대로다. 에디터에서 실행해 확인한다.",
+        "36. 천마를 이기면 엔딩 화면에 `천마 토벌`, 플레이 시간, 회귀 횟수가 보이고, `처음으로`를 누르면 시작 화면에 이어하기 없이 처음 시작만 있다. 에디터에서 실행해 확인한다."
+      ],
+      "gate_warnings": [
+        "`Assets/Tests/PlayMode/Flow/FullRoundFlowTests.cs` — 있던 검사(Assert) 5줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(root.StageProgress.RoundNumber, Is.EqualTo(2), \"천마 처치 후 2회차여야 합니다.\");`\n  - 지워짐: `Assert.That(root.StageProgress.DisplayStageNumber, Is.EqualTo(1), \"2회차의 표시 스테이지는 1이어야 합니다.\");`\n  - 지워짐: `Assert.That(root.StageProgress.SubstageNumber, Is.EqualTo(1), \"2회차는 첫 구간에서 시작해야 합니다.\");`\n  - 지워짐: `Assert.That(saved.Status, Is.EqualTo(SaveLoadStatus.Loaded), \"자동 저장을 읽을 수 있어야 합니다.\");`\n  - 지워짐: `Assert.That(saved.Data.StageNumber, Is.EqualTo(6), \"자동 저장에 다음 회차 스테이지가 기록되어야 합니다.\");`\n  - 새로 들어옴: `Assert.That(root.StageProgress.Phase, Is.EqualTo(StagePhase.Cleared));`\n  - 새로 들어옴: `Assert.That(root.StageProgress.StageNumber, Is.EqualTo(5));`\n  - 새로 들어옴: `Assert.That(root.StageProgress.RegressionCount, Is.EqualTo(0));`\n  - 새로 들어옴: `Assert.That(root.transform.Find(\"[EndingView]\"), Is.Not.Null);`\n  - 새로 들어옴: `Assert.That(store.Text, Is.Null);`\n  - 새로 들어옴: `Assert.That(root.AutoSave.Enabled, Is.False);`"
+      ],
+      "assumptions": [
+        "엔딩 화면을 찾는 공개 속성 이름은 `Ending`으로 정하고 회귀 사양의 연결 지점에 추가했다.",
+        "글자 영역의 임시 크기는 제목 600×48, 시간과 회귀 횟수 각각 600×28로 정했다. 버튼 글자 자식 이름은 `Label`이다.",
+        "기존 시작 버튼 그림에 원래 글자가 포함되어 있어도 지정된 그림을 그대로 사용한다."
+      ],
+      "human_report": [
+        "에디터에서 약한 상태로 천마에게 지면 1-1로 돌아가고 금화·강화 레벨·경지가 그대로인지 확인한다.",
+        "천마를 이기면 엔딩 화면에 `천마 토벌`, 플레이 시간, 회귀 횟수가 보이고, `처음으로`를 누르면 시작 화면에 이어하기 없이 처음 시작만 있는지 에디터에서 확인한다.",
+        "시작 버튼 그림에 포함된 기존 글자와 엔딩 버튼 글자가 겹쳐 보이는지 확인한다."
+      ],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}

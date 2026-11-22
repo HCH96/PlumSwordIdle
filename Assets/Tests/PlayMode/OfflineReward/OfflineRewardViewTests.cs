@@ -21,6 +21,7 @@ namespace PlumSword.Game.Tests.OfflineReward
         private sealed class Store : ISaveStore
         {
             public bool Succeeds;
+            public bool TryDelete() => true;
             public bool TryWrite(string text) => Succeeds;
         }
 

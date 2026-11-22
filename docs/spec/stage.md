@@ -19,7 +19,7 @@
 - `Begin()`은 최초 한 번 큰 스테이지를 배치한다. 전투를 초기화하고, 작은 번호 `SubstageNumber = 1`, 처치 수 0, 보스 없음으로 둔 뒤 첫 무리를 만든다(5스테이지는 위 예외). `StageStarted`와 `Changed`를 보낸다. 다시 부르면 아무 일도 없다.
 - 일반 구간 1~6은 매번 `Random.Next(2, 4)`로 상대 수를 독립적으로 고른다. 현재 제자 위치에서 앞쪽 24유닛을 무리 중심으로 두고 상대 중심 간격을 2유닛으로 배치한다. 예: 중심 24이면 2명은 23·25, 3명은 22·24·26이다. 한 번에 현재 구간의 무리만 배치한다.
 - 현재 무리의 일반 상대를 모두 쓰러뜨리면 설정된 결판 뒤 대기 후 0.5초 페이드아웃하고 가려진 순간 다음 구간을 제자의 현재 위치를 기준으로 배치한 뒤 0.5초 페이드인한다. 여섯 번째 무리 뒤에는 7구간의 보스를 제자 앞 24유닛에 배치한다. 실제 현재 무리에 속한 적만 구간 완료 판단에 포함한다.
-- 대기 시간이 양수인 성공 전환은 보상과 처치 수를 즉시 반영하고 `ClearWait`에서 강화를 잠그고 제자 전진만 막는다. 전투는 계속되지만 전투 알림은 무시하며 보스와 보스 활성 상태는 다음 배치까지 유지한다. 대기가 끝나면 전투를 멈추고 페이드아웃하며, 대기에서 남는 시간은 페이드에 넘긴다. 가려진 순간 제자리 유지를 푼다. 대기 시간이 0이면 바로 페이드아웃한다. 실패는 대기 없이 전환한다. 페이드인이 끝나면 강화 잠금을 풀고 구간 소개를 보여 준다.
+- 대기 시간이 양수인 성공 전환은 보상과 처치 수를 즉시 반영하고 `ClearWait`에서 강화를 잠그고 제자 전진만 막는다. 전투는 계속되지만 전투 알림은 무시하며 보스와 보스 활성 상태는 다음 배치까지 유지한다. 대기가 끝나면 전투를 멈추고 페이드아웃하며, 대기에서 남는 시간은 페이드에 넘긴다. 가려진 순간 제자리 유지를 푼다. 대기 시간이 0이면 바로 페이드아웃한다. 회귀 규칙을 켠 천마 처치는 대기 뒤(대기 0이면 즉시) 페이드 대신 `Cleared`로 간다. 실패는 대기 없이 전환한다. 페이드인이 끝나면 강화 잠금을 풀고 구간 소개를 보여 준다.
 - 성공한 보스의 금화를 지급하고 다음 번호를 기억한 다음 전환 상태에서 `StageCleared`와 `Changed`를 순서대로 보낸다. 일반 구간 성공과 대기 종료 때도 `Changed`를 보낸다. 대기 시간은 설정값에서 1e-9초를 뺀 값 이상이면 끝난 것으로 판정한다.
 - 각 일반 구간과 보스 구간이 시작하면 `SubstageIntro` 상태에서 번호를 1.2초 표시하며 전투를 멈춘다. 강화는 잠그지 않는다. 1회차에서 처음 방문한 큰 스테이지는 기존 테마 소개를 3초 표시한 뒤 구간 번호를 1.2초 표시한다. 테마 소개는 본 큰 스테이지에서는 다시 보이지 않지만, 구간 번호는 매 구간마다 표시한다.
 - 적 처치 보상은 기존 그대로다. 일반 상대는 `10 + 2 × (StageNumber - 1)`, 보스는 `50 + 10 × (StageNumber - 1)` 금화다. 일반 적과 제자가 같은 전투 칸에서 쓰러지면 적의 보상은 지급하지만 구간은 진행하지 않고 실패한다. 보스와 제자가 동시에 쓰러지면 보스 보상 없이 실패한다.
@@ -45,11 +45,17 @@
 
 ## 연결 지점
 
-- `StageProgress(Wallet, StatUpgrades, Battle, Random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0)`: 필수 인자 `null`은 예외, 시작 번호는 최소 1, 본 소개 번호는 0~5로 자른다. 대기 시간이 음수·NaN·무한대면 `ArgumentOutOfRangeException`. 생성 시 전투를 시작하지 않는다.
+- `StageProgress(Wallet, StatUpgrades, Battle, Random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0, bool useRegression = false, int regressionCount = 0)`: 필수 인자 `null`은 예외, 시작 번호는 최소 1, 본 소개 번호는 0~5로 자른다. 대기 시간이 음수·NaN·무한대면 `ArgumentOutOfRangeException`. 생성 시 전투를 시작하지 않는다.
+- `useRegression`은 천마 패배 시 회귀와 처치 시 종료를 켠다. `regressionCount`는 음수를 0으로 보정한 초기 회귀 횟수다.
+- `UseRegression`은 회귀 규칙 사용 여부를 읽는다.
+- `RegressionCount`는 현재 회귀 횟수를 읽는다.
+- `Regressed`는 회귀 시 새 회귀 횟수를 보낸다.
+- `GameCleared`는 천마 처치 후 종료 상태가 되었을 때 보낸다.
+- `StagePhase.Cleared = 6`은 종료 상태이며 Tick과 전투 알림을 무시한다.
 - `ClearWaitSeconds`는 설정된 대기 시간을 읽는다. `DefaultClearWaitSeconds = 1.5`는 게임에서 사용할 임시 상수다.
 - `StageNumber`, `DisplayStageNumber`, `RoundNumber`, `SubstageNumber`(1~7), `Phase`, `HasBegun`, `DefeatedNormalCount`, `Boss`, `IsBossActive`, `IsIntroShowing`, `IsSubstageIntroShowing`, `SeenIntroStage`, `BarRatio`, `FadeAlpha`를 읽는다.
 - `Begin()`과 `Tick(double)`을 호출하고 `StageStarted`, `StageCleared`, `StageFailed`, `Changed`를 구독한다. 스테이지 이벤트의 숫자는 작은 번호가 아니라 전체 큰 스테이지 번호다.
-- `StagePhase`는 `Playing = 0`, `FadingOut = 1`, `FadingIn = 2`, `Intro = 3`, `SubstageIntro = 4`, `ClearWait = 5`다.
+- `StagePhase`는 `Playing = 0`, `FadingOut = 1`, `FadingIn = 2`, `Intro = 3`, `SubstageIntro = 4`, `ClearWait = 5`, `Cleared = 6`이다.
 - `StageLayout.SubstagePositions(Random, double center)`는 무리 하나의 2~3개 좌표를 반환한다. `NormalSubstageCount = 6`, `MinSubstageEnemies = 2`, `MaxGroupSize = 3`, `EncounterDistance = 24`, `InGroupSpacing = 2`, `BossDistance = 24`. 기존 `FirstGroupPosition = 6`, `RollGroups`·`Positions`와 `NormalCount`는 이전 호출과 테스트 호환용이며 현재 스테이지 배치에 사용하지 않는다.
 - `public const int StageLayout.FinalDisplayStage = 5`: 일반 구간 없이 최종 보스만 나오는 화면상 큰 스테이지 번호.
 - `StageRewards.NormalGold(int)`와 `BossGold(int)`는 1 미만에 예외를 던진다. `StageText`는 기존 회차·테마·보스 이름과 영문 테마 소개를 제공한다. 1스테이지 소개는 `Mount Hua and Jongnam disciples spar in Mount Hua's training yard.`이다.

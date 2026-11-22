@@ -6,6 +6,8 @@ namespace PlumSword.Core.Save
     {
         public string Text { get; private set; }
 
+        public bool TryDelete() { Text = null; return true; }
+
         public bool TryWrite(string text)
         {
             if (text == null) throw new ArgumentNullException(nameof(text));

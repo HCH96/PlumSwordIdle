@@ -19,7 +19,10 @@ namespace PlumSword.Core.Save
                 "realmKills=" + data.RealmKills.ToString(culture) + "\n" +
                 "stageNumber=" + data.StageNumber.ToString(culture) + "\n" +
                 "seenIntroStage=" + data.SeenIntroStage.ToString(culture) + "\n" +
-                "savedAtUtcTicks=" + data.SavedAtUtcTicks.ToString(culture) + "\n";
+                "savedAtUtcTicks=" + data.SavedAtUtcTicks.ToString(culture) + "\n" +
+                "regressionCount=" + data.RegressionCount.ToString(culture) + "\n" +
+                "playTimeMs=" + data.PlayTimeMs.ToString(culture) + "\n" +
+                "autoUpgrade=" + (data.AutoUpgrade ? "1" : "0") + "\n";
         }
 
         public static SaveLoadResult Decode(string text)
@@ -53,7 +56,14 @@ namespace PlumSword.Core.Save
             int kills = 0;
             if (fields.ContainsKey("realmKills") && !TryInt(fields, "realmKills", out kills))
                 return new SaveLoadResult(SaveLoadStatus.Corrupt, null);
-            return new SaveLoadResult(SaveLoadStatus.Loaded, new SaveData(gold, attack, health, innerPower, realm, stage, seen, ticks, kills));
+            int regressionCount = 0;
+            long playTimeMs = 0;
+            int autoUpgrade = 1;
+            if ((fields.ContainsKey("regressionCount") && !TryInt(fields, "regressionCount", out regressionCount)) ||
+                (fields.ContainsKey("playTimeMs") && !TryLong(fields, "playTimeMs", out playTimeMs)) ||
+                (fields.ContainsKey("autoUpgrade") && !TryInt(fields, "autoUpgrade", out autoUpgrade)))
+                return new SaveLoadResult(SaveLoadStatus.Corrupt, null);
+            return new SaveLoadResult(SaveLoadStatus.Loaded, new SaveData(gold, attack, health, innerPower, realm, stage, seen, ticks, kills, regressionCount, playTimeMs, autoUpgrade != 0));
         }
 
         private static bool TryInt(Dictionary<string, string> fields, string name, out int value)

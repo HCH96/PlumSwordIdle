@@ -14,15 +14,20 @@ namespace PlumSword.Core.Save
         private readonly StatUpgrades upgrades;
         private readonly RealmProgress realm;
         private readonly StageProgress stage;
+        private readonly PlayTime playTime;
+        private readonly AutoUpgrade autoUpgrade;
         private double retryRemaining;
 
-        public AutoSave(ISaveStore store, Wallet wallet, StatUpgrades upgrades, RealmProgress realm, StageProgress stage, bool enabled = true)
+        public AutoSave(ISaveStore store, Wallet wallet, StatUpgrades upgrades, RealmProgress realm, StageProgress stage, bool enabled = true,
+            PlayTime playTime = null, AutoUpgrade autoUpgrade = null)
         {
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             this.upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
             this.realm = realm ?? throw new ArgumentNullException(nameof(realm));
             this.stage = stage ?? throw new ArgumentNullException(nameof(stage));
+            this.playTime = playTime;
+            this.autoUpgrade = autoUpgrade;
             Enabled = enabled;
             wallet.BalanceChanged += OnBalanceChanged;
             upgrades.Upgraded += OnUpgraded;
@@ -36,6 +41,7 @@ namespace PlumSword.Core.Save
         public event Action<bool> FailedChanged;
 
         public void Enable() => Enabled = true;
+        public void Disable() => Enabled = false;
 
         public void Tick(double deltaSeconds)
         {
@@ -51,7 +57,7 @@ namespace PlumSword.Core.Save
 
         private bool Write(long nowUtcTicks)
         {
-            var text = SaveCodec.Encode(SaveData.Capture(wallet, upgrades, realm, stage, nowUtcTicks));
+            var text = SaveCodec.Encode(SaveData.Capture(wallet, upgrades, realm, stage, nowUtcTicks, playTime, autoUpgrade));
             bool succeeded;
             try { succeeded = store.TryWrite(text); }
             catch (Exception) { succeeded = false; }

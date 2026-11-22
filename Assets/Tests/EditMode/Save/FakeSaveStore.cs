@@ -9,6 +9,7 @@ namespace PlumSword.Core.Tests.Save
         public string LastText { get; private set; }
         public bool Succeeds { get; set; } = true;
         public bool Throws { get; set; }
+        public bool TryDelete() { LastText = null; return true; }
 
         public bool TryWrite(string text)
         {

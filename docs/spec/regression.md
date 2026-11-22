@@ -176,6 +176,7 @@ namespace PlumSword.Game
         // AutoSave 에 PlayTime, AutoUpgrade 를 넘긴다. Update 에서 "동작"의 조건일 때 PlayTime.Add(Time.deltaTime).
         // StageProgress.GameCleared 에서 "동작"의 엔딩 1~3.
         public PlumSword.Core.Stage.PlayTime PlayTime { get; }
+        public PlumSword.Game.Stage.EndingView Ending { get; }
     }
 }
 
@@ -190,7 +191,7 @@ namespace PlumSword.Game.Stage
 }
 ```
 
-- 누가 만들고 누가 들고 있는지: `GameRoot.Awake`가 `PlayTime`을 하나 만들어 들고 있는다. 회귀 횟수는 `StageProgress`가 들고 있다. `EndingView`는 `GameCleared` 때 `GameRoot`가 만든다.
+- 누가 만들고 누가 들고 있는지: `GameRoot.Awake`가 `PlayTime`을 하나 만들어 들고 있는다. 회귀 횟수는 `StageProgress`가 들고 있다. `EndingView`는 `GameCleared` 때 `GameRoot`가 만들어 `Ending`에 담는다.
 - 시뮬레이터는 `useRegression: true`로 `StageProgress`를 만들고, `PlayTime` 대신 흐른 시뮬레이션 시간을 센다.
 
 ### 필요한 것
@@ -204,9 +205,9 @@ namespace PlumSword.Game.Stage
 
 - **회귀**: 별도 화면 없음. 지금의 실패 전환(페이드, 제자 쓰러짐 대기)과 같다.
 - **엔딩 화면** `EndingView` (`[Game]`의 자식 `[EndingView]`):
-  - `EndingPanel`: 캔버스 전체를 덮는 이미지, 색 RGBA (0.05, 0.02, 0.06, 0.92) (임시). 뒤의 입력을 막는다.
+  - `EndingPanel`: 캔버스의 마지막 자식으로 전체를 덮는 이미지, 색 RGBA (0.05, 0.02, 0.06, 0.92) (임시). 뒤의 입력을 막는다.
   - 글자 셋(TMP, Galmuri11, 가운데 정렬, 밝은 아이보리 RGB (1, 0.95, 0.85)): `EndingTitle` `EndingText.Title`(크기 36, 위치 캔버스 가운데 기준 (0, 60)), `EndingPlayTime` `EndingText.PlayTime(플레이 시간)`(크기 18, (0, 0)), `EndingRegressions` `EndingText.Regressions(회귀 횟수)`(크기 18, (0, −30)). 크기·위치는 임시.
-  - 버튼 `EndingReturnButton`: 가운데 기준 (0, −90), 160×40, 글자 `EndingText.ReturnButton`(Galmuri11, 크기 16). 바탕은 시작 화면 버튼 그림이 있으면 그것, 없으면 단색 RGB (0.35, 0.12, 0.2) (임시).
+  - 버튼 `EndingReturnButton`: 가운데 기준 (0, −90), 160×40, 자식 `Label`에 `EndingText.ReturnButton`(Galmuri11, 크기 16). 바탕은 시작 화면 버튼 그림이 있으면 그것, 없으면 단색 RGB (0.35, 0.12, 0.2) (임시). 콜백은 한 번만 호출한다.
   - 플레이 시간과 회귀 횟수는 엔딩을 띄운 순간의 값으로 고정한다.
   - 엔딩 동안 소리는 지금 상태 그대로 둔다 (새 음악 없음).
 - 글자는 Core(`EndingText`)에서 만들고 에딧 모드 테스트로 판정한다. 화면 오브젝트와 버튼은 플레이 모드 테스트로 확인한다.
