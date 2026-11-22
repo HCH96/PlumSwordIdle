@@ -18,6 +18,7 @@ namespace PlumSword.Core.Stage
         /// <summary>스테이지 소개를 보여 주는 길이 (초, 임시).</summary>
         public const double IntroSeconds = 3.0;
         public const double SubstageIntroSeconds = 1.2;
+        public const double DefaultClearWaitSeconds = 1.5;
 
         private readonly Wallet _wallet;
         private readonly StatUpgrades _upgrades;
@@ -33,6 +34,7 @@ namespace PlumSword.Core.Stage
 
         /// <summary>현재 페이드 단계에서 흐른 시간 (초).</summary>
         private double _fadeElapsed;
+        private double _clearWaitElapsed;
 
         /// <summary>소개 단계에서 흐른 시간 (초).</summary>
         private double _introElapsed;
@@ -47,12 +49,15 @@ namespace PlumSword.Core.Stage
         /// startStage: 1 보다 작으면 1 로 만든다 (예외 없음).
         /// 생성자는 전투·지갑·강화를 건드리지 않고 알림을 보내지 않는다.
         /// </summary>
-        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5)
+        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0)
         {
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
             _battle = battle ?? throw new ArgumentNullException(nameof(battle));
             _random = random ?? throw new ArgumentNullException(nameof(random));
+            if (double.IsNaN(clearWaitSeconds) || double.IsInfinity(clearWaitSeconds) || clearWaitSeconds < 0.0)
+                throw new ArgumentOutOfRangeException(nameof(clearWaitSeconds));
+            ClearWaitSeconds = clearWaitSeconds;
 
             StageNumber = startStage < 1 ? 1 : startStage;
             SeenIntroStage = Math.Max(0, Math.Min(5, seenIntroStage));
@@ -70,7 +75,7 @@ namespace PlumSword.Core.Stage
         /// <summary>스테이지가 배치된 뒤에 그 번호를 담아 보낸다 (Begin, 그리고 가려진 순간의 교체).</summary>
         public event Action<int> StageStarted;
 
-        /// <summary>보스를 처치해 성공했을 때 끝난 스테이지 번호를 담아 보낸다. 이때 Phase 는 이미 FadingOut.</summary>
+        /// <summary>보스를 처치해 성공했을 때 끝난 스테이지 번호를 담아 보낸다. Phase는 ClearWait 또는 FadingOut이다.</summary>
         public event Action<int> StageCleared;
 
         /// <summary>제자가 쓰러져 실패했을 때 그 스테이지 번호를 담아 보낸다. 이때 Phase 는 이미 FadingOut.</summary>
@@ -89,6 +94,7 @@ namespace PlumSword.Core.Stage
         public int RoundNumber => (StageNumber - 1) / 5 + 1;
 
         public StagePhase Phase { get; private set; }
+        public double ClearWaitSeconds { get; }
 
         /// <summary>1회차에서 소개를 본 마지막 화면상 스테이지 번호 (0~5). 저장 값.</summary>
         public int SeenIntroStage { get; private set; }
@@ -175,7 +181,16 @@ namespace PlumSword.Core.Stage
                 return;
             }
 
-            if (Phase == StagePhase.Intro || Phase == StagePhase.SubstageIntro)
+            if (Phase == StagePhase.ClearWait)
+            {
+                _clearWaitElapsed += deltaSeconds;
+                if (_clearWaitElapsed < ClearWaitSeconds - FadeTolerance) return;
+                _fadeElapsed = Math.Max(0.0, _clearWaitElapsed - ClearWaitSeconds);
+                Phase = StagePhase.FadingOut;
+                _battle.SetPaused(true);
+                Changed?.Invoke();
+            }
+            else if (Phase == StagePhase.Intro || Phase == StagePhase.SubstageIntro)
                 _introElapsed += deltaSeconds;
             else
                 _fadeElapsed += deltaSeconds;
@@ -183,6 +198,7 @@ namespace PlumSword.Core.Stage
             // 1. 가려진 순간의 교체. 남은 시간은 페이드인으로 넘긴다.
             if (Phase == StagePhase.FadingOut && _fadeElapsed >= FadeSeconds - FadeTolerance)
             {
+                _battle.SetHoldPosition(false);
                 bool newStage = !_substageTransition;
                 if (_substageTransition)
                 {
@@ -316,7 +332,9 @@ namespace PlumSword.Core.Stage
 
             int cleared = StageNumber;
             _wallet.Add(StageRewards.BossGold(cleared));
-            BeginTransition(cleared == int.MaxValue ? int.MaxValue : cleared + 1);
+            _substageTransition = false;
+            _nextStageNumber = cleared == int.MaxValue ? int.MaxValue : cleared + 1;
+            BeginSuccessTransition();
             StageCleared?.Invoke(cleared);
             Changed?.Invoke();
         }
@@ -335,6 +353,23 @@ namespace PlumSword.Core.Stage
             _upgrades.SetLocked(true);
         }
 
+        private void BeginSuccessTransition()
+        {
+            if (ClearWaitSeconds <= 0.0)
+            {
+                Phase = StagePhase.FadingOut;
+                _fadeElapsed = 0.0;
+                _battle.SetPaused(true);
+            }
+            else
+            {
+                Phase = StagePhase.ClearWait;
+                _clearWaitElapsed = 0.0;
+                _battle.SetHoldPosition(true);
+            }
+            _upgrades.SetLocked(true);
+        }
+
         /// <summary>일반 상대 보상·처치 수를 갱신하고 현재 무리를 모두 이기면 다음 구간을 시작한다.</summary>
         private void OnNormalDefeated(Enemy enemy)
         {
@@ -343,10 +378,7 @@ namespace PlumSword.Core.Stage
             if (_substageEnemies.Remove(enemy) && _substageEnemies.Count == 0 && !_battle.IsDiscipleDefeated)
             {
                 _substageTransition = true;
-                Phase = StagePhase.FadingOut;
-                _fadeElapsed = 0.0;
-                _battle.SetPaused(true);
-                _upgrades.SetLocked(true);
+                BeginSuccessTransition();
             }
 
             Changed?.Invoke();

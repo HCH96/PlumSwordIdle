@@ -17,5 +17,8 @@ namespace PlumSword.Core.Stage
 
         /// <summary>작은 스테이지 번호를 잠시 표시하는 동안 전투를 멈춘다.</summary>
         SubstageIntro = 4,
+
+        /// <summary>마지막 적을 이긴 뒤 전환까지 기다리는 중. 전투는 계속되고 제자는 제자리에 선다.</summary>
+        ClearWait = 5,
     }
 }
