@@ -1,0 +1,7 @@
+{
+  "_설명": "1안: 천마 고정값만 바꾼다. 나머지는 기본값.",
+  "_FinalBossHealth": "천마 체력 (기본 보스 공식 220)",
+  "FinalBossHealth": 1500,
+  "_FinalBossAttack": "천마 공격력 (기본 보스 공식 26)",
+  "FinalBossAttack": 80
+}

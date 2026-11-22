@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    밸런스 시뮬레이터. 유니티 없이 Assets/Scripts/Core 의 소스를 그대로 컴파일해
+    게임과 같은 계산으로 플레이를 돌린다. 사용법은 README.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>PlumSword.BalanceSim</RootNamespace>
+    <AssemblyName>BalanceSim</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Core/**/*.cs" LinkBase="Core" />
+  </ItemGroup>
+
+</Project>

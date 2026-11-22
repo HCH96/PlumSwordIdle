@@ -1,0 +1,6 @@
+{
+  "_설명": "tune_02 비교용(채택 안 함): 천마 체력만 1500 → 1400. 위쪽 여유를 늘렸을 때 결과가 바뀌는지 본다.",
+  "FinalBossHealth": 1400,
+  "FinalBossAttack": 80,
+  "BossAttack": [4, 4, 1]
+}
