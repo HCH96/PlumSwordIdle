@@ -1,4 +1,5 @@
 using System;
+using PlumSword.Core.Balance;
 using System.Collections.Generic;
 using PlumSword.Core.Realm;
 using PlumSword.Core.StatUpgrade;
@@ -109,8 +110,8 @@ namespace PlumSword.Core.Combat
         /// <summary>다음 공격까지 남은 시간(초).</summary>
         public double DiscipleAttackCooldown { get; private set; }
 
-        /// <summary>DiscipleBaseAttackInterval 그대로 (고정 1초, 임시). 다음 공격 뒤에 정해질 대기 시간(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
-        public double DiscipleAttackInterval => DiscipleBaseAttackInterval;
+        /// <summary>수치 표의 제자 공격 간격(초). 화면의 공격 애니메이션 속도에 쓴다.</summary>
+        public double DiscipleAttackInterval => BalanceTable.Current.DiscipleAttackInterval;
 
         public bool SkillEnabled { get; }
         public bool IsSkillActive { get; private set; }
@@ -138,7 +139,7 @@ namespace PlumSword.Core.Combat
                 throw new ArgumentOutOfRangeException(nameof(innerPowerLevel));
             }
 
-            return attack * (SkillBasePercent + SkillPercentPerInnerLevel * (long)innerPowerLevel) / 100;
+            return attack * (BalanceTable.Current.SkillBasePercent + BalanceTable.Current.SkillPercentPerInnerLevel * (long)innerPowerLevel) / 100;
         }
 
         public bool IsDiscipleDefeated { get; private set; }
@@ -228,10 +229,10 @@ namespace PlumSword.Core.Combat
 
         /// <summary>
         /// 적을 추가하고 EnemyAdded 를 보낸 뒤 그 적을 돌려준다. 능력치는 EnemyStats 로 계산한다.
-        /// stage &lt; 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
+        /// stage &lt; 1, substage 가 1~7 밖, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
         /// ArgumentOutOfRangeException (아무것도 바꾸지 않는다). 멈췄거나 패배한 상태에서도 추가된다.
         /// </summary>
-        public Enemy AddEnemy(EnemyKind kind, int stage, double position)
+        public Enemy AddEnemy(EnemyKind kind, int stage, double position, int substage = 1)
         {
             // 제자 좌표와의 비교에는 Epsilon 을 허용한다 (칸마다 더한 좌표의 소수 오차로 "같은 좌표" 가 거부되지 않게).
             if (double.IsNaN(position) || double.IsInfinity(position) || position < DisciplePosition - Epsilon)
@@ -239,9 +240,9 @@ namespace PlumSword.Core.Combat
                 throw new ArgumentOutOfRangeException(nameof(position), position, "적의 좌표는 제자의 좌표 이상인 유한한 값이어야 한다.");
             }
 
-            // EnemyStats 가 stage 와 kind 를 검사해 ArgumentOutOfRangeException 을 던진다. 상태를 바꾸기 전에 모두 계산한다.
-            long maxHealth = EnemyStats.MaxHealth(kind, stage);
-            long attack = EnemyStats.Attack(kind, stage);
+            // EnemyStats 가 stage, substage 와 kind 를 검사한다. 상태를 바꾸기 전에 모두 계산한다.
+            long maxHealth = EnemyStats.MaxHealth(kind, stage, substage);
+            long attack = EnemyStats.Attack(kind, stage, substage);
             double attackInterval = EnemyStats.AttackInterval(kind);
 
             bool isJongnamBoss = kind == EnemyKind.Boss && (stage - 1) % 5 == 0;
@@ -386,7 +387,7 @@ namespace PlumSword.Core.Combat
 
             if (engaged && !_wasEngaged && discipleMoved)
             {
-                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, DiscipleBaseAttackInterval * DiscipleAttackWindUpRatio);
+                DiscipleAttackCooldown = Math.Max(DiscipleAttackCooldown, BalanceTable.Current.DiscipleAttackInterval * DiscipleAttackWindUpRatio);
             }
 
             _wasEngaged = engaged;
@@ -436,8 +437,8 @@ namespace PlumSword.Core.Combat
                 if (!ApplySkillHit(enemies, generation)) return false;
                 SkillUsed?.Invoke();
                 if (generation != _resetGeneration) return false;
-                SkillCooldown = SkillCooldownSeconds;
-                DiscipleAttackCooldown = DiscipleBaseAttackInterval;
+                SkillCooldown = BalanceTable.Current.SkillCooldownSeconds;
+                DiscipleAttackCooldown = BalanceTable.Current.DiscipleAttackInterval;
                 return true;
             }
 
@@ -456,8 +457,8 @@ namespace PlumSword.Core.Combat
                 }
             }
 
-            // 다음 대기는 고정 공격 간격(DiscipleBaseAttackInterval)이다.
-            DiscipleAttackCooldown = DiscipleBaseAttackInterval;
+            // 다음 대기는 수치 표의 공격 간격이다.
+            DiscipleAttackCooldown = BalanceTable.Current.DiscipleAttackInterval;
             return true;
         }
 

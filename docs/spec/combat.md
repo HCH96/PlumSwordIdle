@@ -48,7 +48,7 @@
 - **스킬 켜기**: 생성자의 `skillEnabled`가 `true`일 때만 스킬이 있다. 게임에서는 `GameRoot`가 `true`로 만든다. `false`(기본값)이면 스킬 대기가 줄지 않고(0 그대로), 공격 차례는 늘 기본 공격이며, `SkillUsed`가 오지 않는다 (1·2단계와 같은 전투). 처음 상태의 스킬 대기는 0(준비됨)이다. 별도 습득 과정은 없다.
 - **강화·경지 반영** (`docs/spec/stat_upgrade.md`, `docs/spec/realm.md`의 약속):
   - 공격력: 기본 공격 때와 스킬 발동 때 `StatUpgrades.Attack`(경지 보너스 포함)을 읽는다.
-  - 공격 간격: 늘 `Battle.DiscipleBaseAttackInterval`(1.0초)이다. 강화·경지로 바뀌지 않는다.
+  - 공격 간격: 수치 표 `BalanceTable.Current.DiscipleAttackInterval`이다. 기본값은 1.0초이며 강화·경지로 바뀌지 않는다.
   - 내공: 스킬 발동 때 `StatUpgrades.GetLevel(StatType.InnerPower)`를 읽는다 (`SkillDamage`). 내공·공격력을 강화해도 진행 중인 스킬의 저장된 총 피해와 흐르는 스킬 대기는 바꾸지 않는다.
   - 체력: `StatUpgrades.Upgraded`에서 `StatType.Health`를 받으면 `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`을 구해 기억을 새 값으로 바꾼다. 제자가 패배한 상태가 아니면 현재 체력을 늘어난 양만큼 늘린다 (예: `40/100 → 60/120`). 다른 능력치(공격력, 내공)의 `Upgraded`에는 아무것도 하지 않는다.
   - 경지 돌파: 생성자에 `realm`을 받았으면 `realm.BrokeThrough`를 받을 때 체력 강화와 같은 처리를 한다: `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`, 기억을 새 값으로 바꾸고, 패배한 상태가 아니면 현재 체력을 그만큼 늘린다 (예: `90/100 → 100/110`). `BrokeThrough`를 받을 때 `realm.Current`는 이미 새 경지라 `MaxHealth`는 새 값이다. 멈춘 동안에도 반영한다. 알림은 없다. `realm`이 `null`이면 구독하지 않는다 (돌파해도 현재 체력은 그대로다).
@@ -121,9 +121,9 @@
 | 앞 동작 비율 `Battle.DiscipleAttackWindUpRatio` | 7/17 (임시) | 달려와 멈춘 칸에 대기를 `공격 간격 × 7/17` 이상으로 올린다. 간격 1.0초 → 0.4118초(21칸). 공격 애니메이션 17프레임 중 타격 프레임 7번에 맞춘 값이라 `DiscipleAnimator.AttackHitFrame / AttackFrameCount`와 같아야 한다 |
 | 기본 공격 피해 | `StatUpgrades.Attack` | 경지 보너스 포함 |
 | 스킬 범위 `Battle.SkillRange` | 앞쪽 2.0 유닛 (임시) | 범위 안 모든 적에게 같은 피해 |
-| 스킬 재사용 대기 `Battle.SkillCooldownSeconds` | 5.0초 (임시) | 스킬을 쓴 칸부터 센다(250칸). 기본 공격 간격과 따로 센다 |
-| 스킬 배율 `Battle.SkillBasePercent`, `Battle.SkillPercentPerInnerLevel` | 200%, 내공 한 단계당 +10%p (임시) | 정수 % (`int`) |
-| 스킬 피해 `Battle.CalculateSkillDamage(attack, innerPowerLevel)` | `attack × (200 + 10 × innerPowerLevel) / 100` | `long`으로 계산하고 정수 나눗셈(내림). (10, 0) → 20, (10, 1) → 21, (13, 2) → 28, (11, 0) → 22. `SkillDamage`는 `StatUpgrades.Attack`과 `GetLevel(StatType.InnerPower)`를 넣은 값 |
+| 스킬 재사용 대기 | 수치 표의 `SkillCooldownSeconds` (기본 5.0초) | 스킬을 쓴 칸부터 센다. 기본 공격 간격과 따로 센다 |
+| 스킬 배율 | 수치 표의 `SkillBasePercent`, `SkillPercentPerInnerLevel` (기본 200%, 단계당 +10%p) | 정수 % (`int`) |
+| 스킬 피해 `Battle.CalculateSkillDamage(attack, innerPowerLevel)` | `attack × (수치 표의 기본 배율 + 수치 표의 단계당 배율 × innerPowerLevel) / 100` | `long`으로 계산하고 정수 나눗셈(내림). 기본값에서 (10, 0) → 20, (10, 1) → 21, (13, 2) → 28, (11, 0) → 22. `SkillDamage`는 `StatUpgrades.Attack`과 `GetLevel(StatType.InnerPower)`를 넣은 값 |
 | 스킬 타격 | `SkillHitCount` 13, `SkillActiveSteps` 63, `SkillHitSteps` {0, 3, 5, 9, 13, 19, 23, 28, 36, 38, 42, 44, 46} | 0~11타는 총 피해 / 13, 12타는 총 피해에서 앞 12타의 합을 뺀 값. 발동 칸이 0번째다 |
 | 검기 띠 | 가로 2.0 × 세로 0.4, RGB (1.0, 0.55, 0.75), 불투명도 0.6에서 0.25초 동안 0으로 (임시) | `CombatLayout.SkillSlashSeconds` = 0.25, `SkillSlashAlpha(t)` = `0.6 × (1 − t / 0.25)`를 0.0 ~ 0.6으로 잘라냄 |
 | 일반 몬스터 반응 거리 `EnemyStats.NormalReactRange` | 3.0 유닛 (임시) | |
@@ -161,14 +161,16 @@ namespace PlumSword.Core.Combat
         public const double NormalReactRange = 3.0;
         public const double NormalMoveSpeed = 1.0;
 
-        // Normal: 30 + 10 * (stage - 1), Boss: 100 + 30 * (stage - 1). long 으로 계산.
-        // stage 가 1 보다 작거나 kind 가 정의되지 않은 값이면 ArgumentOutOfRangeException (아래 stage, kind 를 받는 메서드 모두 같다).
+        // 수치 표의 구간별 체력. 기존 호출은 1구간이다.
+        // stage < 1, substage가 1~7 밖, 정의되지 않은 kind는 ArgumentOutOfRangeException.
         public static long MaxHealth(EnemyKind kind, int stage);
+        public static long MaxHealth(EnemyKind kind, int stage, int substage);
 
-        // Normal: 5 + 2 * (stage - 1), Boss: 10 + 4 * (stage - 1).
+        // 수치 표의 구간별 공격력. 기존 호출은 1구간이다.
         public static long Attack(EnemyKind kind, int stage);
+        public static long Attack(EnemyKind kind, int stage, int substage);
 
-        // Normal, Boss 모두 2.0 (초).
+        // 수치 표(BalanceTable.Current)의 종류별 공격 간격(초).
         public static double AttackInterval(EnemyKind kind);
 
         // Normal: 0.8, Boss: 1.0 (유닛).
@@ -229,7 +231,7 @@ namespace PlumSword.Core.Combat
         public long DiscipleHealth { get; }             // 0 이상
         public long DiscipleMaxHealth { get; }          // upgrades.MaxHealth 그대로
         public double DiscipleAttackCooldown { get; }   // 다음 공격까지 남은 시간(초)
-        public double DiscipleAttackInterval { get; }   // 늘 DiscipleBaseAttackInterval (1.0). 화면의 공격 애니메이션 속도에 쓴다
+        public double DiscipleAttackInterval { get; }   // 수치 표(BalanceTable.Current)의 제자 공격 간격. 화면의 공격 애니메이션 속도에 쓴다
         public bool IsDiscipleDefeated { get; }
         public bool Paused { get; }
         public bool IsHoldingPosition { get; } // 처음에는 false. 제자의 전진만 막는다
@@ -240,7 +242,7 @@ namespace PlumSword.Core.Combat
         public bool IsSkillReady { get; }               // SkillEnabled 이고 SkillCooldown <= Epsilon
         public long SkillDamage { get; }                // CalculateSkillDamage(upgrades.Attack, upgrades.GetLevel(StatType.InnerPower)). 읽을 때마다 계산
 
-        // attack × (SkillBasePercent + SkillPercentPerInnerLevel × innerPowerLevel) / 100 을 long 정수 나눗셈(내림)으로.
+        // 수치 표(BalanceTable.Current)의 스킬 배율로 long 정수 나눗셈(내림)한다.
         // attack 또는 innerPowerLevel 이 음수면 ArgumentOutOfRangeException.
         public static long CalculateSkillDamage(long attack, int innerPowerLevel);
         public static long CalculateSkillHitDamage(long totalDamage, int hitIndex); // 음수 피해 또는 범위 밖 번호는 ArgumentOutOfRangeException
@@ -262,7 +264,7 @@ namespace PlumSword.Core.Combat
         // stage < 1, 정의되지 않은 kind, position 이 NaN·무한대이거나 DisciplePosition - Epsilon 보다 작으면
         // ArgumentOutOfRangeException (아무것도 바꾸지 않는다). 멈췄거나 패배한 상태에서도 추가된다.
         // (Epsilon 허용: 칸마다 0.1296 을 더한 좌표의 소수 오차 때문에 "제자와 같은 좌표" 가 거부되지 않게 한다.)
-        public Enemy AddEnemy(EnemyKind kind, int stage, double position);
+        public Enemy AddEnemy(EnemyKind kind, int stage, double position, int substage = 1);
 
         // 제자를 좌표 0, 체력 가득, 공격 대기 0, 스킬 대기 0, 패배 아님으로 되돌리고 모든 적을 없앤 뒤
         // ResetCompleted 를 보낸다. EnemyDefeated 는 보내지 않는다. Paused 는 바꾸지 않는다.

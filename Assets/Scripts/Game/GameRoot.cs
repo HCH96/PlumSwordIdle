@@ -82,8 +82,8 @@ namespace PlumSword.Game
             Realm = new PlumSword.Core.Realm.RealmProgress(Wallet, data != null ? data.RealmLevel : 0, data != null ? data.RealmKills : 0);
             StatUpgrades = new PlumSword.Core.StatUpgrade.StatUpgrades(
                 Wallet,
-                PlumSword.Core.Combat.Battle.DiscipleBaseAttack,
-                PlumSword.Core.Combat.Battle.DiscipleBaseMaxHealth,
+                PlumSword.Core.Balance.BalanceTable.Current.DiscipleBaseAttack,
+                PlumSword.Core.Balance.BalanceTable.Current.DiscipleBaseMaxHealth,
                 data != null ? data.AttackLevel : 0,
                 data != null ? data.HealthLevel : 0, data != null ? data.InnerPowerLevel : 0, Realm);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades, Realm, true);

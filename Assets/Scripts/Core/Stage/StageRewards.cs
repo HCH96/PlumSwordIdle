@@ -1,4 +1,4 @@
-using System;
+using PlumSword.Core.Balance;
 
 namespace PlumSword.Core.Stage
 {
@@ -9,31 +9,29 @@ namespace PlumSword.Core.Stage
     public static class StageRewards
     {
         /// <summary>
-        /// 일반 몬스터 한 마리의 금화. 10 + 2 * (stage - 1). long 으로 계산한다.
-        /// stage 가 1 보다 작으면 ArgumentOutOfRangeException.
+        /// 수치 표의 일반 몬스터 금화. 기존 호출은 1구간을 사용한다.
         /// </summary>
         public static long NormalGold(int stage)
+            => NormalGold(stage, 1);
+
+        /// <summary>수치 표의 구간별 일반 몬스터 금화. 유효하지 않은 번호는 예외다.</summary>
+        public static long NormalGold(int stage, int substage)
         {
-            ValidateStage(stage);
-            return 10L + 2L * ((long)stage - 1L);
+            var table = BalanceTable.Current;
+            return table.NormalGold.Evaluate(table.SubstageIndex(stage, substage));
         }
 
         /// <summary>
-        /// 보스의 금화. 50 + 10 * (stage - 1). long 으로 계산한다.
-        /// stage 가 1 보다 작으면 ArgumentOutOfRangeException.
+        /// 수치 표의 보스 금화. 기존 호출은 1구간을 사용한다.
         /// </summary>
         public static long BossGold(int stage)
-        {
-            ValidateStage(stage);
-            return 50L + 10L * ((long)stage - 1L);
-        }
+            => BossGold(stage, 1);
 
-        private static void ValidateStage(int stage)
+        /// <summary>수치 표의 구간별 보스 금화. 유효하지 않은 번호는 예외다.</summary>
+        public static long BossGold(int stage, int substage)
         {
-            if (stage < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(stage), stage, "stage must be 1 or greater.");
-            }
+            var table = BalanceTable.Current;
+            return table.BossGold.Evaluate(table.SubstageIndex(stage, substage));
         }
     }
 }

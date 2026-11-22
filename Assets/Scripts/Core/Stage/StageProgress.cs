@@ -289,12 +289,12 @@ namespace PlumSword.Core.Stage
             _substageEnemies.Clear();
             if (SubstageNumber > StageLayout.NormalSubstageCount)
             {
-                Boss = _battle.AddEnemy(EnemyKind.Boss, StageNumber, _battle.DisciplePosition + StageLayout.BossDistance);
+                Boss = _battle.AddEnemy(EnemyKind.Boss, StageNumber, _battle.DisciplePosition + StageLayout.BossDistance, 7);
                 return;
             }
             var positions = StageLayout.SubstagePositions(_random, _battle.DisciplePosition + StageLayout.EncounterDistance);
             foreach (double position in positions)
-                _substageEnemies.Add(_battle.AddEnemy(EnemyKind.Normal, StageNumber, position));
+                _substageEnemies.Add(_battle.AddEnemy(EnemyKind.Normal, StageNumber, position, SubstageNumber));
         }
 
         /// <summary>Begin 전이거나 Playing 이 아니면 전투의 알림을 모두 무시한다.</summary>
@@ -331,7 +331,7 @@ namespace PlumSword.Core.Stage
             }
 
             int cleared = StageNumber;
-            _wallet.Add(StageRewards.BossGold(cleared));
+            _wallet.Add(StageRewards.BossGold(cleared, 7));
             _substageTransition = false;
             _nextStageNumber = cleared == int.MaxValue ? int.MaxValue : cleared + 1;
             BeginSuccessTransition();
@@ -373,7 +373,7 @@ namespace PlumSword.Core.Stage
         /// <summary>일반 상대 보상·처치 수를 갱신하고 현재 무리를 모두 이기면 다음 구간을 시작한다.</summary>
         private void OnNormalDefeated(Enemy enemy)
         {
-            _wallet.Add(StageRewards.NormalGold(StageNumber));
+            _wallet.Add(StageRewards.NormalGold(StageNumber, SubstageNumber));
             DefeatedNormalCount++;
             if (_substageEnemies.Remove(enemy) && _substageEnemies.Count == 0 && !_battle.IsDiscipleDefeated)
             {

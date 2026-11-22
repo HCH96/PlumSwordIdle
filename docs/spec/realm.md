@@ -6,7 +6,7 @@
 
 ## 목표와 동작
 
-경지는 삼류 → 이류 → 일류 → 절정 → 초절정이다. 일반 몬스터와 보스 처치를 각각 한 마리로 세고, 각 경지에서 30·50·70·100마리를 처치하면 금화 소비나 버튼 조작 없이 다음 경지로 자동 돌파한다. 돌파할 때마다 처치 수는 0으로 돌아간다. 150은 추후 단계용으로 남겨 두며 현재 사용하지 않는다. 초절정에서는 처치를 더 세지 않는다. 스테이지 이동·실패와 재시작 후에도 진행도는 유지한다.
+경지는 삼류 → 이류 → 일류 → 절정 → 초절정이다. 일반 몬스터와 보스 처치를 각각 한 마리로 세고, 각 경지에서 수치 표의 요구 처치 수(기본 30·50·70·100)를 채우면 금화 소비나 버튼 조작 없이 다음 경지로 자동 돌파한다. 돌파할 때마다 처치 수는 0으로 돌아간다. 초절정에서는 처치를 더 세지 않는다. 스테이지 이동·실패와 재시작 후에도 진행도는 유지한다.
 
 `GameRoot`가 `Battle.EnemyDefeated`마다 `RecordKill()`을 한 번 부른다. 동시 처치도 각 적마다 센다. 돌파 시 `Current`를 바꾸고 `BrokeThrough`를 보낸 다음 `ProgressChanged`를 보낸다. 일반 처치에서는 `ProgressChanged`만 보낸다. 기존 돌파 연출과 최대 체력 증가 알림은 그대로 사용한다. 금화와 강화 잠금은 돌파 조건이 아니다.
 
@@ -16,8 +16,8 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 경지별 다음 돌파 처치 수 | 삼류 30, 이류 50, 일류 70, 절정 100, 초절정 0 |
-| 누적 보너스 | 삼류 0%, 이류 10%, 일류 20%, 절정 30%, 초절정 40% |
+| 경지별 다음 돌파 처치 수 | 수치 표의 `RealmKillsRequired`. 기본값 삼류 30, 이류 50, 일류 70, 절정 100, 초절정은 항상 0 |
+| 누적 보너스 | 수치 표의 `RealmBonusPercent`. 기본값 삼류 0%, 이류 10%, 일류 20%, 절정 30%, 초절정 40% |
 | 실제 화면 글자 | 삼류, 이류, 일류, 절정, 초절정 그림 글자 |
 | 에셋 ID | `third_rate`, `second_rate`, `first_rate`, `peak`, `transcendent` |
 
@@ -94,10 +94,10 @@ namespace PlumSword.Core.Realm
     {
         public const int LevelCount = 5;
 
-        // 0, 10, 20, 30, 40 (%). 정의되지 않은 값: ArgumentOutOfRangeException.
+        // 수치 표(BalanceTable.Current)의 경지별 보너스(%). 정의되지 않은 값: ArgumentOutOfRangeException.
         public static int BonusPercent(RealmLevel realm);
 
-        // 현재 경지에서 다음 단계까지 필요한 처치 수. 초절정은 0.
+        // 수치 표(BalanceTable.Current)의 다음 단계까지 필요한 처치 수. 초절정은 0.
         public static int KillsRequired(RealmLevel from);
     }
 
