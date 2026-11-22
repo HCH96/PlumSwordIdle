@@ -87,6 +87,7 @@ namespace PlumSword.Game.Combat
         private SpriteRenderer _skillSlash;
         private double _skillSlashElapsed;
         private Sprite[] _damageDigits;
+        private Sprite[] _plumDamageDigits;
         private readonly List<(GameObject Root, float Elapsed)> _damageNumbers = new List<(GameObject, float)>();
 
         // 제자 스프라이트. 불러오지 못하면 null 이고 단색 사각형을 쓴다.
@@ -224,6 +225,7 @@ namespace PlumSword.Game.Combat
             if (_bossProjectileSprite != null) Destroy(_bossProjectileSprite);
             if (_bossProjectileTexture != null) Destroy(_bossProjectileTexture);
             if (_damageDigits != null) foreach (var digit in _damageDigits) if (digit != null) Destroy(digit);
+            if (_plumDamageDigits != null) foreach (var digit in _plumDamageDigits) if (digit != null) Destroy(digit);
             _sprite = null;
             _texture = null;
 
@@ -306,7 +308,7 @@ namespace PlumSword.Game.Combat
             if (_skillAnimationPlaying)
             {
                 if (!_battle.Paused) _skillAnimationElapsed += deltaTime;
-                int frame = (int)(_skillAnimationElapsed * DiscipleSprites.SkillFramesPerSecond);
+                int frame = 2 + (int)(_skillAnimationElapsed * DiscipleSprites.SkillFramesPerSecond);
                 if (frame < DiscipleSprites.SkillFrameCount)
                 {
                     _disciple.Body.sprite = _discipleSprites.GetSkill(frame);
@@ -397,7 +399,7 @@ namespace PlumSword.Game.Combat
 
         private void OnEnemyDamaged(Enemy enemy)
         {
-            _discipleAttackedThisTick = true;
+            if (!_battle.IsSkillActive) _discipleAttackedThisTick = true;
             if (enemy != null && _enemies.TryGetValue(enemy, out var actor))
             {
                 StartFlash(actor);
@@ -405,7 +407,7 @@ namespace PlumSword.Game.Combat
                 actor.DisplayedHealth = enemy.Health;
                 float y = enemy.Kind == EnemyKind.Boss ? 0f : (float)CombatLayout.EnemyOffsetY(enemy.Index);
                 ShowDamageNumber(damage, new Vector3((float)enemy.Position + ActorDisplayOffset.x + EnemyDisplaySeparation,
-                    ActorDisplayOffset.y + y + (enemy.Kind == EnemyKind.Boss ? 2.3f : 1.8f), 0f));
+                    ActorDisplayOffset.y + y + (enemy.Kind == EnemyKind.Boss ? 2.3f : 1.8f), 0f), _battle.IsSkillActive);
             }
         }
 
@@ -474,7 +476,7 @@ namespace PlumSword.Game.Combat
             {
                 _skillAnimationElapsed = 0f;
                 _skillAnimationPlaying = true;
-                _disciple.Body.sprite = _discipleSprites.GetSkill(0);
+                _disciple.Body.sprite = _discipleSprites.GetSkill(2);
                 _skillSlash.enabled = false;
                 return;
             }
@@ -642,31 +644,40 @@ namespace PlumSword.Game.Combat
 
         private void CreateDamageDigits()
         {
-            var sheet = Resources.Load<Sprite>("Art/UI/damage_numbers");
-            if (sheet == null || sheet.texture.width != 2172 || sheet.texture.height != 724) return;
-            // 원본 시안의 글자별 수평 범위. 세로 기준선은 모든 글자에 공통이다.
-            int[] left = { 33, 232, 403, 587, 770, 957, 1150, 1342, 1518, 1705, 1904 };
-            int[] right = { 217, 383, 579, 756, 950, 1141, 1321, 1513, 1689, 1880, 1994 };
-            _damageDigits = new Sprite[left.Length];
-            for (int i = 0; i < left.Length; i++)
-                _damageDigits[i] = Sprite.Create(sheet.texture, new Rect(left[i], 214, right[i] - left[i] + 1, 300),
-                    new Vector2(0.5f, 0.5f), 32f);
+            _damageDigits = SliceDamageDigits("Art/UI/damage_numbers",
+                new[] { 33, 232, 403, 587, 770, 957, 1150, 1342, 1518, 1705, 1904 },
+                new[] { 217, 383, 579, 756, 950, 1141, 1321, 1513, 1689, 1880, 1994 });
+            _plumDamageDigits = SliceDamageDigits("Art/UI/damage_numbers_plum",
+                new[] { 31, 233, 403, 589, 771, 959, 1152, 1344, 1522, 1710, 1912 },
+                new[] { 217, 384, 581, 760, 954, 1144, 1326, 1517, 1696, 1887, 2004 });
         }
 
-        private void ShowDamageNumber(long damage, Vector3 position)
+        private static Sprite[] SliceDamageDigits(string path, int[] left, int[] right)
         {
-            if (damage <= 0 || _damageDigits == null) return;
+            var sheet = Resources.Load<Sprite>(path);
+            if (sheet == null || sheet.texture.width != 2172 || sheet.texture.height != 724) return null;
+            var digits = new Sprite[left.Length];
+            for (int i = 0; i < left.Length; i++)
+                digits[i] = Sprite.Create(sheet.texture, new Rect(left[i], 214, right[i] - left[i] + 1, 300),
+                    new Vector2(0.5f, 0.5f), 32f);
+            return digits;
+        }
+
+        private void ShowDamageNumber(long damage, Vector3 position, bool skill = false)
+        {
+            var digits = skill ? _plumDamageDigits ?? _damageDigits : _damageDigits;
+            if (damage <= 0 || digits == null) return;
             string text = damage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
             var root = new GameObject("[DamageNumber]");
             root.transform.SetParent(transform, false);
             root.transform.localPosition = position + new Vector3((_damageNumbers.Count % 3 - 1) * 0.2f, 0f, 0f);
             const float scale = 0.05f;
             float width = 0f;
-            foreach (char c in text) width += _damageDigits[c == ',' ? 10 : c - '0'].rect.width * scale / 32f;
+            foreach (char c in text) width += digits[c == ',' ? 10 : c - '0'].rect.width * scale / 32f;
             float x = -width * 0.5f;
             foreach (char c in text)
             {
-                var sprite = _damageDigits[c == ',' ? 10 : c - '0'];
+                var sprite = digits[c == ',' ? 10 : c - '0'];
                 float glyphWidth = sprite.rect.width * scale / 32f;
                 var obj = new GameObject(c.ToString());
                 obj.transform.SetParent(root.transform, false);

@@ -99,7 +99,7 @@ namespace PlumSword.Game.Combat
             for (int i = 0; i < frames.Length; i++)
             {
                 var rect = new Rect((i % columns) * width, (3 - i / columns) * height, width, height);
-                frames[i] = Sprite.Create(texture, rect, new Vector2(58f / width, 6f / height), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                frames[i] = Sprite.Create(texture, rect, new Vector2(58f / width, 18f / height), PixelsPerUnit, 0, SpriteMeshType.FullRect);
                 frames[i].name = $"{texture.name}_{i:00}";
             }
             return frames;

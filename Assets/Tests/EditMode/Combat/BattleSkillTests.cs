@@ -79,7 +79,7 @@ namespace PlumSword.Core.Tests.Combat
 
             battle.Step();
             // 053에서는 스킬 발동이 아직 구현되지 않아 기존 이름을 유지한다.
-            Assert.AreEqual(enemy.MaxHealth - 20, enemy.Health);
+            Assert.AreEqual(enemy.MaxHealth - 1, enemy.Health);
             Assert.AreEqual(5.0, battle.SkillCooldown);
             battle.Reset();
             Assert.AreEqual(0.0, battle.SkillCooldown);
@@ -105,21 +105,21 @@ namespace PlumSword.Core.Tests.Combat
             battle.SkillUsed += () => events.Add("skill");
             Enemy boss = battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             battle.Step();
-            Assert.AreEqual(80, boss.Health);
+            Assert.AreEqual(99, boss.Health);
             Assert.AreEqual(90, battle.DiscipleHealth);
             CollectionAssert.AreEqual(new[] { "damage", "skill" }, events);
             Assert.AreEqual(5.0, battle.SkillCooldown, 1e-6);
             Assert.IsFalse(battle.IsSkillReady);
             Assert.AreEqual(1.0, battle.DiscipleAttackCooldown, 1e-6);
             Steps(battle, 50);
-            Assert.AreEqual(70, boss.Health);
+            Assert.AreEqual(80, boss.Health);
             Assert.AreEqual(1, events.FindAll(x => x == "skill").Count);
             Assert.AreEqual(4.0, battle.SkillCooldown, 1e-6);
             Steps(battle, 199);
             Assert.AreEqual(40, boss.Health);
             Assert.IsFalse(battle.IsSkillReady);
-            battle.Step();
-            Assert.AreEqual(20, boss.Health);
+            Steps(battle, 14);
+            Assert.AreEqual(39, boss.Health);
             Assert.AreEqual(2, events.FindAll(x => x == "skill").Count);
         }
 
@@ -135,8 +135,8 @@ namespace PlumSword.Core.Tests.Combat
             Enemy second = battle.AddEnemy(EnemyKind.Boss, 1, 1.9);
             Enemy third = battle.AddEnemy(EnemyKind.Boss, 1, 2.5);
             battle.Step();
-            Assert.AreEqual(10, first.Health);
-            Assert.AreEqual(80, second.Health);
+            Assert.AreEqual(29, first.Health);
+            Assert.AreEqual(99, second.Health);
             Assert.AreEqual(100, third.Health);
             CollectionAssert.AreEqual(new[] { 0, 1 }, indices);
             Assert.AreEqual(1, used);
@@ -158,7 +158,7 @@ namespace PlumSword.Core.Tests.Combat
             Steps(battle, 20);
             Assert.AreEqual(130, boss.Health);
             battle.Step();
-            Assert.AreEqual(110, boss.Health);
+            Assert.AreEqual(129, boss.Health);
             Assert.AreEqual(1, used);
         }
 
@@ -171,22 +171,22 @@ namespace PlumSword.Core.Tests.Combat
             Enemy normal = battle.AddEnemy(EnemyKind.Normal, 1, 0.8);
             Enemy boss = battle.AddEnemy(EnemyKind.Boss, 2, 8.0);
             battle.Step();
-            Assert.AreEqual(10, normal.Health);
+            Assert.AreEqual(29, normal.Health);
             Steps(battle, 50);
-            Assert.AreEqual(1, battle.Enemies.Count);
+            Assert.AreEqual(2, battle.Enemies.Count);
             Steps(battle, 55);
-            Assert.AreEqual(7.0, battle.DisciplePosition, 1e-6);
+            Assert.AreEqual(5.4432, battle.DisciplePosition, 1e-6);
             Steps(battle, 20);
             Assert.AreEqual(130, boss.Health);
             battle.Step();
-            Assert.AreEqual(120, boss.Health);
+            Assert.AreEqual(130, boss.Health);
             Steps(battle, 124);
             Assert.IsTrue(battle.IsSkillReady);
             Assert.AreEqual(100, boss.Health);
-            Steps(battle, 25);
+            Steps(battle, 38);
             Assert.AreEqual(100, boss.Health);
             battle.Step();
-            Assert.AreEqual(80, boss.Health);
+            Assert.AreEqual(99, boss.Health);
             Assert.AreEqual(2, used);
         }
 
@@ -206,7 +206,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void SkillAttack_SimultaneousDefeat_NotifiesInOrder()
         {
-            var battle = SkillBattle(15, 5);
+            var battle = SkillBattle(200, 5);
             var events = new List<string>();
             bool defeatedAtEnemyEvent = false;
             battle.EnemyDamaged += e => events.Add("damage");
@@ -228,7 +228,7 @@ namespace PlumSword.Core.Tests.Combat
             battle.Step();
             Assert.IsTrue(upgrades.TryUpgrade(StatType.InnerPower));
             Assert.AreEqual(5.0, battle.SkillCooldown, 1e-6);
-            Steps(battle, 250);
+            Steps(battle, 309);
             Assert.AreEqual(19, boss.Health);
         }
 
@@ -243,7 +243,7 @@ namespace PlumSword.Core.Tests.Combat
             Assert.IsTrue(battle.IsSkillReady);
             Enemy boss = battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             battle.Step();
-            Assert.AreEqual(80, boss.Health);
+            Assert.AreEqual(99, boss.Health);
         }
 
         [Test]
@@ -286,7 +286,7 @@ namespace PlumSword.Core.Tests.Combat
             battle.EnemyDamaged += e => damageCooldown = battle.SkillCooldown;
             battle.SkillUsed += () => { health = boss.Health; cooldown = battle.SkillCooldown; };
             battle.Step();
-            Assert.AreEqual(80, health);
+            Assert.AreEqual(99, health);
             Assert.AreEqual(0, cooldown);
             Assert.AreEqual(0, damageCooldown);
         }

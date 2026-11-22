@@ -44,8 +44,8 @@
 
 | `SfxId` | 파일 | 요청하는 때 |
 | --- | --- | --- |
-| `SwordSwing` | `sword_swing` | `Battle.EnemyDamaged` (기본 공격과 스킬 모두 알림이 오지만 스킬 프레임은 아래 "대신하기"로 빠진다) |
-| `AttackHit` | `attack_hit` | `Battle.EnemyDamaged` (`SwordSwing`과 함께) |
+| `SwordSwing` | `sword_swing` | `Battle.EnemyDamaged` (스킬이 이어지는 동안 `Battle.IsSkillActive`가 참이면 요청하지 않는다) |
+| `AttackHit` | `attack_hit` | `Battle.EnemyDamaged` (`SwordSwing`과 함께, `Battle.IsSkillActive`가 참이면 요청하지 않는다) |
 | `UpgradeSuccess` | `upgrade_success` | `StatUpgrades.Upgraded` |
 | `PlumSwordSkill` | `plum_sword_skill` | `Battle.SkillUsed` |
 | `RealmBreakthrough` | `realm_breakthrough` | `RealmProgress.BrokeThrough` |
@@ -436,7 +436,7 @@ namespace PlumSword.Game
 23. `SfxTriggers` 생성자의 다섯 인자 중 하나라도 `null` → `ArgumentNullException`.
 24. `Battle.AddEnemy(EnemyKind.Boss, 1, 좌표)` → `Drain` → `[BossAppear]`. `AddEnemy(EnemyKind.Normal, 1, 좌표)` → 빈 목록.
 25. 스킬이 꺼진 `Battle`(`skillEnabled: false`)에 일반 적 하나를 제자 앞 0.5에 두고 첫 `EnemyDamaged`까지 `Step` → `Drain` → `[SwordSwing, AttackHit]`.
-26. 스킬이 켜진 `Battle`에 일반 적 하나를 제자 앞 0.5에 두고 첫 `SkillUsed`까지 `Step` → `Drain` 결과에 `PlumSwordSkill`이 있고 `SwordSwing`, `AttackHit`이 없다.
+26. 스킬이 켜진 `Battle`에 일반 적 하나를 제자 앞 0.5에 두고 첫 `SkillUsed`까지 `Step` → `Drain` 결과에 `PlumSwordSkill`이 있고 `SwordSwing`, `AttackHit`이 없다. 공격력 10으로 2스테이지 보스를 제자 앞 1.0에 두면 첫 칸에도 같고, 이어지는 62칸의 피해는 `Battle.IsSkillActive`가 참이므로 두 소리를 요청하지 않는다. 64번째 칸의 기본 공격에는 두 소리를 요청한다.
 27. 일반 적이 쓰러진 칸 → `Drain`에 `EnemyDefeated`. 보스가 쓰러진 칸 → `EnemyDefeated` 없음.
 28. `StageProgress`로 1스테이지 1구간의 무리를 모두 쓰러뜨려 `Phase`가 `FadingOut`이 된 프레임 → `Drain`에 `StageTransition`과 `EnemyDefeated`.
 29. 보스를 혼자 이긴 프레임 → `Drain`에 `BossDefeated`, `StageTransition` 없음. 제자가 쓰러진 프레임(일반 구간과 보스 구간 각각) → `PlayerDefeated`, `StageTransition` 없음. 보스와 제자가 같은 칸에 쓰러지면 `BossDefeated` 없음, `PlayerDefeated` 있음. (보스를 이기게 하려면 `StatUpgrades`를 충분히 강하게 만든다.)

@@ -34,6 +34,9 @@ namespace PlumSword.Core.Combat
         public const double SkillCooldownSeconds = 5.0;
         public const int SkillBasePercent = 200;
         public const int SkillPercentPerInnerLevel = 10;
+        public const int SkillHitCount = 13;
+        public const int SkillActiveSteps = 63;
+        public static readonly IReadOnlyList<int> SkillHitSteps = Array.AsReadOnly(new[] { 0, 3, 5, 9, 13, 19, 23, 28, 36, 38, 42, 44, 46 });
         public const double BossProjectileSpeed = 6.0;
 
         /// <summary>
@@ -57,6 +60,9 @@ namespace PlumSword.Core.Combat
 
         // 직전 칸의 이동이 끝났을 때 제자의 공격 범위 안에 적이 있었는가. 앞 동작을 시작할 칸을 가린다.
         private bool _wasEngaged;
+        private int _skillStep;
+        private int _nextSkillHit;
+        private long _skillTotalDamage;
 
         /// <summary>
         /// upgrades: 제자의 공격력·최대 체력을 읽을 곳. null 이면 ArgumentNullException.
@@ -107,9 +113,18 @@ namespace PlumSword.Core.Combat
         public double DiscipleAttackInterval => DiscipleBaseAttackInterval;
 
         public bool SkillEnabled { get; }
+        public bool IsSkillActive { get; private set; }
         public double SkillCooldown { get; private set; }
         public bool IsSkillReady => SkillEnabled && SkillCooldown <= Epsilon;
         public long SkillDamage => CalculateSkillDamage(_upgrades.Attack, _upgrades.GetLevel(StatType.InnerPower));
+
+        public static long CalculateSkillHitDamage(long totalDamage, int hitIndex)
+        {
+            if (totalDamage < 0) throw new ArgumentOutOfRangeException(nameof(totalDamage));
+            if (hitIndex < 0 || hitIndex >= SkillHitCount) throw new ArgumentOutOfRangeException(nameof(hitIndex));
+            long portion = totalDamage / SkillHitCount;
+            return hitIndex == SkillHitCount - 1 ? totalDamage - portion * (SkillHitCount - 1) : portion;
+        }
 
         public static long CalculateSkillDamage(long attack, int innerPowerLevel)
         {
@@ -188,9 +203,10 @@ namespace PlumSword.Core.Combat
             var snapshot = new List<Enemy>(_enemies);
             int generation = _resetGeneration;
 
+            if (IsSkillActive && ++_skillStep >= SkillActiveSteps) IsSkillActive = false;
             ReduceCooldowns(snapshot);
             double positionBeforeMove = DisciplePosition;
-            MoveDisciple(snapshot);
+            if (!IsSkillActive) MoveDisciple(snapshot);
             MoveEnemies(snapshot);
             BeginWindUp(snapshot, DisciplePosition > positionBeforeMove);
 
@@ -246,6 +262,10 @@ namespace PlumSword.Core.Combat
             DiscipleHealth = _upgrades.MaxHealth;
             DiscipleAttackCooldown = 0.0;
             SkillCooldown = 0.0;
+            IsSkillActive = false;
+            _skillStep = 0;
+            _nextSkillHit = 0;
+            _skillTotalDamage = 0;
             IsDiscipleDefeated = false;
             _enemies.Clear();
             _bossProjectiles.Clear();
@@ -368,6 +388,12 @@ namespace PlumSword.Core.Combat
         // 알림 안에서 Reset 이 불려 칸을 그만둬야 하면 false.
         private bool AttackByDisciple(List<Enemy> enemies, int generation)
         {
+            if (IsSkillActive)
+            {
+                if (_nextSkillHit < SkillHitCount && _skillStep == SkillHitSteps[_nextSkillHit])
+                    return ApplySkillHit(enemies, generation);
+                return true;
+            }
             if (DiscipleAttackCooldown > Epsilon)
             {
                 return true;
@@ -393,8 +419,21 @@ namespace PlumSword.Core.Combat
                 return true;
             }
 
-            // 공격력은 피해를 줄 때마다 읽는다 (따로 저장해 두지 않는다).
-            long damage = skill ? SkillDamage : _upgrades.Attack;
+            if (skill)
+            {
+                _skillTotalDamage = SkillDamage;
+                _skillStep = 0;
+                _nextSkillHit = 0;
+                IsSkillActive = true;
+                if (!ApplySkillHit(enemies, generation)) return false;
+                SkillUsed?.Invoke();
+                if (generation != _resetGeneration) return false;
+                SkillCooldown = SkillCooldownSeconds;
+                DiscipleAttackCooldown = DiscipleBaseAttackInterval;
+                return true;
+            }
+
+            long damage = _upgrades.Attack;
             foreach (Enemy enemy in hits)
             {
                 enemy.Health = ReduceHealth(enemy.Health, damage);
@@ -409,18 +448,23 @@ namespace PlumSword.Core.Combat
                 }
             }
 
-            if (skill)
-            {
-                SkillUsed?.Invoke();
-                if (generation != _resetGeneration)
-                {
-                    return false;
-                }
-                SkillCooldown = SkillCooldownSeconds;
-            }
-
             // 다음 대기는 고정 공격 간격(DiscipleBaseAttackInterval)이다.
             DiscipleAttackCooldown = DiscipleBaseAttackInterval;
+            return true;
+        }
+
+        private bool ApplySkillHit(List<Enemy> enemies, int generation)
+        {
+            long damage = CalculateSkillHitDamage(_skillTotalDamage, _nextSkillHit++);
+            var hits = new List<Enemy>();
+            foreach (Enemy enemy in enemies)
+                if (enemy.Position - DisciplePosition <= SkillRange + Epsilon) hits.Add(enemy);
+            foreach (Enemy enemy in hits) enemy.Health = ReduceHealth(enemy.Health, damage);
+            foreach (Enemy enemy in hits)
+            {
+                EnemyDamaged?.Invoke(enemy);
+                if (generation != _resetGeneration) return false;
+            }
             return true;
         }
 

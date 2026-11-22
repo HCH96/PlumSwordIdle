@@ -50,7 +50,12 @@ namespace PlumSword.Core.Audio
             realm.BrokeThrough -= OnBrokeThrough;
         }
 
-        private void OnEnemyDamaged(Enemy enemy) { queue.Request(SfxId.SwordSwing); queue.Request(SfxId.AttackHit); }
+        private void OnEnemyDamaged(Enemy enemy)
+        {
+            if (battle.IsSkillActive) return;
+            queue.Request(SfxId.SwordSwing);
+            queue.Request(SfxId.AttackHit);
+        }
         private void OnSkillUsed() { queue.Request(SfxId.PlumSwordSkill); }
         private void OnEnemyDefeated(Enemy enemy) { if (enemy.Kind == EnemyKind.Normal) queue.Request(SfxId.EnemyDefeated); }
         private void OnEnemyAdded(Enemy enemy) { if (enemy.Kind == EnemyKind.Boss) queue.Request(SfxId.BossAppear); }
