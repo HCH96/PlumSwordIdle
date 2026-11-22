@@ -30,3 +30,4 @@
 | `20261122-131718` | skill_hits | 2026-11-22 13:39 | 3건 | EditMode 897/897, PlayMode 160/160 | claude (교차) | 4건 | [report.md](20261122-131718/report.md) |
 | `20261122-133943` | clear_wait | 2026-11-22 13:57 | 3건 | EditMode 920/920, PlayMode 164/164 | claude (교차) | 4건 | [report.md](20261122-133943/report.md) |
 | `20261122-135729` | stage_hud | 2026-11-22 14:19 | 3건 | EditMode 945/945, PlayMode 172/172 | claude (교차) | 6건 | [report.md](20261122-135729/report.md) |
+| `20261122-160726` | balance | 2026-11-22 16:32 | 4건 | EditMode 989/989, PlayMode 174/174 | claude (교차) | 0건 | [report.md](20261122-160726/report.md) |
