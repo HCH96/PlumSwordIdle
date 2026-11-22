@@ -27,7 +27,9 @@
   3. **공격** (이동이 끝난 좌표로 판정한다):
      - 제자: 대기 시간이 `1e-9` 이하이고 거리 `1.0 + 1e-9` 이내의 적이 하나라도 있으면 **공격 차례**다. 차례가 되면 스킬이 준비됐는지(`IsSkillReady`: 스킬이 켜져 있고 스킬 대기가 `1e-9` 이하) 보고 아래 둘 중 하나만 한다. 차례가 아니면 스킬이 준비돼 있어도 쓰지 않는다 (거리 1.0 밖·2.0 안에만 적이 있을 때도 그렇다).
        - **기본 공격** (스킬이 준비되지 않았을 때): `StatUpgrades.Attack`을 한 번 읽어, 거리 `1.0 + 1e-9` 이내의 모든 적의 체력을 그만큼 줄인다 (0에서 멈춤). 적마다 `EnemyDamaged`를 추가된 순서대로 보낸다. 그 뒤 공격 대기를 `Battle.DiscipleBaseAttackInterval`(1.0초)로 정한다.
-       - **스킬 이십사수매화검법** (스킬이 준비됐을 때, 기본 공격 대신): `SkillDamage`를 한 번 읽어, 거리 `2.0 + 1e-9`(`Battle.SkillRange`) 이내의 모든 적의 체력을 그만큼 줄인다 (0에서 멈춤). 적마다 `EnemyDamaged`를 추가된 순서대로 보낸 뒤 `SkillUsed`를 한 번 보낸다. 그 뒤 스킬 대기를 `Battle.SkillCooldownSeconds`(5.0초)로, 공격 대기를 `Battle.DiscipleBaseAttackInterval`(1.0초)로 정한다. 그래서 `EnemyDamaged`와 `SkillUsed`를 받는 시점에 `SkillCooldown`은 아직 0이고 `DiscipleAttackCooldown`도 정해지기 전의 값이다.
+       - **스킬 이십사수매화검법** (스킬이 준비됐을 때, 기본 공격 대신): `SkillDamage`를 한 번 읽어 총 피해로 저장하고 `IsSkillActive`를 켜서 0번 타를 준다. 그 뒤 `SkillUsed`를 한 번 보내고 스킬 대기를 5.0초, 공격 대기를 1.0초로 정한다. 첫 타의 `EnemyDamaged`와 `SkillUsed`에서 스킬 대기는 아직 0이다.
+       - 스킬 발동 칸을 0으로 세어 `SkillHitSteps`의 13칸에 타격한다. 각 타는 이동 후 좌표에서 칸 시작 적 목록 중 앞 2.0 + `Epsilon` 이내의 모든 적에게 분배 피해를 주고, 체력을 0에서 멈춘 뒤 추가 순서대로 `EnemyDamaged`를 보낸다. 대상이 없으면 빗나간다. 첫 타 이후에는 `SkillUsed`를 보내지 않는다. 쓰러짐은 칸 끝에 판정한다.
+       - 발동 칸부터 62번째 칸까지 스킬이 활성화되어 제자가 이동하거나 기본 공격·새 스킬을 사용하지 않는다. 63번째 칸부터 해제하여 평소대로 움직이고 공격한다. 대기 감소, 적 이동·공격과 종남 검기는 계속된다. `EnemyDamaged` 안에서 스킬 타는 `IsSkillActive`가 `true`, 기본 공격은 `false`다.
      - 적(추가된 순서대로): 대기 시간이 `1e-9` 이하이고 제자까지의 거리가 자기 공격 범위(일반 0.8, 보스 1.0)에 `1e-9`를 더한 값 이하이면 공격한다. 종남 장로는 공격 횟수를 세어 세 번째마다 기본 공격 대신 눈꽃 검기를 자신의 좌표에서 발사한다. 검기는 공격 당시의 공격력만큼 적중 시 피해를 준다. 나머지 공격은 즉시 체력을 자기 공격력만큼 줄이고 `DiscipleDamaged`를 보낸다. 공격 대기는 모두 자기 공격 간격으로 정한다. **이번 칸에 제자의 공격으로 체력이 0이 된 적도 공격한다.**
   4. **쓰러짐 판정**: 체력이 0인 적을 모두 `Enemies`에서 빼고 `IsDead`를 `true`로 만든다. 제자의 체력이 0이면 `IsDiscipleDefeated`를 `true`로 만든다. 이 값들을 모두 바꾼 뒤에 알림을 보낸다: 쓰러진 적마다 `EnemyDefeated`(추가된 순서대로), 그다음 제자가 패배했으면 `DiscipleDefeated` 한 번.
 - **동시에 쓰러짐**: 같은 칸에 제자와 적이 함께 쓰러지면 둘 다 처리된다. `EnemyDefeated`를 받는 시점에 `IsDiscipleDefeated`는 이미 `true`다. 이것으로 스테이지 기능이 동시 처치를 가려낸다. 전투는 성공·실패와 보상을 판정하지 않는다.
@@ -40,13 +42,13 @@
 - **개방 보스 쓰러짐 표시**: 승인된 25프레임을 0.075초 간격으로 재생하고 마지막 프레임을 0.5초 유지한다. 쓰러지는 동안 방망이를 놓으며 방망이는 스프라이트에 포함된다. 보스 승리 전환의 페이드 시작은 쓰러짐 재생 후로 미룬다.
 - **개방 보스 기술**: 매 세 번째 공격에 방망이를 크게 휘두르는 기술 동작을 쓴다. 피해는 일반 공격과 같은 근접 피해로 즉시 한 번 적용한다. 피해량·범위·공격 간격은 기존 보스 수치 그대로이며 투사체는 없다. 기술 발생 주기와 피해량은 임시값이다.
 - **적 추가** `AddEnemy(kind, stage, position)`: 능력치를 `EnemyStats`로 계산해 적을 만들고 `Enemies` 끝에 넣은 뒤 `EnemyAdded`를 보낸다. 새 적은 체력이 가득하고 공격 대기 시간이 0(바로 공격할 수 있음)이다. 순번 `Index`는 `Reset` 뒤 0부터, 추가할 때마다 1씩 는다.
-- **초기화** `Reset()`: 제자 좌표 0, 제자 체력 = `StatUpgrades.MaxHealth`, 제자 공격 대기 0, 스킬 대기 0(준비됨), `IsDiscipleDefeated = false`, 모든 적과 종남 검기 제거(`EnemyDefeated`는 보내지 않는다), 다음 `Index` 0, 모아 둔 시간 0으로 만든 뒤 `ResetCompleted`를 한 번 보낸다. `Paused`는 바꾸지 않는다.
+- **초기화** `Reset()`: 제자 좌표 0, 제자 체력 = `StatUpgrades.MaxHealth`, 제자 공격 대기 0, 스킬 대기 0(준비됨), `IsSkillActive = false`와 남은 타격 취소, `IsDiscipleDefeated = false`, 모든 적과 종남 검기 제거(`EnemyDefeated`는 보내지 않는다), 다음 `Index` 0, 모아 둔 시간 0으로 만든 뒤 `ResetCompleted`를 한 번 보낸다. `Paused`는 바꾸지 않는다.
 - **멈춤** `SetPaused(paused)`: 멈춘 동안 `Step`과 `Tick`은 아무것도 하지 않고, `Tick`이 받은 시간은 모으지 않고 버린다. 알림은 없다. 처음에는 멈춰 있지 않다. 멈춤을 거는 쪽은 스테이지 기능이다 (페이드 동안).
 - **스킬 켜기**: 생성자의 `skillEnabled`가 `true`일 때만 스킬이 있다. 게임에서는 `GameRoot`가 `true`로 만든다. `false`(기본값)이면 스킬 대기가 줄지 않고(0 그대로), 공격 차례는 늘 기본 공격이며, `SkillUsed`가 오지 않는다 (1·2단계와 같은 전투). 처음 상태의 스킬 대기는 0(준비됨)이다. 별도 습득 과정은 없다.
 - **강화·경지 반영** (`docs/spec/stat_upgrade.md`, `docs/spec/realm.md`의 약속):
-  - 공격력: 기본 공격·스킬 피해를 줄 때마다 `StatUpgrades.Attack`(경지 보너스 포함)을 읽는다.
+  - 공격력: 기본 공격 때와 스킬 발동 때 `StatUpgrades.Attack`(경지 보너스 포함)을 읽는다.
   - 공격 간격: 늘 `Battle.DiscipleBaseAttackInterval`(1.0초)이다. 강화·경지로 바뀌지 않는다.
-  - 내공: 스킬 피해를 줄 때마다 `StatUpgrades.GetLevel(StatType.InnerPower)`를 읽는다 (`SkillDamage`). 내공·공격력을 강화해도 흐르는 스킬 대기는 바꾸지 않는다.
+  - 내공: 스킬 발동 때 `StatUpgrades.GetLevel(StatType.InnerPower)`를 읽는다 (`SkillDamage`). 내공·공격력을 강화해도 진행 중인 스킬의 저장된 총 피해와 흐르는 스킬 대기는 바꾸지 않는다.
   - 체력: `StatUpgrades.Upgraded`에서 `StatType.Health`를 받으면 `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`을 구해 기억을 새 값으로 바꾼다. 제자가 패배한 상태가 아니면 현재 체력을 늘어난 양만큼 늘린다 (예: `40/100 → 60/120`). 다른 능력치(공격력, 내공)의 `Upgraded`에는 아무것도 하지 않는다.
   - 경지 돌파: 생성자에 `realm`을 받았으면 `realm.BrokeThrough`를 받을 때 체력 강화와 같은 처리를 한다: `늘어난 양 = StatUpgrades.MaxHealth − 기억해 둔 직전 최대 체력`, 기억을 새 값으로 바꾸고, 패배한 상태가 아니면 현재 체력을 그만큼 늘린다 (예: `90/100 → 100/110`). `BrokeThrough`를 받을 때 `realm.Current`는 이미 새 경지라 `MaxHealth`는 새 값이다. 멈춘 동안에도 반영한다. 알림은 없다. `realm`이 `null`이면 구독하지 않는다 (돌파해도 현재 체력은 그대로다).
 - 몬스터를 처치해도 제자의 체력은 회복하지 않는다. 체력이 가득 차는 것은 `Reset`뿐이다.
@@ -87,17 +89,18 @@
 | `CombatLayout.EnemyOffsetY(음수)` | `ArgumentOutOfRangeException` | |
 | `CombatLayout.HealthRatio`의 `maxHealth`가 0 이하 | 0.0 | |
 | `CombatLayout.HealthRatio`의 `health`가 음수 / `maxHealth`보다 큼 | 0.0 / 1.0 으로 잘라낸다 | |
-| 공격 차례에 스킬이 준비됨 | 기본 공격 대신 스킬 | 2.0 안 모든 적 −`SkillDamage`, `EnemyDamaged` 적 수만큼 → `SkillUsed` 1번, 스킬 대기 5.0, 공격 대기 1.0 |
+| 공격 차례에 스킬이 준비됨 | 기본 공격 대신 스킬 | 총 피해 저장 후 첫 타의 `EnemyDamaged`들 → `SkillUsed` 1번, 스킬 대기 5.0, 공격 대기 1.0 |
 | 스킬 대기가 끝났지만 공격 대기가 남음 | 다음 공격 차례까지 기다린다 | `IsSkillReady`는 `true` 그대로 |
 | 거리 1.0 밖·2.0 안에만 적이 있음 | 공격 차례가 아니다. 스킬도 쓰지 않는다 | 제자는 계속 다가간다 |
 | 거리 2.0 밖의 적 | 스킬에 맞지 않는다 | 체력 그대로, `EnemyDamaged` 없음 |
-| 적이 없음 | 스킬 대기는 계속 줄고, 0이면 준비된 채 기다린다 | |
-| 멈춘 동안, 패배한 뒤 | 스킬 대기도 줄지 않는다 | |
-| `skillEnabled`가 `false` | 스킬이 없다 | `SkillCooldown` 0, `IsSkillReady` `false`, `SkillUsed` 없음 |
+| 적이 없음 | 활성 스킬의 타는 빗나가고 제자는 정지. 그 외에는 스킬 준비를 기다린다 | 대기는 계속 감소 |
+| 멈춘 동안, 패배한 뒤 | 스킬 대기와 타 진행이 멈춘다 | |
+| `skillEnabled`가 `false` | 스킬이 없다 | `SkillCooldown` 0, `IsSkillReady`와 `IsSkillActive` `false`, `SkillUsed` 없음 |
 | 스킬 피해가 남은 체력보다 큼 | 체력 0에서 멈춘다 | |
 | 패배한 상태에서 경지 돌파 | 현재 체력을 늘리지 않는다 | 체력 0 그대로. 직전 최대 체력 기억만 바꾼다 |
 | 생성자의 `realm`이 `null` | 돌파를 구독하지 않는다 | 돌파해도 현재 체력 그대로 |
 | `CalculateSkillDamage`의 `attack` 또는 `innerPowerLevel`이 음수 | `ArgumentOutOfRangeException` | |
+| `CalculateSkillHitDamage`의 총 피해가 음수 또는 타 번호가 0~12 밖 | `ArgumentOutOfRangeException` | |
 | `CombatLayout.SkillSlashAlpha`의 시간이 음수 / `NaN` | 0.6 / 0.0 | |
 
 ## 수치
@@ -118,6 +121,7 @@
 | 스킬 재사용 대기 `Battle.SkillCooldownSeconds` | 5.0초 (임시) | 스킬을 쓴 칸부터 센다(250칸). 기본 공격 간격과 따로 센다 |
 | 스킬 배율 `Battle.SkillBasePercent`, `Battle.SkillPercentPerInnerLevel` | 200%, 내공 한 단계당 +10%p (임시) | 정수 % (`int`) |
 | 스킬 피해 `Battle.CalculateSkillDamage(attack, innerPowerLevel)` | `attack × (200 + 10 × innerPowerLevel) / 100` | `long`으로 계산하고 정수 나눗셈(내림). (10, 0) → 20, (10, 1) → 21, (13, 2) → 28, (11, 0) → 22. `SkillDamage`는 `StatUpgrades.Attack`과 `GetLevel(StatType.InnerPower)`를 넣은 값 |
+| 스킬 타격 | `SkillHitCount` 13, `SkillActiveSteps` 63, `SkillHitSteps` {0, 3, 5, 9, 13, 19, 23, 28, 36, 38, 42, 44, 46} | 0~11타는 총 피해 / 13, 12타는 총 피해에서 앞 12타의 합을 뺀 값. 발동 칸이 0번째다 |
 | 검기 띠 | 가로 2.0 × 세로 0.4, RGB (1.0, 0.55, 0.75), 불투명도 0.6에서 0.25초 동안 0으로 (임시) | `CombatLayout.SkillSlashSeconds` = 0.25, `SkillSlashAlpha(t)` = `0.6 × (1 − t / 0.25)`를 0.0 ~ 0.6으로 잘라냄 |
 | 일반 몬스터 반응 거리 `EnemyStats.NormalReactRange` | 3.0 유닛 (임시) | |
 | 일반 몬스터 이동 속도 `EnemyStats.NormalMoveSpeed` | 초당 1.0 유닛 (임시) | 한 칸에 0.02 |
@@ -206,6 +210,9 @@ namespace PlumSword.Core.Combat
         public const double SkillCooldownSeconds = 5.0;       // 스킬 재사용 대기 (초)
         public const int SkillBasePercent = 200;              // 내공 0단계의 스킬 배율 (%)
         public const int SkillPercentPerInnerLevel = 10;      // 내공 한 단계당 더하는 배율 (%p)
+        public const int SkillHitCount = 13;
+        public const int SkillActiveSteps = 63;
+        public static readonly IReadOnlyList<int> SkillHitSteps; // 0, 3, 5, 9, 13, 19, 23, 28, 36, 38, 42, 44, 46
 
         // upgrades: 제자의 공격력·최대 체력·내공 단계를 읽을 곳. null 이면 ArgumentNullException.
         // realm: null 이 아니면 realm.BrokeThrough 를 구독해 돌파 때 현재 체력을 늘린다. null 이면 구독하지 않는다.
@@ -224,6 +231,7 @@ namespace PlumSword.Core.Combat
         public bool Paused { get; }
 
         public bool SkillEnabled { get; }               // 생성자의 skillEnabled
+        public bool IsSkillActive { get; }              // 발동 칸부터 62번째 칸까지 true
         public double SkillCooldown { get; }            // 스킬을 다시 쓸 수 있을 때까지 남은 시간(초). 0 이상. 스킬이 꺼져 있으면 늘 0
         public bool IsSkillReady { get; }               // SkillEnabled 이고 SkillCooldown <= Epsilon
         public long SkillDamage { get; }                // CalculateSkillDamage(upgrades.Attack, upgrades.GetLevel(StatType.InnerPower)). 읽을 때마다 계산
@@ -231,6 +239,7 @@ namespace PlumSword.Core.Combat
         // attack × (SkillBasePercent + SkillPercentPerInnerLevel × innerPowerLevel) / 100 을 long 정수 나눗셈(내림)으로.
         // attack 또는 innerPowerLevel 이 음수면 ArgumentOutOfRangeException.
         public static long CalculateSkillDamage(long attack, int innerPowerLevel);
+        public static long CalculateSkillHitDamage(long totalDamage, int hitIndex); // 음수 피해 또는 범위 밖 번호는 ArgumentOutOfRangeException
 
         // 살아 있는 적. 추가된 순서. 쓰러진 적은 쓰러짐 판정에서 빠진다.
         public System.Collections.Generic.IReadOnlyList<Enemy> Enemies { get; }
@@ -397,7 +406,7 @@ namespace PlumSword.Game.Combat
   - **달려와 멈춘 칸**: `Battle`이 대기를 `공격 간격 × 7/17`로 올리므로("동작"의 2-1), 그 칸부터 앞 동작 0번이 시작되고 피해는 7번 프레임에 들어간다. 앞 동작은 `engaged`이면 그 칸에 움직였어도 보여 준다. 대기 없이 공격이 일어나는 경우(제자가 서 있는 채 범위 안에 적이 생겼을 때)에는 타격 프레임 7부터 재생한다.
   - 달리기 20 fps, 대기 10 fps로 반복한다 (임시). 제자 이동 속도는 초당 6.48 유닛이다 ("수치"). `Battle`은 0.02초 칸으로 움직여 화면 프레임(예: 60 fps)에 움직임이 없는 프레임이 끼므로, 움직임이 `RunGraceSeconds`(0.1초) 동안 없어야 달리기를 멈춘다. 다른 동작에서 달리기·대기로 들어가면 처음부터 센다.
   - 패배·멈춤 상태는 `engaged`가 아니므로 대기 동작을 보여 준다 (진행 중이던 공격 마무리는 끝까지 재생한다).
-- **스킬 (이십사수매화검법)**: `SkillUsed` 때 사용자가 확정한 제자·매화 꽃잎 합성 애니메이션을 24fps, 32프레임 한 번 재생한다. 시트 `Art/Characters/disciple_skill`은 8열 × 4행, 칸 99×105, 피벗 (58, 6)px이다. 재생 중 전투가 멈추면 프레임도 멈추고 패배·초기화하면 중단한다. 재발동하면 처음부터 재생한다. 피해는 기존 스킬 판정 시점에 즉시 적용하며, 애니메이션 재생 중에도 전투는 계속된다. 에셋이 없으면 기존 기본 공격과 아래 임시 검기 띠로 대체한다.
+- **스킬 (이십사수매화검법)**: `SkillUsed` 때 사용자가 확정한 제자·매화 꽃잎 합성 애니메이션을 24fps, 32프레임 한 번 재생한다. 시트 `Art/Characters/disciple_skill`은 8열 × 4행, 칸 99×105, 피벗 (58, 6)px이다. 재생 중 전투가 멈추면 프레임도 멈추고 패배·초기화하면 중단한다. 재발동하면 처음부터 재생한다. 피해는 위의 13타 일정에 따라 적용하며, 애니메이션 재생 중에도 적의 전투는 계속된다. 에셋이 없으면 기존 기본 공격과 아래 임시 검기 띠로 대체한다.
   - 모양: 1×1 흰색 스프라이트를 가로 2.0 × 세로 0.4로 늘린 사각형, 색 RGB (1.0, 0.55, 0.75).
   - 위치: 쏜 순간의 제자 표시 위치 기준으로 왼쪽 끝이 발의 x, 세로 가운데가 발 위 0.75 유닛이다. 곧 가운데 `(DisciplePosition − 2.25 + 1.0, −1.5 + 0.75)`에 고정되고 제자를 따라가지 않는다. 그리는 순서는 20000 (캐릭터 위, 체력 바 아래).
   - 불투명도: 쏜 뒤 흐른 시간 `t`(`Time.deltaTime`으로 센다)로 `CombatLayout.SkillSlashAlpha(t)`이고, `CombatLayout.SkillSlashSeconds`(0.25초)가 지나면 숨긴다. 보이는 중에 또 `SkillUsed`가 오면 새 위치에서 처음부터 센다. `ResetCompleted`에서 숨긴다.
@@ -472,20 +481,22 @@ namespace PlumSword.Game.Combat
 
 스킬 발동 (`BattleSkillTests`)
 
-49. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 뒤: 보스의 `Health`는 80이고, `EnemyDamaged` 1번 다음에 `SkillUsed` 1번이 이 순서로 온다. `SkillCooldown`은 5.0, `IsSkillReady`는 `false`, `DiscipleAttackCooldown`은 1.0, `DiscipleHealth`는 90이다.
-50. 49번에 이어: 51칸 뒤 보스의 `Health`는 70(기본 공격)이고 `SkillUsed`는 1번 그대로, `SkillCooldown`은 4.0이다. 250칸 뒤 보스의 `Health`는 40이고 `IsSkillReady`는 `false`, 251칸 뒤 20이고 `SkillUsed`는 2번이다.
-51. 스킬 전투에서 `AddEnemy(Normal, 1, 0.8)`, `AddEnemy(Boss, 1, 1.9)`, `AddEnemy(Boss, 1, 2.5)` 뒤 1칸 뒤: 세 적의 `Health`는 10, 80, 100이고 `EnemyDamaged`는 2번(`Index` 0, 1 순서), `SkillUsed`는 1번 온다 (2.0 안의 적만 맞는다).
-52. 스킬 전투에서 고정형 보스 `AddEnemy(Boss, 2, 1.5)` 뒤: 1칸 뒤 보스의 `Health`는 130, `SkillUsed`는 0번, `IsSkillReady`는 `true`다 (거리 1.0 밖·2.0 안이면 공격 차례가 아니다). 4칸 뒤 `DisciplePosition`은 0.5, 24칸 뒤 보스의 `Health`는 130, 25칸 뒤 110이고 `SkillUsed`는 1번이다 (달려와 멈춘 앞 동작 뒤 스킬).
-53. 스킬 전투에서 `AddEnemy(Normal, 1, 0.8)`과 고정형 `AddEnemy(Boss, 2, 8.0)` 뒤: 1칸 뒤 일반 몬스터의 `Health`는 10, 51칸 뒤 `Enemies.Count`는 1이다. 106칸 뒤 `DisciplePosition`은 7.0, 126칸 뒤 보스의 `Health`는 130, 127칸 뒤 120이다. 251칸 뒤 `IsSkillReady`는 `true`이고 보스의 `Health`는 100, 276칸 뒤 100, 277칸 뒤 80이고 `SkillUsed`는 2번이다 (스킬 준비가 끝나도 다음 공격 차례까지 기다린다).
+49. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 뒤 보스 체력은 99이고 `EnemyDamaged` 다음 `SkillUsed`가 온다. 스킬 대기는 5.0, 공격 대기는 1.0, 제자 체력은 90이다.
+50. 49번에 이어 51칸 뒤 보스 체력 80, `SkillUsed` 1번, 스킬 대기 4.0이다. 250칸 뒤 체력 40이고 준비 전이며, 264칸 뒤 체력 39, `SkillUsed` 2번이다.
+51. 일반 적 0.8, 보스 1.9와 2.5를 순서대로 추가하면 첫 칸 체력은 29, 99, 100이며 피해 알림은 0, 1 순서이고 스킬 알림은 1번이다.
+52. 고정 보스 1.5에서는 첫 칸 체력 130, 스킬 미발동, 4칸 뒤 제자 좌표 0.5, 24칸 뒤 체력 130, 25칸 뒤 129이며 스킬 알림은 1번이다.
+53. 일반 적 0.8과 고정 보스 8.0을 추가하면 첫 칸 일반 적 체력 29, 51칸 뒤 적 2명, 106칸 뒤 제자 좌표 5.4432다. 126·127칸 뒤 보스 체력은 130, 251·289칸 뒤 100, 290칸 뒤 99이며 스킬 알림은 2번이다.
 54. 기본 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 251칸 뒤: 보스의 `Health`는 40, `SkillUsed`는 0번, `SkillCooldown`은 0이다.
-55. 스킬 전투를 `new StatUpgrades(wallet, 15, 5)`로 만들고 `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤: `EnemyDamaged` → `SkillUsed` → `EnemyDefeated` → `DiscipleDefeated`가 이 순서로 1번씩 오고, `EnemyDefeated`를 받는 시점에 읽은 `IsDiscipleDefeated`는 `true`다 (스킬 피해 30으로 쓰러진 몬스터도 그 칸에 공격한다).
-56. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.InnerPower)`를 부르면 `SkillCooldown`은 5.0 그대로이고, 251칸 뒤 보스의 `Health`는 19다 (40 − 21).
-57. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `Reset()`을 부르면 `SkillCooldown`은 0, `IsSkillReady`는 `true`다. 이어서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 더 진행하면 새 보스의 `Health`는 80이다.
+55. 공격력 200, 체력 5인 스킬 전투에서 일반 적 0.8을 추가하면 첫 칸에 `EnemyDamaged` → `SkillUsed` → `EnemyDefeated` → `DiscipleDefeated` 순서로 알리고 적 쓰러짐 알림에서 제자 패배도 이미 참이다.
+56. 보스 1.0에 첫 칸 스킬을 쓴 뒤 내공을 강화해도 대기는 5.0이고 310칸 뒤 보스 체력은 19다.
+57. 첫 스킬 뒤 `Reset()`하면 스킬 대기는 0, 준비는 참, 활성 상태는 거짓이고 새 보스의 첫 칸 체력은 99다.
 58. 스킬 전투에서 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하고 `SetPaused(true)` 뒤 `Step()` 10번과 `Tick(0.1)`을 불러도 `SkillCooldown`은 5.0이다.
 59. 스킬 전투를 `new StatUpgrades(wallet, 10, 5)`로 만들고 `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤: `IsDiscipleDefeated`는 `true`, `SkillCooldown`은 5.0이고, 이어서 `Step()` 10번 뒤에도 5.0이다.
 60. 스킬 전투에서 적이 없을 때 50칸 뒤 `SkillCooldown`은 0, `IsSkillReady`는 `true`, `DisciplePosition`은 6.48이다.
-61. 스킬 전투에서 `SkillUsed` 안에서 보스의 `Health`와 `SkillCooldown`을 읽게 하고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면, 읽은 값은 80과 0이다.
+61. 스킬 전투에서 `SkillUsed` 안에서 보스의 `Health`와 `SkillCooldown`을 읽게 하고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면, 읽은 값은 99와 0이다.
 62. 스킬 전투에서 `SkillUsed` 안에서 `Reset()`을 부르게 하고 `AddEnemy(Boss, 1, 1.0)` 뒤 1칸 진행하면, 예외 없이 `SkillCooldown`은 0, `DiscipleAttackCooldown`은 0, `DiscipleHealth`는 100, `Enemies.Count`는 0이고, `ResetCompleted`는 1번, `DiscipleDamaged`는 0번 온다.
+
+스킬 분할 타격 (`BattleSkillHitTests`): 총 피해 20은 앞 12타가 각 1, 마지막이 8이고, 26은 각 2, 12는 앞 타가 0, 마지막이 12다. 음수 피해와 범위 밖 타 번호는 예외다. 고정 보스 1.0의 체력은 1·3·4·10·47·63·64칸 뒤 각각 129·129·128·126·110·110·100이고 활성 상태는 63칸 뒤 참, 64칸 뒤 거짓이다. 일반 적 2.6은 접근 후 마지막 5타만 맞아 47칸 뒤 체력 18이다. 첫 타로 적을 쓰러뜨리면 63칸까지 제자는 제자리이고 알림은 한 번이며 64칸에 0.1296 전진한다. 활성 상태 알림, 비활성 스킬, 멈춤·리셋과 발동 후 강화의 피해 고정도 검증한다.
 
 경지 돌파 (`BattleRealmTests`)
 
