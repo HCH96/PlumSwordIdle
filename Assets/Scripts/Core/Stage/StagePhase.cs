@@ -20,5 +20,8 @@ namespace PlumSword.Core.Stage
 
         /// <summary>마지막 적을 이긴 뒤 전환까지 기다리는 중. 전투는 계속되고 제자는 제자리에 선다.</summary>
         ClearWait = 5,
+
+        /// <summary>천마를 처음 이겨 게임이 끝났다. Tick·전투 알림을 무시한다.</summary>
+        Cleared = 6,
     }
 }

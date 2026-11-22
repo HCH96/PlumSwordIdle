@@ -49,7 +49,7 @@ namespace PlumSword.Core.Stage
         /// startStage: 1 보다 작으면 1 로 만든다 (예외 없음).
         /// 생성자는 전투·지갑·강화를 건드리지 않고 알림을 보내지 않는다.
         /// </summary>
-        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0)
+        public StageProgress(Wallet wallet, StatUpgrades upgrades, Battle battle, Random random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0, bool useRegression = false, int regressionCount = 0)
         {
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             _upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
@@ -58,8 +58,11 @@ namespace PlumSword.Core.Stage
             if (double.IsNaN(clearWaitSeconds) || double.IsInfinity(clearWaitSeconds) || clearWaitSeconds < 0.0)
                 throw new ArgumentOutOfRangeException(nameof(clearWaitSeconds));
             ClearWaitSeconds = clearWaitSeconds;
+            UseRegression = useRegression;
+            RegressionCount = Math.Max(0, regressionCount);
 
             StageNumber = startStage < 1 ? 1 : startStage;
+            if (UseRegression && StageNumber > 5) StageNumber = (StageNumber - 1) % 5 + 1;
             SeenIntroStage = Math.Max(0, Math.Min(5, seenIntroStage));
             Phase = StagePhase.Playing;
             HasBegun = false;
@@ -81,6 +84,9 @@ namespace PlumSword.Core.Stage
         /// <summary>제자가 쓰러져 실패했을 때 그 스테이지 번호를 담아 보낸다. 이때 Phase 는 이미 FadingOut.</summary>
         public event Action<int> StageFailed;
 
+        public event Action<int> Regressed;
+        public event Action GameCleared;
+
         /// <summary>화면이 다시 그려야 할 때 보낸다. 가는 때는 사양 "동작"의 목록이 전부다.</summary>
         public event Action Changed;
 
@@ -95,6 +101,8 @@ namespace PlumSword.Core.Stage
 
         public StagePhase Phase { get; private set; }
         public double ClearWaitSeconds { get; }
+        public bool UseRegression { get; }
+        public int RegressionCount { get; private set; }
 
         /// <summary>1회차에서 소개를 본 마지막 화면상 스테이지 번호 (0~5). 저장 값.</summary>
         public int SeenIntroStage { get; private set; }
@@ -176,7 +184,7 @@ namespace PlumSword.Core.Stage
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "경과 시간은 0 이상의 유한한 값이어야 한다.");
             }
 
-            if (!HasBegun || Phase == StagePhase.Playing)
+            if (!HasBegun || Phase == StagePhase.Playing || Phase == StagePhase.Cleared)
             {
                 return;
             }
@@ -185,6 +193,11 @@ namespace PlumSword.Core.Stage
             {
                 _clearWaitElapsed += deltaSeconds;
                 if (_clearWaitElapsed < ClearWaitSeconds - FadeTolerance) return;
+                if (UseRegression && !_substageTransition && DisplayStageNumber == StageLayout.FinalDisplayStage)
+                {
+                    FinishGame();
+                    return;
+                }
                 _fadeElapsed = Math.Max(0.0, _clearWaitElapsed - ClearWaitSeconds);
                 Phase = StagePhase.FadingOut;
                 _battle.SetPaused(true);
@@ -336,6 +349,20 @@ namespace PlumSword.Core.Stage
             _nextStageNumber = cleared == int.MaxValue ? int.MaxValue : cleared + 1;
             BeginSuccessTransition();
             StageCleared?.Invoke(cleared);
+            if (UseRegression && DisplayStageNumber == StageLayout.FinalDisplayStage && ClearWaitSeconds <= 0.0)
+            {
+                FinishGame();
+                return;
+            }
+            Changed?.Invoke();
+        }
+
+        private void FinishGame()
+        {
+            Phase = StagePhase.Cleared;
+            _battle.SetPaused(true);
+            _upgrades.SetLocked(true);
+            GameCleared?.Invoke();
             Changed?.Invoke();
         }
 
@@ -393,8 +420,11 @@ namespace PlumSword.Core.Stage
             }
 
             int failed = StageNumber;
-            BeginTransition(failed);
+            bool regress = UseRegression && DisplayStageNumber == StageLayout.FinalDisplayStage;
+            BeginTransition(regress ? 1 : failed);
+            if (regress && RegressionCount < int.MaxValue) RegressionCount++;
             StageFailed?.Invoke(failed);
+            if (regress) Regressed?.Invoke(RegressionCount);
             Changed?.Invoke();
         }
 
