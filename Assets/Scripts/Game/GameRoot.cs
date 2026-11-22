@@ -24,6 +24,7 @@ namespace PlumSword.Game
         private static readonly Vector2 UiReferenceResolution = new Vector2(640f, 360f);
         private ISaveStore saveStore;
         internal static StartEntry NextEntry = StartEntry.Launch;
+        internal static MemorySaveStore BatchSaveStore;
         private bool restarting;
 
         public OfflineRewardResult OfflineReward { get; private set; }
@@ -65,8 +66,8 @@ namespace PlumSword.Game
             NextEntry = StartEntry.Launch;
             if (Application.isBatchMode)
             {
-                saveStore = new MemorySaveStore();
-                LoadResult = SaveCodec.Decode(null);
+                saveStore = BatchSaveStore ?? new MemorySaveStore();
+                LoadResult = SaveCodec.Decode(BatchSaveStore != null ? BatchSaveStore.Text : null);
             }
             else
             {
@@ -184,6 +185,14 @@ namespace PlumSword.Game
             if (restarting) return;
             restarting = true;
             NextEntry = StartEntry.TitleReturn;
+            Recreate();
+        }
+
+        internal void RecreateAs(StartEntry entry)
+        {
+            if (restarting) return;
+            restarting = true;
+            NextEntry = entry;
             Recreate();
         }
 
