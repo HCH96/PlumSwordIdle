@@ -19,6 +19,7 @@ namespace PlumSword.Game.Tests.StartMenu
         private sealed class FakeStore : ISaveStore
         {
             public bool Succeeds = true;
+            public bool TryDelete() => true;
             public bool TryWrite(string text) => Succeeds;
         }
 

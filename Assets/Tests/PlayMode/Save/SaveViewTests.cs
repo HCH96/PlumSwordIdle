@@ -18,6 +18,7 @@ namespace PlumSword.Game.Tests.Save
         {
             public int Attempts;
             public bool Succeeds = true;
+            public bool TryDelete() => true;
             public bool TryWrite(string text) { Attempts++; return Succeeds; }
         }
         private GameObject canvasObject, viewObject;

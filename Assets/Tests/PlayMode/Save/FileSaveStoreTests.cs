@@ -24,6 +24,19 @@ namespace PlumSword.Game.Tests.Save
         }
 
         [Test]
+        public void TryDelete_ExistingAndMissingFiles_Succeeds()
+        {
+            var store = new FileSaveStore(directory);
+            Assert.That(store.TryDelete(), Is.True);
+            Assert.That(store.TryWrite("abc"), Is.True);
+            File.WriteAllText(Path.Combine(directory, "save.tmp"), "temporary");
+            Assert.That(store.TryDelete(), Is.True);
+            Assert.That(File.Exists(Path.Combine(directory, "save.dat")), Is.False);
+            Assert.That(File.Exists(Path.Combine(directory, "save.tmp")), Is.False);
+            Assert.That(store.TryDelete(), Is.True);
+        }
+
+        [Test]
         public void Constructor_NullOrEmptyDirectory_ThrowsArgumentException()
         {
             Assert.Throws<ArgumentNullException>(() => new FileSaveStore(null));

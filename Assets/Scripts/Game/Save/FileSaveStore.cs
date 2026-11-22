@@ -29,6 +29,18 @@ namespace PlumSword.Game.Save
             }
         }
 
+        public bool TryDelete()
+        {
+            try
+            {
+                File.Delete(Path.Combine(directory, "save.dat"));
+                File.Delete(Path.Combine(directory, "save.tmp"));
+                return true;
+            }
+            catch (DirectoryNotFoundException) { return true; }
+            catch (Exception) { return false; }
+        }
+
         public bool TryWrite(string text)
         {
             if (text == null) throw new ArgumentNullException(nameof(text));

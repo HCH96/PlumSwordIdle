@@ -7,7 +7,7 @@ namespace PlumSword.Core.Tests.Save
 {
     public class SaveCodecTests
     {
-        private const string Standard = "version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nrealmKills=0\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n";
+        private const string Standard = "version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nrealmKills=0\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\nregressionCount=0\nplayTimeMs=0\nautoUpgrade=1\n";
 
         [Test]
         public void Encode_StandardData_ProducesExactText() =>

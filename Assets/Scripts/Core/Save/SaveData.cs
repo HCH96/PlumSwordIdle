@@ -11,7 +11,8 @@ namespace PlumSword.Core.Save
         public const int CurrentVersion = 2;
 
         public SaveData(long gold, int attackLevel, int healthLevel, int innerPowerLevel, int realmLevel,
-            int stageNumber, int seenIntroStage, long savedAtUtcTicks, int realmKills = 0)
+            int stageNumber, int seenIntroStage, long savedAtUtcTicks, int realmKills = 0,
+            int regressionCount = 0, long playTimeMs = 0, bool autoUpgrade = true)
         {
             Gold = gold;
             AttackLevel = attackLevel;
@@ -22,6 +23,9 @@ namespace PlumSword.Core.Save
             StageNumber = stageNumber;
             SeenIntroStage = seenIntroStage;
             SavedAtUtcTicks = savedAtUtcTicks;
+            RegressionCount = regressionCount;
+            PlayTimeMs = playTimeMs;
+            AutoUpgrade = autoUpgrade;
         }
 
         public long Gold { get; }
@@ -33,8 +37,12 @@ namespace PlumSword.Core.Save
         public int StageNumber { get; }
         public int SeenIntroStage { get; }
         public long SavedAtUtcTicks { get; }
+        public int RegressionCount { get; }
+        public long PlayTimeMs { get; }
+        public bool AutoUpgrade { get; }
 
-        public static SaveData Capture(Wallet wallet, StatUpgrades upgrades, RealmProgress realm, StageProgress stage, long savedAtUtcTicks)
+        public static SaveData Capture(Wallet wallet, StatUpgrades upgrades, RealmProgress realm, StageProgress stage, long savedAtUtcTicks,
+            PlayTime playTime = null, AutoUpgrade autoUpgrade = null)
         {
             if (wallet == null) throw new ArgumentNullException(nameof(wallet));
             if (upgrades == null) throw new ArgumentNullException(nameof(upgrades));
@@ -42,7 +50,8 @@ namespace PlumSword.Core.Save
             if (stage == null) throw new ArgumentNullException(nameof(stage));
             return new SaveData(wallet.Balance, upgrades.GetLevel(StatType.Attack),
                 upgrades.GetLevel(StatType.Health), upgrades.GetLevel(StatType.InnerPower), (int)realm.Current,
-                stage.StageNumber, stage.SeenIntroStage, savedAtUtcTicks, realm.Kills);
+                stage.StageNumber, stage.SeenIntroStage, savedAtUtcTicks, realm.Kills,
+                stage.RegressionCount, playTime?.Milliseconds ?? 0, autoUpgrade?.Enabled ?? true);
         }
     }
 }

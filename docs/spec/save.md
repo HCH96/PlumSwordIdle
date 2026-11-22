@@ -15,13 +15,14 @@
 ## 동작
 
 - **저장 값** (판 2): 보유 금화(`Wallet.Balance`), 공격력·체력·내공 강화 단계(`StatUpgrades.GetLevel(StatType.Attack / Health / InnerPower)`), 현재 경지(`(int)RealmProgress.Current`, 0~4), 그 경지에서의 처치 수(`RealmProgress.Kills`), 전체 진행 번호(`StageProgress.StageNumber`), 본 소개 번호(`StageProgress.SeenIntroStage`), 마지막 저장 시각(`savedAtUtcTicks`, 저장할 때 Game 이 넘긴 현재 UTC 시각의 `DateTime.Ticks`). 작은 스테이지 번호, 스테이지별 처치 수, 남은 체력, 보스, 단계(`Phase`), 무리 구성, 강화 잠금, 기본 공격 대기, 이십사수매화검법의 재사용 대기는 저장하지 않는다. 불러오면 저장된 큰 스테이지의 1구간부터 다시 시작하고, 스킬은 사용할 수 있는 상태로 시작한다 (전투 기능의 규칙). 천마 뒤 1스테이지 테마로 돌아가도 금화·강화·경지는 그대로이므로 저장 값도 그대로 이어진다.
-- **모으기** `SaveData.Capture(wallet, upgrades, realm, stage, savedAtUtcTicks)`: 각 기능의 지금 값을 그대로 읽어 `SaveData` 를 만든다. 아무것도 바꾸지 않는다.
-- **글자로 바꾸기** `SaveCodec.Encode(data)`: 아래 "수치"의 파일 형식대로 열 줄을 만든다.
+- **모으기** `SaveData.Capture(wallet, upgrades, realm, stage, savedAtUtcTicks, playTime, autoUpgrade)`: 회귀 횟수와 선택적인 플레이 시간·자동 강화 상태를 포함해 각 기능의 값을 읽는다. 선택 인자가 null이면 각각 0과 true다. 아무것도 바꾸지 않는다.
+- **글자로 바꾸기** `SaveCodec.Encode(data)`: 아래 "수치"의 파일 형식대로 열세 줄을 만든다.
 - **되돌리기** `SaveCodec.Decode(text)`: 아래 순서로 판정해 `SaveLoadResult` 를 돌려준다. 예외를 던지지 않는다.
   1. `text` 가 `null` (파일 없음): `Empty`.
   2. 줄로 나눈다 (`\n` 기준, 줄 끝의 `\r` 하나는 지운다). 빈 줄은 건너뛴다. 남은 줄 중 `=` 가 없는 줄이 있거나, 같은 이름이 두 번 나오면 `Corrupt`.
   3. `version` 줄이 없거나 값이 정수가 아니면 `Corrupt`. 값이 `2` 가 아니면 (2단계의 판 1, 0, 음수, 3 이상) 나머지 줄을 보지 않고 `UnsupportedVersion`.
   4. 여덟 필수 이름(`gold`, `attackLevel`, `healthLevel`, `innerPowerLevel`, `realmLevel`, `stageNumber`, `seenIntroStage`, `savedAtUtcTicks`) 중 하나라도 없거나, 값이 그 타입의 정수로 읽히지 않으면 (글자 섞임, 앞뒤 공백, 범위 넘침) `Corrupt`. `realmKills`는 기존 파일에서 생략 가능하며 없으면 0, 있으면 정수여야 한다.
+     `regressionCount`, `playTimeMs`, `autoUpgrade`가 없으면 각각 0, 0, true다. 있으면 각 타입의 정수여야 하며 `autoUpgrade`는 0만 false다. 음수 회귀 횟수와 시간은 그대로 담는다.
   5. 아니면 `Loaded` 와 그 값의 `SaveData`. 모르는 이름의 줄은 무시한다 (판 2 파일에 `attackSpeedLevel` 줄이 있어도 무시). 값이 기능의 범위를 벗어나도(금화 음수, 내공 음수, 경지 7, 번호 0 등) 그대로 담는다. 잘라내기는 각 기능의 생성자가 한다.
 - **불러오기** (`GameRoot.Awake` 맨 앞): 저장소를 고르고(아래 "저장소"), 저장을 읽어 `LoadResult` 로 들고 있는다. 상태에 따라 각 기능을 만든다.
   - `Loaded`: `new Wallet(Gold)`, `new RealmProgress(Wallet, RealmLevel, RealmKills)`, `new StatUpgrades(Wallet, 시작 공격력, 시작 최대 체력, AttackLevel, HealthLevel, InnerPowerLevel, Realm)`, `new StageProgress(Wallet, StatUpgrades, Battle, random, StageNumber, SeenIntroStage)`. 범위 밖 값은 각 생성자가 잘라낸다 (금화 음수 → 0, 단계 음수 → 0, 경지 0 미만 → 0·4 초과 → 4, 번호 1 미만 → 1, 본 소개 번호 0~5 밖 → 자름).
@@ -31,12 +32,12 @@
   - 네 알림 중 하나가 오면 켜져 있을 때(`Enabled`) `IsDirty = true` 만 한다. 바로 쓰지 않는다. 꺼져 있으면 무시한다.
   - **프레임 끝** `Flush(nowUtcTicks)`: 켜져 있고, `IsDirty` 이고, 재시도 대기 중이 아니면 쓴다 ("쓰기"). 아니면 아무것도 하지 않고 `false`. 그래서 같은 프레임의 여러 변화(보스 처치의 금화 등)는 한 번에 저장된다.
   - **즉시** `SaveNow(nowUtcTicks)`: 켜져 있으면 `IsDirty` 와 재시도 대기에 상관없이 바로 쓴다. 꺼져 있으면 `false`. 게임을 끌 때와 앱이 백그라운드로 갈 때 쓴다.
-  - **쓰기**: `SaveCodec.Encode(SaveData.Capture(wallet, upgrades, realm, stage, nowUtcTicks))` 를 `store.TryWrite` 로 넘긴다. `TryWrite` 가 예외를 던지면 `false` 로 본다 (예외를 밖으로 내보내지 않는다).
+  - **쓰기**: `SaveCodec.Encode(SaveData.Capture(wallet, upgrades, realm, stage, nowUtcTicks, playTime, autoUpgrade))` 를 `store.TryWrite` 로 넘긴다. `TryWrite` 가 예외를 던지면 `false` 로 본다 (예외를 밖으로 내보내지 않는다).
     - 성공: `IsDirty = false`, 재시도 대기 0, `HasFailed = false`. 돌려주는 값 `true`.
     - 실패: `IsDirty = true` (그대로 남김), 재시도 대기 3.0초, `HasFailed = true`. 돌려주는 값 `false`. 기존 파일은 저장소가 그대로 둔다.
     - `HasFailed` 가 실제로 바뀐 때에만 `FailedChanged(새 값)` 를 한 번 보낸다. 계속 실패하면 처음 한 번만 간다.
   - **시간** `Tick(deltaSeconds)`: 재시도 대기에서 `deltaSeconds` 를 뺀다. `1e-9` 이하가 되면 0 이다. 대기가 0 이면 아무 일도 없다. 실패 뒤 그사이에 새 변화가 와도 대기가 끝날 때까지 쓰지 않는다 (`SaveNow` 만 예외).
-  - **켜기** `Enable()`: 꺼져 있으면 켠다. 이미 켜져 있으면 아무 일도 없다. 끄는 메서드는 없다.
+  - **켜기와 끄기**: `Enable()`은 켜고 `Disable()`은 끈다. 꺼진 동안 `Flush`와 `SaveNow`는 쓰지 않는다. 기존 대기와 변경 상태는 그대로 둔다.
 - **저장하는 때** (이것이 전부다): 금화가 바뀐 프레임 끝(처치 보상, 강화 구매, 오프라인 보상 지급 등 `BalanceChanged` 가 가는 모든 때), 경지 처치 수가 바뀐 프레임 끝, 강화한 프레임 끝(내공 포함), 스테이지가 배치된 프레임 끝(`Begin`, 가려진 순간의 교체. 보스 처치 뒤 다음 스테이지로 넘어갈 때와 실패 뒤 재도전이 여기 든다), 실패 뒤 재시도 대기가 끝난 프레임 끝, 게임을 끌 때, 앱이 백그라운드로 갈 때.
 - **페이드 중에 끄면**: 보스 금화는 처치한 프레임 끝에 끝난 스테이지의 번호로 이미 저장되어 있다. 다음 번호는 가려진 순간의 교체(`StageStarted`)에서 저장된다. 그래서 그사이(페이드아웃 0.5초)에 끄고 다시 켜면 끝난 스테이지부터 다시 하고, 보스 금화는 이미 받은 채다. 이 동작을 허용한다.
 - **화면 코드의 갱신** (`SaveView`): 매 프레임 `LateUpdate` 에서 `AutoSave.Tick(Time.unscaledDeltaTime)` 다음 `AutoSave.Flush(DateTime.UtcNow.Ticks)`. `OnApplicationPause(true)` 와 `OnApplicationQuit` 에서 `AutoSave.SaveNow(DateTime.UtcNow.Ticks)`. 끌 때 실패하면 더 할 것이 없다 (기존 파일은 남는다).
@@ -51,6 +52,7 @@
 - **파일 저장소** `FileSaveStore(directory)`: 파일 `save.dat` 하나 (UTF-8, BOM 없음).
   - `Load()`: `save.dat` 가 없으면 `SaveCodec.Decode(null)`. 있으면 전체를 읽어 `SaveCodec.Decode(text)`. 읽다가 예외가 나면 `new SaveLoadResult(SaveLoadStatus.Corrupt, null)`. 예외를 밖으로 내보내지 않는다.
   - `TryWrite(text)`: 폴더가 없으면 만들고, `save.tmp` 에 전부 쓴 뒤, `save.dat` 가 있으면 `File.Replace(save.tmp, save.dat, null)`, 없으면 `File.Move(save.tmp, save.dat)`. 성공하면 `true`. 어느 단계에서든 예외가 나면 `save.tmp` 를 지워 보고(지우다 난 예외도 무시) `false`. 실패해도 기존 `save.dat` 는 그대로다. 예외를 밖으로 내보내지 않는다 (`text` 가 `null` 인 경우만 `ArgumentNullException`).
+  - `TryDelete()`: `save.dat`과 `save.tmp`를 지운다. 둘 다 없거나 삭제에 성공하면 `true`, 예외가 나면 `false`다.
 
 ### 경계 상황
 
@@ -115,6 +117,9 @@
 | 8 | `stageNumber` | `int` | 1 |
 | 9 | `seenIntroStage` | `int` | 0 |
 | 10 | `savedAtUtcTicks` | `long` | (없음. 저장할 때 넣는다) |
+| 11 | `regressionCount` | `int` | 0 |
+| 12 | `playTimeMs` | `long` | 0 |
+| 13 | `autoUpgrade` | `int` | 1 (켜짐) |
 
 예: 금화 1234, 단계 3·2·4 (공격력·체력·내공), 경지 2 (일류), 번호 7, 본 소개 5, 시각 638000000000000000 →
 
@@ -129,6 +134,9 @@ realmKills=0
 stageNumber=7
 seenIntroStage=5
 savedAtUtcTicks=638000000000000000
+regressionCount=0
+playTimeMs=0
+autoUpgrade=1
 ```
 
 **표시 글자** (`SaveText`, 한글 글꼴 전이라 영문):
@@ -163,7 +171,7 @@ namespace PlumSword.Core.Save
             int stageNumber,
             int seenIntroStage,
             long savedAtUtcTicks,
-            int realmKills = 0);
+            int realmKills = 0, int regressionCount = 0, long playTimeMs = 0, bool autoUpgrade = true);
 
         public long Gold { get; }
         public int AttackLevel { get; }
@@ -174,6 +182,9 @@ namespace PlumSword.Core.Save
         public int StageNumber { get; }
         public int SeenIntroStage { get; }
         public long SavedAtUtcTicks { get; }
+        public int RegressionCount { get; }
+        public long PlayTimeMs { get; }
+        public bool AutoUpgrade { get; }
 
         // 각 기능의 지금 값을 읽어 만든다: wallet.Balance, upgrades.GetLevel(Attack / Health / InnerPower),
         // (int)realm.Current, stage.StageNumber, stage.SeenIntroStage. 아무것도 바꾸지 않고 알림을 보내지 않는다.
@@ -183,7 +194,8 @@ namespace PlumSword.Core.Save
             PlumSword.Core.StatUpgrade.StatUpgrades upgrades,
             PlumSword.Core.Realm.RealmProgress realm,
             PlumSword.Core.Stage.StageProgress stage,
-            long savedAtUtcTicks);
+            long savedAtUtcTicks, PlumSword.Core.Stage.PlayTime playTime = null,
+            PlumSword.Core.StatUpgrade.AutoUpgrade autoUpgrade = null);
     }
 
     public enum SaveLoadStatus
@@ -206,7 +218,7 @@ namespace PlumSword.Core.Save
 
     public static class SaveCodec
     {
-        // "수치"의 파일 형식으로 열 줄. data 가 null 이면 ArgumentNullException.
+        // "수치"의 파일 형식으로 열세 줄. data 가 null 이면 ArgumentNullException.
         public static string Encode(SaveData data);
 
         // null 이면 Empty. 나머지는 "동작"의 판정 순서대로. 예외를 던지지 않는다.
@@ -218,6 +230,8 @@ namespace PlumSword.Core.Save
         // text 를 저장한다. 다 쓰면 true. 실패하면 false 이고 그 전에 저장된 내용은 그대로 남긴다.
         // text 가 null 이면 ArgumentNullException. 그 밖에는 예외를 던지지 않는다.
         bool TryWrite(string text);
+        // 저장이 없어도 true. 실패하면 false, 예외 없음.
+        bool TryDelete();
     }
 
     public sealed class MemorySaveStore : ISaveStore
@@ -227,6 +241,7 @@ namespace PlumSword.Core.Save
 
         // Text = text, 언제나 true. text 가 null 이면 ArgumentNullException.
         public bool TryWrite(string text);
+        public bool TryDelete(); // Text = null, true
     }
 
     public sealed class AutoSave
@@ -234,7 +249,7 @@ namespace PlumSword.Core.Save
         public const double RetrySeconds = 3.0;
 
         // store, wallet, upgrades, realm, stage 중 null 이 있으면 ArgumentNullException.
-        // wallet.BalanceChanged, upgrades.Upgraded, stage.StageStarted 를 구독한다. realm 은 구독하지 않고 쓸 때 읽는다.
+        // wallet.BalanceChanged, upgrades.Upgraded, stage.StageStarted, realm.ProgressChanged 를 구독한다.
         // stage.Begin() 보다 먼저 만든다.
         // 생성자는 쓰지 않고 알림을 보내지 않는다. 시작 상태: Enabled = enabled, IsDirty false, HasFailed false, 대기 0.
         public AutoSave(
@@ -243,7 +258,8 @@ namespace PlumSword.Core.Save
             PlumSword.Core.StatUpgrade.StatUpgrades upgrades,
             PlumSword.Core.Realm.RealmProgress realm,
             PlumSword.Core.Stage.StageProgress stage,
-            bool enabled = true);
+            bool enabled = true, PlumSword.Core.Stage.PlayTime playTime = null,
+            PlumSword.Core.StatUpgrade.AutoUpgrade autoUpgrade = null);
 
         public bool Enabled { get; }
         public bool IsDirty { get; }      // 저장하지 않은 변화가 있으면 true
@@ -254,6 +270,7 @@ namespace PlumSword.Core.Save
 
         // 꺼져 있으면 켠다. 이미 켜져 있으면 아무 일도 없다.
         public void Enable();
+        public void Disable();
 
         // 재시도 대기를 줄인다 (1e-9 이하면 0). 0: 아무 일 없음. 음수·NaN·무한대: ArgumentOutOfRangeException.
         public void Tick(double deltaSeconds);
@@ -304,6 +321,8 @@ namespace PlumSword.Game.Save
 
         // save.tmp 에 쓰고 save.dat 과 바꾼다. 실패하면 false, save.dat 그대로. text 가 null 이면 ArgumentNullException.
         public bool TryWrite(string text);
+        // save.dat과 save.tmp 삭제. 없어도 true, 실패하면 false.
+        public bool TryDelete();
     }
 
     public sealed class SaveView : MonoBehaviour
@@ -389,7 +408,7 @@ namespace PlumSword.Game.Save
 
 이미 구현되고 바뀌지 않은 완료 조건(3, 4, 8, 9, 10, 15, 16, 18~33)은 기록 파일로 옮겼다. 번호는 그대로 두고, 새 조건은 34번부터 붙인다.
 
-1. `new SaveData(1234, 3, 2, 4, 2, 7, 5, 638000000000000000)` 을 `SaveCodec.Encode` 하면 `"version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nrealmKills=0\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\n"` 이다.
+1. `new SaveData(1234, 3, 2, 4, 2, 7, 5, 638000000000000000)` 을 `SaveCodec.Encode` 하면 `"version=2\ngold=1234\nattackLevel=3\nhealthLevel=2\ninnerPowerLevel=4\nrealmLevel=2\nrealmKills=0\nstageNumber=7\nseenIntroStage=5\nsavedAtUtcTicks=638000000000000000\nregressionCount=0\nplayTimeMs=0\nautoUpgrade=1\n"` 이다.
 2. 1번의 글자를 `Decode` 하면 `Status` 가 `Loaded`, `HasSaveData` 가 `true` 이고, `Data` 의 여덟 값(`Gold`, `AttackLevel`, `HealthLevel`, `InnerPowerLevel`, `RealmLevel`, `StageNumber`, `SeenIntroStage`, `SavedAtUtcTicks`)이 1234, 3, 2, 4, 2, 7, 5, 638000000000000000 이다.
 5. 1번 글자에서 `version=2` 줄을 뺀 글자, `version=2` 를 `version=abc` 로 바꾼 글자는 둘 다 `Corrupt` 이다.
 6. 1번 글자의 `version=2` 를 `version=1`, `version=3`, `version=0` 으로 바꾼 글자와 `"version=1\n"` 한 줄짜리 글자는 모두 `UnsupportedVersion`, `Data` `null`, `HasSaveData` `false` 이다.
