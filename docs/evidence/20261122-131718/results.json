@@ -1,0 +1,508 @@
+{
+  "loop": "loop/20261122-131718",
+  "bundle": "skill_hits",
+  "merged_at": "2026-11-22 13:39",
+  "tag": "loop-merged/20261122-131718",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 897,
+      "passed": 897,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 160,
+      "passed": 160,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [
+      "`Assets/Tests/EditMode/Combat/BattleSkillTests.cs` — 있던 검사(Assert) 14줄을 지우거나 바꿈 (작업 078_battle_skill_hits)\n  - 지워짐: `Assert.AreEqual(enemy.MaxHealth - 20, enemy.Health);`\n  - 지워짐: `Assert.AreEqual(80, boss.Health);`\n  - 지워짐: `Assert.AreEqual(70, boss.Health);`\n  - 지워짐: `Assert.AreEqual(20, boss.Health);`\n  - 지워짐: `Assert.AreEqual(10, first.Health);`\n  - 지워짐: `Assert.AreEqual(80, second.Health);`\n  - 지워짐: `Assert.AreEqual(110, boss.Health);`\n  - 지워짐: `Assert.AreEqual(10, normal.Health);`\n  - 새로 들어옴: `Assert.AreEqual(enemy.MaxHealth - 1, enemy.Health);`\n  - 새로 들어옴: `Assert.AreEqual(99, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(80, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(39, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(29, first.Health);`\n  - 새로 들어옴: `Assert.AreEqual(99, second.Health);`\n  - 새로 들어옴: `Assert.AreEqual(129, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(29, normal.Health);`",
+      "`Assets/Tests/PlayMode/Combat/CombatSkillTests.cs` — 있던 검사(Assert) 2줄을 지우거나 바꿈 (작업 080_combat_skill_view)\n  - 지워짐: `Assert.That(body.sprite.name, Is.EqualTo(\"disciple_skill_00\"));`\n  - 지워짐: `Assert.That(body.sprite.name, Is.Not.EqualTo(\"disciple_skill_00\"));`\n  - 새로 들어옴: `Assert.That(body.sprite.name, Is.EqualTo(\"disciple_skill_02\"));`\n  - 새로 들어옴: `Assert.That(body.sprite.name, Is.Not.EqualTo(\"disciple_skill_02\"));`"
+    ],
+    "stats": {
+      "files_changed": 15,
+      "files": [
+        "Assets/Scripts/Core/Audio/SfxTriggers.cs",
+        "Assets/Scripts/Core/Combat/Battle.cs",
+        "Assets/Scripts/Game/Combat/CombatView.cs",
+        "Assets/Scripts/Game/Combat/DiscipleSprites.cs",
+        "Assets/Tests/EditMode/Audio/SfxTriggersTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleSkillHitTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleSkillTests.cs",
+        "Assets/Tests/PlayMode/Combat/CombatSkillHitViewTests.cs",
+        "Assets/Tests/PlayMode/Combat/CombatSkillTests.cs",
+        "docs/dev/assets.md",
+        "docs/history/078_battle_skill_hits.md",
+        "docs/history/079_sfx_skill_hits.md",
+        "docs/history/080_combat_skill_view.md",
+        "docs/spec/audio.md",
+        "docs/spec/combat.md"
+      ],
+      "tests_before": 702,
+      "tests_after": 720,
+      "new_tests": [
+        "BattleSkillHitTests.DamageNotifications_ExposeSkillState",
+        "BattleSkillHitTests.DisabledSkill_NeverActivates",
+        "BattleSkillHitTests.HitDamage_DistributesTotalAndRejectsInvalidInputs",
+        "BattleSkillHitTests.HitSchedule_ExposesExpectedSteps",
+        "BattleSkillHitTests.PausedSkill_DoesNotAdvance",
+        "BattleSkillHitTests.Reset_DiscardsActiveSkill",
+        "BattleSkillHitTests.Skill_EmptyFieldRemainsStationaryUntilEnd",
+        "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+        "BattleSkillHitTests.Skill_UsesCurrentPositionsForEachHit",
+        "BattleSkillHitTests.UpgradeDuringSkill_DoesNotChangeStoredDamage",
+        "CombatSkillHitViewTests.BasicHit_EnemyDamageUsesIvoryDigits",
+        "CombatSkillHitViewTests.SkillAnimation_EndsAfterOneAndQuarterSeconds",
+        "CombatSkillHitViewTests.SkillAnimation_StartsAtFrameTwo",
+        "CombatSkillHitViewTests.SkillFrames_AllUseFootPivot",
+        "CombatSkillHitViewTests.SkillHit_EnemyDamageUsesPlumDigits",
+        "SfxTriggersTests.AttackAfterSkill_RequestsSwingAndHit",
+        "SfxTriggersTests.SkillFirstHit_RequestsSkillWithoutSwingOrHit",
+        "SfxTriggersTests.SkillRemainingSteps_RequestNoSwingOrHit"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": [
+        "Assets/Scripts/Game/Combat/CombatView.cs",
+        "Assets/Scripts/Game/Combat/DiscipleSprites.cs"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "doc": "078_battle_skill_hits.md",
+      "branch": "task/078_battle_skill_hits",
+      "agents": "codex(시도 1)",
+      "summary": "스킬 피해를 고정 일정의 13타로 분배하고 활성 중 제자 이동과 공격을 중지했다. 관련 에딧 모드 테스트와 전투 사양을 갱신했다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "스킬 13타 분할, 발동 칸 저장 피해, 63칸 활성·정지, 초기화·멈춤·강화 처리가 요구사항대로 Battle.cs에 구현됐습니다. 새 테스트가 완료 조건의 상황과 숫자를 그대로 검사하고, 기존 테스트의 기대값 변경은 요구사항에 적힌 목록과 정확히 같습니다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Combat/BattleSkillHitTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다. \"스킬 전투\"는 `new Battle(new StatUpgrades(new Wallet(1000), 10, 100), null, true)`이고, \"n칸 뒤\"는 처음부터 `Step()`을 n번 부른 뒤다.",
+            "test": "BattleSkillHitTests 전체 (CreateBattle이 정의와 같음, 2~20번 조건별 테스트 존재)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "`Battle.CalculateSkillHitDamage(20, i)`는 i가 0~11이면 1이고, `(20, 12)`는 8이다.",
+            "test": "BattleSkillHitTests.HitDamage_DistributesTotalAndRejectsInvalidInputs",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "`Battle.CalculateSkillHitDamage(26, 0)`은 2이고 `(26, 12)`는 2다.",
+            "test": "BattleSkillHitTests.HitDamage_DistributesTotalAndRejectsInvalidInputs",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "`Battle.CalculateSkillHitDamage(12, 0)`은 0이고 `(12, 12)`는 12다.",
+            "test": "BattleSkillHitTests.HitDamage_DistributesTotalAndRejectsInvalidInputs",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "`Battle.CalculateSkillHitDamage(-1, 0)`, `(20, -1)`, `(20, 13)`은 각각 `ArgumentOutOfRangeException`을 던진다.",
+            "test": "BattleSkillHitTests.HitDamage_DistributesTotalAndRejectsInvalidInputs",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "`Battle.SkillHitSteps`는 {0, 3, 5, 9, 13, 19, 23, 28, 36, 38, 42, 44, 46}이고, `SkillHitCount`는 13, `SkillActiveSteps`는 63이다.",
+            "test": "BattleSkillHitTests.HitSchedule_ExposesExpectedSteps",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "스킬 전투에서 `AddEnemy(Boss, 2, 1.0)`(체력 130, 움직이지 않음) 뒤 1칸 뒤 보스 `Health`는 129이고 3칸 뒤에도 129다.",
+            "test": "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "같은 상황에서 4칸 뒤 보스 `Health`는 128이고 10칸 뒤 126이다.",
+            "test": "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "같은 상황에서 47칸 뒤 보스 `Health`는 110이다 (13타 합 20).",
+            "test": "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "같은 상황에서 63칸 뒤 보스 `Health`는 110이고 `IsSkillActive`는 `true`다.",
+            "test": "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "같은 상황에서 64칸 뒤 보스 `Health`는 100(기본 공격)이고 `IsSkillActive`는 `false`다.",
+            "test": "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "스킬 전투를 새로 만들면 `IsSkillActive`는 `false`다. 기본 전투(`skillEnabled` false)에서 `AddEnemy(Boss, 2, 1.0)` 뒤 64칸 동안 `IsSkillActive`는 한 번도 `true`가 아니다.",
+            "test": "BattleSkillHitTests.DisabledSkill_NeverActivates",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "스킬 전투에서 보스와 일반 몬스터 순서로 `AddEnemy(Boss, 2, 1.0)`, `AddEnemy(Normal, 1, 2.6)` 뒤 47칸 뒤 보스 `Health`는 110이고 일반 몬스터 `Health`는 18이다 (일반 몬스터는 30번째 칸부터 범위 2.0에 들어와 36·38·42·44·46번째 칸의 5타만 맞는다).",
+            "test": "BattleSkillHitTests.Skill_UsesCurrentPositionsForEachHit",
+            "verdict": "있음"
+          },
+          {
+            "id": 14,
+            "condition": "공격력 200 스킬 전투(`new StatUpgrades(new Wallet(1000), 200, 100)`)에서 `AddEnemy(Normal, 1, 0.8)` 뒤 1칸 뒤 `Enemies.Count`는 0이다.",
+            "test": "BattleSkillHitTests.Skill_EmptyFieldRemainsStationaryUntilEnd",
+            "verdict": "있음"
+          },
+          {
+            "id": 15,
+            "condition": "같은 상황에서 63칸 뒤 `DisciplePosition`은 0이고 `EnemyDamaged`는 모두 1번이다 (남은 타는 빗나가고 제자는 전진하지 않는다).",
+            "test": "BattleSkillHitTests.Skill_EmptyFieldRemainsStationaryUntilEnd",
+            "verdict": "있음"
+          },
+          {
+            "id": 16,
+            "condition": "같은 상황에서 64칸 뒤 `DisciplePosition`은 0.1296이다.",
+            "test": "BattleSkillHitTests.Skill_EmptyFieldRemainsStationaryUntilEnd",
+            "verdict": "있음"
+          },
+          {
+            "id": 17,
+            "condition": "스킬 전투에서 `AddEnemy(Boss, 2, 1.0)` 뒤 47칸 동안 받은 모든 `EnemyDamaged` 안에서 읽은 `IsSkillActive`는 `true`이고, 64칸째의 `EnemyDamaged` 안에서 읽은 값은 `false`다.",
+            "test": "BattleSkillHitTests.DamageNotifications_ExposeSkillState",
+            "verdict": "있음"
+          },
+          {
+            "id": 18,
+            "condition": "스킬 전투에서 `AddEnemy(Boss, 2, 1.0)` 뒤 1칸 진행하고 `SetPaused(true)` 후 `Step()`을 10번 부르면 보스 `Health`는 129이고 `IsSkillActive`는 `true`다.",
+            "test": "BattleSkillHitTests.PausedSkill_DoesNotAdvance",
+            "verdict": "있음"
+          },
+          {
+            "id": 19,
+            "condition": "스킬 전투에서 `AddEnemy(Boss, 2, 1.0)` 뒤 10칸 진행하고 `Reset()`을 부르면 `IsSkillActive`는 `false`다.",
+            "test": "BattleSkillHitTests.Reset_DiscardsActiveSkill",
+            "verdict": "있음"
+          },
+          {
+            "id": 20,
+            "condition": "스킬 전투에서 `AddEnemy(Boss, 2, 1.0)` 뒤 1칸 진행하고 `upgrades.TryUpgrade(StatType.Attack)`을 불러도 47칸 뒤 보스 `Health`는 110이다.",
+            "test": "BattleSkillHitTests.UpgradeDuringSkill_DoesNotChangeStoredDamage",
+            "verdict": "있음"
+          },
+          {
+            "id": 21,
+            "condition": "`BattleSkillTests`의 기존 테스트가 요구사항에 적은 값으로 모두 통과한다.",
+            "test": "BattleSkillTests 차이를 요구사항의 변경 목록과 한 줄씩 대조함 (지정된 값만 바뀌었고 어서트 수와 테스트 이름은 그대로)",
+            "verdict": "있음"
+          },
+          {
+            "id": 22,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "기계 검사가 짚은 BattleSkillTests.cs 기대값 변경 14줄(지워진 8줄, 새로 들어온 8줄)은 요구사항 35~44줄의 목록과 정확히 같습니다. 그 밖의 어서트는 그대로라 검사가 약해지지 않았습니다."
+          },
+          {
+            "severity": "note",
+            "text": "Battle.cs:206의 한 줄 조건(`IsSkillActive && ++_skillStep >= SkillActiveSteps`)과 ApplySkillHit(Battle.cs:456~)의 중괄호 없는 foreach는 이 파일의 기존 스타일과 다릅니다. 동작에는 문제가 없습니다."
+          },
+          {
+            "severity": "note",
+            "text": "docs/spec/combat.md 완료 조건 초안 49~57번이 원래의 자세한 문장에서 줄인 문장으로 바뀌었습니다(예: 51~53번). 숫자는 테스트와 맞습니다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 894,
+          "passed": 894,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 155,
+          "passed": 155,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "BattleSkillHitTests.DamageNotifications_ExposeSkillState",
+        "BattleSkillHitTests.DisabledSkill_NeverActivates",
+        "BattleSkillHitTests.HitDamage_DistributesTotalAndRejectsInvalidInputs",
+        "BattleSkillHitTests.HitSchedule_ExposesExpectedSteps",
+        "BattleSkillHitTests.PausedSkill_DoesNotAdvance",
+        "BattleSkillHitTests.Reset_DiscardsActiveSkill",
+        "BattleSkillHitTests.Skill_EmptyFieldRemainsStationaryUntilEnd",
+        "BattleSkillHitTests.Skill_ScheduledHitsAndEnd_MatchSteps",
+        "BattleSkillHitTests.Skill_UsesCurrentPositionsForEachHit",
+        "BattleSkillHitTests.UpgradeDuringSkill_DoesNotChangeStoredDamage"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [
+        "`Assets/Tests/EditMode/Combat/BattleSkillTests.cs` — 있던 검사(Assert) 14줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(enemy.MaxHealth - 20, enemy.Health);`\n  - 지워짐: `Assert.AreEqual(80, boss.Health);`\n  - 지워짐: `Assert.AreEqual(70, boss.Health);`\n  - 지워짐: `Assert.AreEqual(20, boss.Health);`\n  - 지워짐: `Assert.AreEqual(10, first.Health);`\n  - 지워짐: `Assert.AreEqual(80, second.Health);`\n  - 지워짐: `Assert.AreEqual(110, boss.Health);`\n  - 지워짐: `Assert.AreEqual(10, normal.Health);`\n  - 새로 들어옴: `Assert.AreEqual(enemy.MaxHealth - 1, enemy.Health);`\n  - 새로 들어옴: `Assert.AreEqual(99, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(80, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(39, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(29, first.Health);`\n  - 새로 들어옴: `Assert.AreEqual(99, second.Health);`\n  - 새로 들어옴: `Assert.AreEqual(129, boss.Health);`\n  - 새로 들어옴: `Assert.AreEqual(29, normal.Health);`"
+      ],
+      "assumptions": [],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "079_sfx_skill_hits.md",
+      "branch": "task/079_sfx_skill_hits",
+      "agents": "codex(시도 1)",
+      "summary": "스킬 활성 중 피해의 휘두름·타격음 요청을 생략하고 종료 후 기본 공격을 검증하는 테스트와 소리 사양을 추가했다. Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "SfxTriggers.OnEnemyDamaged가 battle.IsSkillActive가 참일 때 아무것도 요청하지 않도록 바뀌었다. 새 테스트 세 개가 첫 칸, 이어지는 62칸(후속 12타 확인 포함), 64번째 칸의 기본 공격을 작업 문서의 상황 그대로 검사한다. 기존 테스트, Combat 내부, SfxQueue, 화면 코드는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Audio/SfxTriggersTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다. 기존 도우미 `Create`, `Drain`을 쓴다.",
+            "test": "SfxTriggersTests.SkillFirstHit_RequestsSkillWithoutSwingOrHit, SkillRemainingSteps_RequestNoSwingOrHit, AttackAfterSkill_RequestsSwingAndHit (모두 Create/Drain 사용)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "`Create(attack: 10, skill: true)` 뒤 `battle.AddEnemy(EnemyKind.Boss, 2, battle.DisciplePosition + 1.0)`를 두고 `battle.Step()` 1번 뒤 `Drain()` 결과에 `PlumSwordSkill`이 있고 `SwordSwing`, `AttackHit`은 없다.",
+            "test": "SfxTriggersTests.SkillFirstHit_RequestsSkillWithoutSwingOrHit",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "같은 상황에서 이어서 `battle.Step()`과 `Drain()`을 62번 번갈아 부르는 동안 어느 결과에도 `SwordSwing`, `AttackHit`이 없다.",
+            "test": "SfxTriggersTests.SkillRemainingSteps_RequestNoSwingOrHit (62번 반복하며 매번 검사하고, 후속 EnemyDamaged가 12번 왔는지도 확인)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "같은 상황에서 이어서 `battle.Step()` 1번(처음부터 64번째 칸, 스킬이 끝난 뒤의 기본 공격) 뒤 `Drain()` 결과에 `SwordSwing`과 `AttackHit`이 있다.",
+            "test": "SfxTriggersTests.AttackAfterSkill_RequestsSwingAndHit (63칸 진행 뒤 64번째 칸 검사)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "기존 테스트 `SkillAttack_ReplacesSwingAndHit`과 스킬이 꺼진 전투의 휘두름·타격 테스트가 그대로 통과한다.",
+            "test": "SfxTriggersTests.SkillAttack_ReplacesSwingAndHit, NormalAttack_RequestsSwingAndHit (diff에서 바뀌지 않음을 확인, 통과 여부는 루프 실행 결과)",
+            "verdict": "루프가 판정"
+          },
+          {
+            "id": 6,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프의 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "Battle.cs:427-429에서 IsSkillActive=true를 먼저 정한 뒤 ApplySkillHit(EnemyDamaged)를 부르므로, 첫 타의 휘두름·타격음도 SfxQueue의 '대신하기' 규칙이 아니라 이번 검사로 빠진다. 작업 문서의 의도와 맞는다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 897,
+          "passed": 897,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 155,
+          "passed": 155,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "SfxTriggersTests.AttackAfterSkill_RequestsSwingAndHit",
+        "SfxTriggersTests.SkillFirstHit_RequestsSkillWithoutSwingOrHit",
+        "SfxTriggersTests.SkillRemainingSteps_RequestNoSwingOrHit"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "080_combat_skill_view.md",
+      "branch": "task/080_combat_skill_view",
+      "agents": "codex(시도 1~2)",
+      "summary": "피해 숫자 색상 테스트 두 개에서 텍스처 이름을 직접 검증하도록 수정했다. Unity 테스트와 관문 재검사는 루프 스크립트가 수행한다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "발 기준점 (58, 18), 프레임 2~31 재생, 스킬 중 기본 공격 동작 제외, 매화색 피해 숫자와 아이보리 대체가 요구사항대로 들어갔다. 플레이 모드 테스트가 각 완료 조건의 상황과 기대값을 직접 검사한다. 기존 테스트는 작업 문서가 지시한 값만 바뀌었고 Assert 수는 그대로다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "화면 코드가 컴파일되고 기존 테스트가 모두 통과한다 (`CombatSkillTests`는 요구사항에 적은 값으로).",
+            "test": "루프의 컴파일·전체 테스트 판정 (CombatSkillTests.SkillUsed_PlaysApprovedAnimation_PausesAndResetStopsIt의 값은 요구사항대로 00→02로 바뀜)",
+            "verdict": "루프가 판정"
+          },
+          {
+            "id": 2,
+            "condition": "Assets/Tests/PlayMode/Combat/CombatSkillHitViewTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다. 쓰는 법은 `docs/dev/architecture.md` \"테스트\" 절을 따르고, 기존 `CombatSkillTests`처럼 `CombatView`를 직접 만든다.",
+            "test": "CombatSkillHitViewTests (5개 테스트가 조건 3~7을 하나씩 맡고, 모두 CombatView를 AddComponent로 직접 만든다)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "DiscipleSprites`로 자른 스킬 프레임 0~31의 `pivot`은 모두 (58, 18)px이다.",
+            "test": "CombatSkillHitViewTests.SkillFrames_AllUseFootPivot",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "스킬이 켜진 전투(공격력 10, 체력 100)에 `AddEnemy(Boss, 2, 1.0)`을 두고 `battle.Step()` 1번 뒤, `[DamageNumber]` 가운데 보스 쪽 숫자의 글자 스프라이트 텍스처 이름은 `damage_numbers_plum`이다.",
+            "test": "CombatSkillHitViewTests.SkillHit_EnemyDamageUsesPlumDigits",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "스킬이 꺼진 전투에 `AddEnemy(Normal, 1, 0.8)`을 두고 `battle.Step()` 1번 뒤, 적 쪽 피해 숫자의 글자 스프라이트 텍스처 이름은 `damage_numbers`다.",
+            "test": "CombatSkillHitViewTests.BasicHit_EnemyDamageUsesIvoryDigits",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "스킬이 켜진 전투에 `AddEnemy(Boss, 2, 1.0)`을 두고 `battle.Step()` 1번 뒤 제자 몸 스프라이트 이름은 `disciple_skill_02`다.",
+            "test": "CombatSkillHitViewTests.SkillAnimation_StartsAtFrameTwo",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "같은 상황에서 실제 시간 1.4초 뒤 제자 몸 스프라이트 이름은 `disciple_skill_`로 시작하지 않는다 (스킬 재생이 1.25초에 끝난다).",
+            "test": "CombatSkillHitViewTests.SkillAnimation_EndsAfterOneAndQuarterSeconds",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "게임을 실행해 스킬이 나갈 때 제자의 발이 대기·달리기 때와 같은 높이에 있고 떠오르지 않는다. 에디터에서 스킬 발동 순간을 멈춰 보며 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          },
+          {
+            "id": 9,
+            "condition": "스킬이 나가는 동안 제자가 앞으로 이동하지 않고, 검격마다 적 위에 매화색 숫자가 하나씩 떠오른다. 에디터에서 재생하며 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "CombatSkillHitViewTests.cs:55의 GetEnemyDamageTexture는 `view.transform.Find(\"[DamageNumber]\")`로 처음 찾은 숫자만 본다. 적 쪽 숫자라고 직접 확인하지는 않는다. 다만 Battle.Step이 제자 공격(Battle.cs:397~452)을 적 공격(477~)보다 먼저 처리하므로, 처음 생기는 숫자는 적 쪽 숫자다. 그래서 지금은 올바르게 검사한다."
+          },
+          {
+            "severity": "note",
+            "text": "docs/spec/combat.md 스킬 항목의 대체 문구가 '기존 기본 공격과 아래 임시 검기 띠로 대체'에서 '아래 임시 검기 띠로 대체'로 바뀌었다. 요구사항(IsSkillActive 중의 EnemyDamaged는 attacked로 세지 않음)에서 자연스럽게 나오는 변화라 문제 삼지 않는다. 다만 보고서의 가정에는 적혀 있지 않다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 897,
+          "passed": 897,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 160,
+          "passed": 160,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "CombatSkillHitViewTests.BasicHit_EnemyDamageUsesIvoryDigits",
+        "CombatSkillHitViewTests.SkillAnimation_EndsAfterOneAndQuarterSeconds",
+        "CombatSkillHitViewTests.SkillAnimation_StartsAtFrameTwo",
+        "CombatSkillHitViewTests.SkillFrames_AllUseFootPivot",
+        "CombatSkillHitViewTests.SkillHit_EnemyDamageUsesPlumDigits"
+      ],
+      "screen_files": [
+        "Assets/Scripts/Game/Combat/CombatView.cs",
+        "Assets/Scripts/Game/Combat/DiscipleSprites.cs"
+      ],
+      "human_conditions": [
+        "게임을 실행해 스킬이 나갈 때 제자의 발이 대기·달리기 때와 같은 높이에 있고 떠오르지 않는다. 에디터에서 스킬 발동 순간을 멈춰 보며 확인한다.",
+        "스킬이 나가는 동안 제자가 앞으로 이동하지 않고, 검격마다 적 위에 매화색 숫자가 하나씩 떠오른다. 에디터에서 재생하며 확인한다."
+      ],
+      "gate_warnings": [
+        "`Assets/Tests/PlayMode/Combat/CombatSkillTests.cs` — 있던 검사(Assert) 2줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(body.sprite.name, Is.EqualTo(\"disciple_skill_00\"));`\n  - 지워짐: `Assert.That(body.sprite.name, Is.Not.EqualTo(\"disciple_skill_00\"));`\n  - 새로 들어옴: `Assert.That(body.sprite.name, Is.EqualTo(\"disciple_skill_02\"));`\n  - 새로 들어옴: `Assert.That(body.sprite.name, Is.Not.EqualTo(\"disciple_skill_02\"));`"
+      ],
+      "assumptions": [],
+      "human_report": [
+        "게임을 실행해 스킬이 나갈 때 제자의 발이 대기·달리기 때와 같은 높이에 있고 떠오르지 않는지 에디터에서 발동 순간을 멈춰 확인한다.",
+        "스킬이 나가는 동안 제자가 앞으로 이동하지 않고, 검격마다 적 위에 매화색 숫자가 하나씩 떠오르는지 에디터에서 재생하며 확인한다."
+      ],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}
