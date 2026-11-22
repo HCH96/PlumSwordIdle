@@ -491,8 +491,9 @@ namespace PlumSword.Game.StartMenu
 }
 ```
 
-- 누가 만들고 누가 들고 있는지: `GameRoot`가 `Volume`, `LeaveGame`, `SettingsView` 하나씩을 만들어 들고 있는다. `TryLeave`를 부르는 것은 `SettingsView` 하나뿐이다. `ReturnToTitle`을 부르는 것은 `SettingsView`(의 `onReturnToTitle`) 하나뿐이다. 시작 흐름과 `Begin()`을 부르는 것은 `GameRoot` 하나뿐이다 (스테이지 사양과 같다). 소리를 넣는 기능은 나중에 `GameRoot.Volume`의 `BgmScale`·`SfxScale`·`Changed`를 쓴다.
+- 누가 만들고 누가 들고 있는지: `GameRoot`가 `Volume`, `LeaveGame`, `SettingsView` 하나씩을 만들어 들고 있는다. `TryLeave`를 부르는 것은 `SettingsView` 하나뿐이다. `ReturnToTitle`은 `SettingsView`와 엔딩 화면에서 부른다. 시작 흐름과 `Begin()`을 부르는 것은 `GameRoot` 하나뿐이다 (스테이지 사양과 같다). 소리를 넣는 기능은 나중에 `GameRoot.Volume`의 `BgmScale`·`SfxScale`·`Changed`를 쓴다.
 - **`GameRoot.Awake` 순서** (저장·오프라인 보상 사양의 순서를 이것으로 대신한다):
+  - 회귀 사양에 따라 `PlayTime`을 복원하고 회귀 규칙을 켠다. 천마 처치 후 저장을 지우고 엔딩을 띄우며 엔딩에서 시작 화면으로 돌아간다.
   1. 맨 앞: `Entry = NextEntry`, `NextEntry = Launch`. (오프라인 보상 사양의 "`IsResumeRestart`를 정적 표시에서 읽고 지운다"가 여기로 온다.)
   2. 저장소를 고르고 `LoadResult`를 읽는다 (저장 사양 그대로).
   3. `Wallet`, `StatUpgrades`, `Battle`을 만든다 (그대로).

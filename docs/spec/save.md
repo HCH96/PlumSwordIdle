@@ -345,6 +345,7 @@ namespace PlumSword.Game.Save
 
 - 누가 만들고 누가 들고 있는지: `GameRoot` 가 저장소 하나(`MemorySaveStore` 또는 `FileSaveStore`), `LoadResult`, `AutoSave` 하나를 만들어 들고 있는다. 게임에 `AutoSave` 는 하나뿐이다. `Tick`·`Flush`·`SaveNow` 를 부르는 것은 `SaveView` 하나뿐이다.
 - **`GameRoot.Awake` 순서** (지금의 순서에서 바뀌는 곳만):
+  - 회귀 사양에 따라 저장된 시간으로 `PlayTime`을 만들고 회귀 규칙과 횟수를 `StageProgress`에 넘기며, `AutoSave`에 `PlayTime`과 `AutoUpgrade`를 연결한다. 엔딩에서는 자동 저장을 끄고 저장을 지운다.
   1. 맨 앞: 저장소를 고르고 `LoadResult` 를 읽는다 (배치 모드에서는 위 저장소 규칙, 아니면 `FileSaveStore.Load()`). `Loaded` 면 `LoadResult.Data` 의 값, 아니면 처음 값을 쓴다.
   2. `Wallet`, `Realm`, `StatUpgrades` 를 그 값으로 만든다 (`new Wallet(gold)`, `new RealmProgress(Wallet, realmLevel, realmKills)`, `StatUpgrades` 생성자의 단계 인자 셋(`attackLevel`, `healthLevel`, `innerPowerLevel`)과 `Realm`). 저장이 없으면 경지와 내공 단계는 0 이다.
   3. 화면 조립(금화, 강화, 전투)은 그대로다.

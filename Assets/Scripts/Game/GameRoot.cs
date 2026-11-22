@@ -61,6 +61,8 @@ namespace PlumSword.Game
 
         /// <summary>게임에 하나뿐인 스테이지 진행. Tick 은 StageView 만, Begin 은 GameRoot 만 부른다.</summary>
         public PlumSword.Core.Stage.StageProgress StageProgress { get; private set; }
+        public PlumSword.Core.Stage.PlayTime PlayTime { get; private set; }
+        public PlumSword.Game.Stage.EndingView Ending { get; private set; }
 
         private void Awake()
         {
@@ -88,7 +90,8 @@ namespace PlumSword.Game
                 PlumSword.Core.Balance.BalanceTable.Current.DiscipleBaseMaxHealth,
                 data != null ? data.AttackLevel : 0,
                 data != null ? data.HealthLevel : 0, data != null ? data.InnerPowerLevel : 0, Realm);
-            AutoUpgrade = new PlumSword.Core.StatUpgrade.AutoUpgrade(StatUpgrades, Wallet, true);
+            AutoUpgrade = new PlumSword.Core.StatUpgrade.AutoUpgrade(StatUpgrades, Wallet, data != null ? data.AutoUpgrade : true);
+            PlayTime = new PlumSword.Core.Stage.PlayTime(data != null ? data.PlayTimeMs / 1000.0 : 0.0);
             Battle = new PlumSword.Core.Combat.Battle(StatUpgrades, Realm, true);
             Battle.EnemyDefeated += enemy => Realm.RecordKill();
 
@@ -103,13 +106,15 @@ namespace PlumSword.Game
             CreateRealmView();
             CreateCombatView();
             CreateRealmAuraView();
-            CreateStage(data != null ? data.StageNumber : 1, data != null ? data.SeenIntroStage : 0);
+            CreateStage(data != null ? data.StageNumber : 1, data != null ? data.SeenIntroStage : 0, data != null ? data.RegressionCount : 0);
 
             if (LoadResult.Status == SaveLoadStatus.Loaded && StartMenuRules.CalculatesOfflineReward(Entry))
                 OfflineReward = OfflineRewardCalculator.Calculate(data.SavedAtUtcTicks, System.DateTime.UtcNow.Ticks, StageProgress.StageNumber);
 
             AutoSave = new AutoSave(saveStore, Wallet, StatUpgrades, Realm, StageProgress,
-                enabled: StartMenuRules.AutoSaveStartsEnabled(LoadResult.Status, OfflineReward != null && OfflineReward.HasReward));
+                enabled: StartMenuRules.AutoSaveStartsEnabled(LoadResult.Status, OfflineReward != null && OfflineReward.HasReward),
+                playTime: PlayTime, autoUpgrade: AutoUpgrade);
+            StageProgress.GameCleared += ShowEnding;
             var saveViewObject = new GameObject("[SaveView]");
             saveViewObject.transform.SetParent(transform, false);
             saveViewObject.AddComponent<SaveView>().Initialize(AutoSave, UiCanvas);
@@ -148,6 +153,22 @@ namespace PlumSword.Game
             var backKeyObject = new GameObject("[BackKeyWatcher]");
             backKeyObject.transform.SetParent(transform, false);
             backKeyObject.AddComponent<BackKeyWatcher>().Initialize(this, Settings);
+        }
+
+        private void Update()
+        {
+            if (!IsStartScreenShowing && StageProgress.HasBegun && StageProgress.Phase != PlumSword.Core.Stage.StagePhase.Cleared)
+                PlayTime.Add(Time.deltaTime);
+        }
+
+        private void ShowEnding()
+        {
+            AutoSave.Disable();
+            saveStore.TryDelete();
+            var viewObject = new GameObject("[EndingView]");
+            viewObject.transform.SetParent(transform, false);
+            Ending = viewObject.AddComponent<PlumSword.Game.Stage.EndingView>();
+            Ending.Initialize(UiCanvas, PlayTime.Seconds, StageProgress.RegressionCount, ReturnToTitle);
         }
 
         private void StartFlow()
@@ -315,11 +336,11 @@ namespace PlumSword.Game
         }
 
         // 스테이지 로직을 만들고 화면을 붙인다. 시작은 저장 기능을 연결한 뒤에 한다.
-        private void CreateStage(int startStage, int seenIntroStage)
+        private void CreateStage(int startStage, int seenIntroStage, int regressionCount)
         {
             StageProgress = new PlumSword.Core.Stage.StageProgress(
                 Wallet, StatUpgrades, Battle, new System.Random(), startStage, seenIntroStage,
-                PlumSword.Core.Stage.StageProgress.DefaultClearWaitSeconds);
+                PlumSword.Core.Stage.StageProgress.DefaultClearWaitSeconds, true, regressionCount);
 
             var viewObject = new GameObject("[StageView]");
             viewObject.transform.SetParent(transform, false);
