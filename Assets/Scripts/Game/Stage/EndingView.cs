@@ -1,7 +1,5 @@
 using System;
-using PlumSword.Core.Stage;
-using PlumSword.Game.StartMenu;
-using TMPro;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,64 +7,82 @@ namespace PlumSword.Game.Stage
 {
     public sealed class EndingView : MonoBehaviour
     {
+        public const float FadeSeconds = 1.25f;
+        public const float HoldSeconds = 5f;
         private GameObject panel;
-        private bool returned;
-        private static TMP_FontAsset font;
 
         public void Initialize(Canvas canvas, double playSeconds, int regressionCount, Action onReturn)
         {
             if (canvas == null) throw new ArgumentNullException(nameof(canvas));
             if (onReturn == null) throw new ArgumentNullException(nameof(onReturn));
+
             panel = new GameObject("EndingPanel", typeof(RectTransform), typeof(Image));
             var rect = (RectTransform)panel.transform;
             rect.SetParent(canvas.transform, false);
+            Stretch(rect);
+            var backdrop = panel.GetComponent<Image>();
+            backdrop.color = Color.clear;
+            backdrop.raycastTarget = true;
+
+            var artObject = new GameObject("EndingArt", typeof(RectTransform), typeof(Image));
+            var artRect = (RectTransform)artObject.transform;
+            artRect.SetParent(rect, false);
+            Stretch(artRect);
+            var art = artObject.GetComponent<Image>();
+            art.sprite = Resources.Load<Sprite>("Art/UI/ending_dawn");
+            art.color = art.sprite != null ? Color.white : Color.black;
+            art.raycastTarget = false;
+            if (art.sprite != null)
+            {
+                var aspect = artObject.AddComponent<AspectRatioFitter>();
+                aspect.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+                aspect.aspectRatio = art.sprite.rect.width / art.sprite.rect.height;
+            }
+            artObject.SetActive(false);
+
+            var fadeObject = new GameObject("EndingFade", typeof(RectTransform), typeof(Image));
+            var fadeRect = (RectTransform)fadeObject.transform;
+            fadeRect.SetParent(rect, false);
+            Stretch(fadeRect);
+            var fade = fadeObject.GetComponent<Image>();
+            fade.color = Color.clear;
+            fade.raycastTarget = false;
+            StartCoroutine(PlayEnding(artObject, fade, onReturn));
+        }
+
+        private static void Stretch(RectTransform rect)
+        {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
             rect.offsetMin = rect.offsetMax = Vector2.zero;
-            rect.SetAsLastSibling();
-            var background = panel.GetComponent<Image>();
-            background.color = new Color(0.05f, 0.02f, 0.06f, 0.92f);
-            background.raycastTarget = true;
+        }
 
-            var time = EndingText.PlayTime(playSeconds);
-            var regressions = EndingText.Regressions(regressionCount);
-            if (font == null)
+        private static IEnumerator PlayEnding(GameObject art, Image fade, Action onReturn)
+        {
+            yield return Fade(fade, 0f, 1f);
+            art.SetActive(true);
+            yield return Fade(fade, 1f, 0f);
+            yield return new WaitForSecondsRealtime(HoldSeconds);
+            yield return Fade(fade, 0f, 1f);
+            onReturn();
+        }
+
+        private static IEnumerator Fade(Image image, float from, float to)
+        {
+            float elapsed = 0f;
+            image.color = new Color(0f, 0f, 0f, from);
+            while (elapsed < FadeSeconds)
             {
-                var source = Resources.Load<Font>("Fonts/Galmuri11");
-                if (source != null) font = TMP_FontAsset.CreateFontAsset(source);
+                elapsed += Time.unscaledDeltaTime;
+                image.color = new Color(0f, 0f, 0f, Mathf.Lerp(from, to, elapsed / FadeSeconds));
+                yield return null;
             }
-            if (font != null) font.TryAddCharacters(EndingText.Title + time + regressions + EndingText.ReturnButton + "0123456789:");
-            CreateText("EndingTitle", rect, new Vector2(0, 60), new Vector2(600, 48), EndingText.Title, 36);
-            CreateText("EndingPlayTime", rect, Vector2.zero, new Vector2(600, 28), time, 18);
-            CreateText("EndingRegressions", rect, new Vector2(0, -30), new Vector2(600, 28), regressions, 18);
-            var buttonRect = CreateRect("EndingReturnButton", rect, new Vector2(0, -90), new Vector2(160, 40));
-            var image = buttonRect.gameObject.AddComponent<Image>();
-            image.sprite = Resources.Load<Sprite>(StartScreenArt.StartButtonPath);
-            image.color = image.sprite != null ? Color.white : new Color(0.35f, 0.12f, 0.2f);
-            var button = buttonRect.gameObject.AddComponent<Button>();
-            button.onClick.AddListener(() => { if (returned) return; returned = true; onReturn(); });
-            CreateText("Label", buttonRect, Vector2.zero, new Vector2(160, 40), EndingText.ReturnButton, 16);
+            image.color = new Color(0f, 0f, 0f, to);
         }
 
-        private static RectTransform CreateRect(string name, Transform parent, Vector2 position, Vector2 size)
+        private void LateUpdate()
         {
-            var rect = (RectTransform)new GameObject(name, typeof(RectTransform)).transform;
-            rect.SetParent(parent, false);
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            return rect;
-        }
-
-        private static void CreateText(string name, Transform parent, Vector2 position, Vector2 size, string value, float fontSize)
-        {
-            var text = CreateRect(name, parent, position, size).gameObject.AddComponent<TextMeshProUGUI>();
-            if (font != null) text.font = font;
-            text.fontSize = fontSize;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = new Color(1f, 0.95f, 0.85f);
-            text.raycastTarget = false;
-            text.text = value;
+            if (panel != null) panel.transform.SetAsLastSibling();
         }
 
         private void OnDestroy()

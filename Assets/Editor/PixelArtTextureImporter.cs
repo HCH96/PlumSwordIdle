@@ -38,7 +38,8 @@ namespace PlumSword.Editor
             if (assetPath.StartsWith("Assets/Resources/Art/Enemies/")
                 || assetPath == "Assets/Resources/Art/UI/damage_numbers.png") importer.maxTextureSize = 4096;
 
-            if (assetPath == "Assets/Resources/Art/UI/jongnam_stage_hud.png"
+            if (assetPath == "Assets/Resources/Art/UI/ending_dawn.png"
+                || assetPath == "Assets/Resources/Art/UI/jongnam_stage_hud.png"
                 || assetPath == "Assets/Resources/Art/UI/jongnam_title_plum_duel.png"
                 || assetPath.StartsWith("Assets/Resources/Art/UI/Settings/")
                 || assetPath.StartsWith("Assets/Resources/Art/UI/StatUpgrade/")

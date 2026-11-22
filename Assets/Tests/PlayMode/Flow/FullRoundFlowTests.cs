@@ -65,6 +65,11 @@ namespace PlumSword.Game.Tests.Flow
             Assert.That(root.transform.Find("[EndingView]"), Is.Not.Null);
             Assert.That(store.Text, Is.Null);
             Assert.That(root.AutoSave.Enabled, Is.False);
+            yield return GameFlow.WaitUntil(() => GameFlow.FindRoot() != null && GameFlow.FindRoot() != root, 12f,
+                () => "엔딩이 끝난 뒤 시작 화면으로 돌아가지 않았습니다.");
+            var titleRoot = GameFlow.FindRoot();
+            Assert.That(titleRoot.IsStartScreenShowing, Is.True);
+            Assert.That(titleRoot.LoadResult.Status, Is.EqualTo(SaveLoadStatus.Empty));
         }
     }
 }

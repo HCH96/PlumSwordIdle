@@ -5,7 +5,7 @@
 
 ## 목표
 
-천마를 첫 판에는 거의 이길 수 없게 만들고, 천마에게 지면 1-1로 **회귀**해 다시 강해지며 도전하게 한다. 금화·강화·경지는 회귀해도 그대로다. 천마를 처음 이기면 **엔딩 화면**(천마 토벌, 총 플레이 시간, 회귀 횟수)을 보여 주고 저장을 지운 뒤 시작 화면으로 돌아간다. 목표는 자동 강화 기준 회귀 3번쯤, 약 20분에 천마를 처음 잡는 것이다 (수치는 `docs/spec/balance.md`와 시뮬레이터가 맞춘다).
+천마를 첫 판에는 거의 이길 수 없게 만들고, 천마에게 지면 1-1로 **회귀**해 다시 강해지며 도전하게 한다. 금화·강화·경지는 회귀해도 그대로다. 천마를 처음 이기면 **엔딩 그림**을 보여 주고 저장을 지운 뒤 시작 화면으로 돌아간다. 목표는 자동 강화 기준 회귀 3번쯤, 약 20분에 천마를 처음 잡는 것이다 (수치는 `docs/spec/balance.md`와 시뮬레이터가 맞춘다).
 
 지금의 "천마에게 지면 천마전 재도전, 이기면 다음 회차" 규칙(`docs/spec/stage.md`)은 `StageProgress`의 회귀 규칙을 켰을 때 이 사양으로 바뀐다. 게임(`GameRoot`)은 켜고, 끄면(기본값) 지금과 같다.
 
@@ -31,7 +31,7 @@
   1. 자동 저장을 끈다 (`AutoSave.Disable()`).
   2. 저장을 지운다 (`ISaveStore.TryDelete()`). 실패해도 계속한다.
   3. `[Game]`의 자식 `[EndingView]`로 엔딩 화면을 띄운다.
-  4. 엔딩 화면의 `처음으로`를 누르면 `GameRoot.ReturnToTitle()`. 저장이 지워졌으므로 시작 화면은 저장 없는 상태(이어하기 없음)로 뜬다.
+  4. 전투 화면을 1.25초간 검게 페이드한 뒤 엔딩 그림을 1.25초간 나타내고 5초 유지한다. 그림을 1.25초간 검게 페이드한 뒤 `GameRoot.ReturnToTitle()`로 자동 복귀한다. 저장이 지워졌으면 시작 화면에 이어하기가 없다.
   5. 엔딩 화면에서 게임을 끄면, 다음 실행은 저장이 없으므로 처음부터다.
 
 ### 경계 상황
@@ -184,8 +184,8 @@ namespace PlumSword.Game.Stage
 {
     public sealed class EndingView : MonoBehaviour
     {
-        // canvas 아래에 화면 전체를 덮는 "EndingPanel" 을 만들고 글자 셋과 버튼 "EndingReturnButton" 을 둔다.
-        // 버튼을 누르면 onReturn 을 부른다 (GameRoot 는 ReturnToTitle 을 넘긴다).
+        // canvas 아래에 전체 화면 엔딩 그림과 페이드를 만들고 재생 후 onReturn 을 한 번 부른다.
+        // playSeconds 와 regressionCount 는 기존 호출 호환을 위해 받지만 화면에 표시하지 않는다.
         public void Initialize(UnityEngine.Canvas canvas, double playSeconds, int regressionCount, System.Action onReturn);
     }
 }
@@ -205,12 +205,10 @@ namespace PlumSword.Game.Stage
 
 - **회귀**: 별도 화면 없음. 지금의 실패 전환(페이드, 제자 쓰러짐 대기)과 같다.
 - **엔딩 화면** `EndingView` (`[Game]`의 자식 `[EndingView]`):
-  - `EndingPanel`: 캔버스의 마지막 자식으로 전체를 덮는 이미지, 색 RGBA (0.05, 0.02, 0.06, 0.92) (임시). 뒤의 입력을 막는다.
-  - 글자 셋(TMP, Galmuri11, 가운데 정렬, 밝은 아이보리 RGB (1, 0.95, 0.85)): `EndingTitle` `EndingText.Title`(크기 36, 위치 캔버스 가운데 기준 (0, 60)), `EndingPlayTime` `EndingText.PlayTime(플레이 시간)`(크기 18, (0, 0)), `EndingRegressions` `EndingText.Regressions(회귀 횟수)`(크기 18, (0, −30)). 크기·위치는 임시.
-  - 버튼 `EndingReturnButton`: 가운데 기준 (0, −90), 160×40, 자식 `Label`에 `EndingText.ReturnButton`(Galmuri11, 크기 16). 바탕은 시작 화면 버튼 그림이 있으면 그것, 없으면 단색 RGB (0.35, 0.12, 0.2) (임시). 콜백은 한 번만 호출한다.
-  - 플레이 시간과 회귀 횟수는 엔딩을 띄운 순간의 값으로 고정한다.
-  - 엔딩 동안 소리는 지금 상태 그대로 둔다 (새 음악 없음).
-- 글자는 Core(`EndingText`)에서 만들고 에딧 모드 테스트로 판정한다. 화면 오브젝트와 버튼은 플레이 모드 테스트로 확인한다.
+  - `EndingPanel`이 기존 UI와 입력을 덮고, `Art/UI/ending_dawn` 그림을 화면 비율을 유지하며 빈 곳 없이 채운다. 긴 화면에서는 그림 일부가 잘릴 수 있다. 그림이 없으면 검은 화면으로 대체한다.
+  - 전투 화면을 1.25초간 검게 페이드하고 그림을 1.25초간 나타낸 뒤 5초 유지한다. 다시 1.25초간 검게 페이드하고 시작 화면으로 자동 복귀한다. 시간은 게임 시간 배율과 무관하다.
+  - 그림을 볼 때 글자·버튼 등 게임 UI는 표시하지 않으며 뒤로 가기 키도 무시한다. 엔딩 동안 소리는 지금 상태 그대로 둔다 (새 음악 없음).
+- 페이드 순서와 자동 복귀는 플레이 모드 테스트로 확인한다.
 
 ## 저장
 
@@ -228,7 +226,7 @@ namespace PlumSword.Game.Stage
 ## 범위 밖
 
 - 회귀 연출(전용 글자·효과), 플레이 중 회귀 횟수 표시: 하지 않는다 (2026-11-22 결정).
-- 엔딩 뒤 이어서 하기, 최고 기록 저장, 엔딩 음악·그림: 하지 않는다.
+- 엔딩 뒤 이어서 하기, 최고 기록 저장, 엔딩 음악: 하지 않는다.
 - 회귀 보너스(영구 능력치, 천마 피해 보상): 하지 않는다.
 - 천마를 강하게 만드는 수치와 20분 맞추기: `docs/spec/balance.md`와 시뮬레이터.
 - 플레이 모드 흐름 테스트 `FullRoundFlowTests.FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves`: 게임이 회귀 규칙을 켜면 2회차가 없어 성립하지 않는다. 이름은 루프 전에 사람이 대화에서 바꾼다 (아래 완료 조건 34). 본문은 루프가 고친다.
@@ -279,7 +277,7 @@ namespace PlumSword.Game.Stage
 
 화면과 조립 (플레이 모드)
 
-31. `Assets/Tests/PlayMode/Stage/EndingViewTests.cs`: `EndingView.Initialize(canvas, 754.9, 3, onReturn)`이면 `EndingPanel`, `EndingTitle`(`"천마 토벌"`), `EndingPlayTime`(`"플레이 시간 12:34"`), `EndingRegressions`(`"회귀 3회"`), `EndingReturnButton`이 있고, 버튼을 누르면 `onReturn`이 1번 불린다.
+31. `EndingViewTests`: 전투 화면 페이드, 엔딩 그림 표시와 유지, 마지막 페이드가 순서대로 진행되고 `onReturn`이 한 번 불린다.
 32. 첫 씬을 불러오면 `GameRoot.StageProgress.UseRegression`은 `true`이고 `GameRoot.PlayTime`은 `null`이 아니다.
 33. 첫 씬에서 게임을 시작해 2초 지나면 `GameRoot.PlayTime.Seconds`는 1.0보다 크다.
 34. 흐름 테스트 (이름은 사람이 루프 전에 `FreshLaunch_DefeatFinalBoss_ShowsEndingAndClearsSave`로 바꾼다): 지금처럼 강하게 강화해 진행하면 천마 처치 뒤 `Phase`가 `Cleared`가 되고, `[EndingView]`가 있으며, 배치 저장소의 `Text`는 `null`이다.
@@ -287,7 +285,7 @@ namespace PlumSword.Game.Stage
 사람 확인
 
 35. 에디터에서 약한 상태로 천마에게 지면 1-1로 돌아가고 금화·강화 레벨·경지가 그대로다.
-36. 천마를 이기면 엔딩 화면에 `천마 토벌`, 플레이 시간, 회귀 횟수가 보이고, `처음으로`를 누르면 시작 화면에 이어하기 없이 처음 시작만 있다.
+36. 천마를 이기면 UI 없이 엔딩 그림이 페이드로 나타났다가 사라지고 시작 화면에 이어하기 없이 처음 시작만 있다.
 
 ## 결정 기록
 

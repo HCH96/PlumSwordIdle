@@ -18,7 +18,7 @@ namespace PlumSword.Game.StartMenu
 
         private void Update()
         {
-            if (root == null || settings == null || Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
+            if (root == null || root.Ending != null || settings == null || Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
             switch (StartMenuRules.BackKey(settings.IsOpen, root.IsStartScreenShowing, root.StageProgress.HasBegun))
             {
                 case BackKeyAction.OpenSettings:
