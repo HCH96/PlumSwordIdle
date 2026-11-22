@@ -1,0 +1,241 @@
+{
+  "loop": "loop/20261122-224840",
+  "bundle": "balance_tuning",
+  "merged_at": "2026-11-22 22:57",
+  "tag": "loop-merged/20261122-224840",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 1056,
+      "passed": 1056,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 181,
+      "passed": 181,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [
+      "`Assets/Tests/EditMode/Balance/BalanceTableTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(t.FinalBossHealth, Is.Zero); Assert.That(t.FinalBossAttack, Is.Zero);`\n  - 새로 들어옴: `Assert.That(t.FinalBossHealth, Is.EqualTo(1500)); Assert.That(t.FinalBossAttack, Is.EqualTo(80));`",
+      "`Assets/Tests/EditMode/Combat/BattleAttackTests.cs` — 있던 검사(Assert) 5줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(50L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(86L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(81L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(80L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(92L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(87L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`",
+      "`Assets/Tests/EditMode/Combat/BattleHoldPositionTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(86L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(92L, _battle.DiscipleHealth);`",
+      "`Assets/Tests/EditMode/Combat/BattleRealmTests.cs` — 있던 검사(Assert) 4줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(100L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(122L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(106L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(128L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`",
+      "`Assets/Tests/EditMode/Combat/BattleSkillTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(90, battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96, battle.DiscipleHealth);`",
+      "`Assets/Tests/EditMode/Combat/BattleTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(10L, boss.Attack);`\n  - 새로 들어옴: `Assert.AreEqual(4L, boss.Attack);`",
+      "`Assets/Tests/EditMode/Combat/BattleUpgradeTests.cs` — 있던 검사(Assert) 6줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(130));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(85));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(116));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(116));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(136));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(91));`",
+      "`Assets/Tests/EditMode/Combat/EnemyStatsTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(8589934594L, EnemyStats.Attack(EnemyKind.Boss, int.MaxValue));`\n  - 새로 들어옴: `Assert.AreEqual(8589934588L, EnemyStats.Attack(EnemyKind.Boss, int.MaxValue));`",
+      "`Assets/Tests/EditMode/Combat/JongnamBossBehaviorTests.cs` — 있던 검사(Assert) 3줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(980));`\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(980));`\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(970));`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(992));`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(992));`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(988));`",
+      "`Assets/Tests/EditMode/Stage/StageProgressFadeTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`",
+      "`Assets/Tests/EditMode/Stage/StageProgressFinalTests.cs` — 있던 검사(Assert) 6줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(boss.MaxHealth, Is.EqualTo(220));`\n  - 지워짐: `Assert.That(boss.Attack, Is.EqualTo(26));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(370));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].Attack, Is.EqualTo(46));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(220));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].Health, Is.EqualTo(220));`\n  - 새로 들어옴: `Assert.That(boss.MaxHealth, Is.EqualTo(1500));`\n  - 새로 들어옴: `Assert.That(boss.Attack, Is.EqualTo(80));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(1500));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].Attack, Is.EqualTo(80));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(1500));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].Health, Is.EqualTo(1500));`",
+      "`Assets/Tests/EditMode/Stage/StageProgressOutcomeTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`",
+      "`Assets/Tests/EditMode/Stage/StageProgressRoundTests.cs` — 있던 검사(Assert) 2줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(boss.Attack, Is.EqualTo(30));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(30));`\n  - 새로 들어옴: `Assert.That(boss.Attack, Is.EqualTo(24));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(24));`",
+      "`Assets/Tests/PlayMode/Combat/JongnamBossSpriteTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(970), \"스킬 모션도 기존 공격 피해를 유지한다\");`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(988), \"스킬 모션도 기존 공격 피해를 유지한다\");`"
+    ],
+    "stats": {
+      "files_changed": 22,
+      "files": [
+        "Assets/Scripts/Core/Balance/BalanceTable.cs",
+        "Assets/Tests/EditMode/Audio/SfxTriggersTests.cs",
+        "Assets/Tests/EditMode/Balance/BalanceTableTests.cs",
+        "Assets/Tests/EditMode/Balance/BalanceTunedDefaultsTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleAttackTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleHoldPositionTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleRealmTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleSkillTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleTests.cs",
+        "Assets/Tests/EditMode/Combat/BattleUpgradeTests.cs",
+        "Assets/Tests/EditMode/Combat/EnemyStatsTests.cs",
+        "Assets/Tests/EditMode/Combat/JongnamBossBehaviorTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressFadeTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressFinalTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressIntroTickTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressOutcomeTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressRoundTests.cs",
+        "Assets/Tests/PlayMode/Combat/JongnamBossSpriteTests.cs",
+        "docs/history/097_balance_tuned_defaults.md",
+        "docs/spec/balance.md",
+        "docs/spec/combat.md",
+        "docs/spec/stage.md"
+      ],
+      "tests_before": 842,
+      "tests_after": 847,
+      "new_tests": [
+        "BalanceTunedDefaultsTests.BossAttackCurve_DefaultValues",
+        "BalanceTunedDefaultsTests.FinalStages_BossUsesFixedStats",
+        "BalanceTunedDefaultsTests.FourthStage_BossUsesCurves",
+        "BalanceTunedDefaultsTests.NormalAttackAndBossGold_AreUnchanged",
+        "BalanceTunedDefaultsTests.SixthStage_BossUsesAttackCurve"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": []
+    }
+  },
+  "tasks": [
+    {
+      "doc": "097_balance_tuned_defaults.md",
+      "branch": "task/097_balance_tuned_defaults",
+      "agents": "codex(시도 1)",
+      "summary": "보스 공격력 곡선과 천마 기본 능력치를 조정하고 지정된 테스트 및 사양을 갱신했다. 새 기본값 검증 테스트를 추가했으며 Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "BalanceTable.Default에서는 작업 문서가 지정한 세 값(BossAttack (4,4,1), FinalBossHealth 1500, FinalBossAttack 80)만 바뀌었다. 기존 테스트의 기대값·준비값 변경은 요구사항 목록과 한 줄씩 일치하고, 새 테스트는 완료 조건의 숫자를 그대로 검사한다. 지워지거나 바뀐 검사는 모두 작업 문서가 명시한 값 교체이며, 검사 수와 뜻은 줄지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Balance/BalanceTunedDefaultsTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "BalanceTunedDefaultsTests (조건 2~9마다 메서드가 있음, SetUp·TearDown에서 Current=Default로 맞춤)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "기본 표의 `BossAttack.Evaluate(0)`, `Evaluate(1)`, `Evaluate(2)`, `Evaluate(3)`은 각각 4, 8, 12, 16이다.",
+            "test": "BalanceTunedDefaultsTests.BossAttackCurve_DefaultValues (TestCase 0→4, 1→8, 2→12, 3→16)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "기본 표에서 `EnemyStats.Attack(EnemyKind.Boss, 4)`는 16이다.",
+            "test": "BalanceTunedDefaultsTests.FourthStage_BossUsesCurves",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "기본 표에서 `EnemyStats.MaxHealth(EnemyKind.Boss, 4)`는 190이다 (보스 체력 곡선은 그대로).",
+            "test": "BalanceTunedDefaultsTests.FourthStage_BossUsesCurves",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "기본 표에서 `EnemyStats.MaxHealth(EnemyKind.Boss, 5)`는 1500이다.",
+            "test": "BalanceTunedDefaultsTests.FinalStages_BossUsesFixedStats(5)",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "기본 표에서 `EnemyStats.Attack(EnemyKind.Boss, 5)`는 80이다.",
+            "test": "BalanceTunedDefaultsTests.FinalStages_BossUsesFixedStats(5)",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "기본 표에서 `EnemyStats.MaxHealth(EnemyKind.Boss, 10)`은 1500이고 `EnemyStats.Attack(EnemyKind.Boss, 10)`은 80이다.",
+            "test": "BalanceTunedDefaultsTests.FinalStages_BossUsesFixedStats(10)",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "기본 표에서 `EnemyStats.Attack(EnemyKind.Boss, 6)`은 24이다 (2회차 1스테이지 보스는 천마가 아니다).",
+            "test": "BalanceTunedDefaultsTests.SixthStage_BossUsesAttackCurve",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "기본 표에서 `EnemyStats.Attack(EnemyKind.Normal, 4)`는 11이고 `StageRewards.BossGold(5)`는 90이다 (바꾸지 않은 값은 그대로).",
+            "test": "BalanceTunedDefaultsTests.NormalAttackAndBossGold_AreUnchanged",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "요구사항에 적은 기존 테스트는 모두 이름이 그대로이고, 적힌 값만 바뀐 채 통과한다.",
+            "test": "diff 대조: 요구사항 목록의 테스트 22개 항목과 값이 모두 일치, 메서드 이름 변경과 검사 삭제 없음, 목록 밖 기대값 변경 없음 (통과 여부는 루프 실행 결과)",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 전체 테스트",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "docs/spec/stage.md:119 완료 조건 42가 아직 '체력 370, 공격력 46'이다. 실제 테스트 StageProgressFinalTests.TenthStage_…는 1500·80으로 바뀌었다. 작업 문서는 41·44만 고치라고 했기 때문에 범위 밖이지만, 사양과 테스트가 어긋나므로 후속 정리가 필요하다."
+          },
+          {
+            "severity": "note",
+            "text": "docs/spec/balance.md:104 코드 예시 주석이 아직 '지금 게임의 수치로 채운 새 객체'로 되어 있어 새 기본값 설명과 맞지 않는다 (사소함)."
+          },
+          {
+            "severity": "note",
+            "text": "구현 에이전트는 Unity 테스트를 직접 돌리지 않았다고 보고했다. 통과 여부는 루프의 전체 테스트 결과에 달려 있다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 1056,
+          "passed": 1056,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 181,
+          "passed": 181,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "BalanceTunedDefaultsTests.BossAttackCurve_DefaultValues",
+        "BalanceTunedDefaultsTests.FinalStages_BossUsesFixedStats",
+        "BalanceTunedDefaultsTests.FourthStage_BossUsesCurves",
+        "BalanceTunedDefaultsTests.NormalAttackAndBossGold_AreUnchanged",
+        "BalanceTunedDefaultsTests.SixthStage_BossUsesAttackCurve"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [
+        "`Assets/Tests/EditMode/Balance/BalanceTableTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(t.FinalBossHealth, Is.Zero); Assert.That(t.FinalBossAttack, Is.Zero);`\n  - 새로 들어옴: `Assert.That(t.FinalBossHealth, Is.EqualTo(1500)); Assert.That(t.FinalBossAttack, Is.EqualTo(80));`",
+        "`Assets/Tests/EditMode/Combat/BattleAttackTests.cs` — 있던 검사(Assert) 5줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(50L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(86L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(81L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(80L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(92L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(87L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`",
+        "`Assets/Tests/EditMode/Combat/BattleHoldPositionTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(86L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(92L, _battle.DiscipleHealth);`",
+        "`Assets/Tests/EditMode/Combat/BattleRealmTests.cs` — 있던 검사(Assert) 4줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(100L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(122L, _battle.DiscipleHealth);`\n  - 지워짐: `Assert.AreEqual(90L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(106L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(128L, _battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96L, _battle.DiscipleHealth);`",
+        "`Assets/Tests/EditMode/Combat/BattleSkillTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(90, battle.DiscipleHealth);`\n  - 새로 들어옴: `Assert.AreEqual(96, battle.DiscipleHealth);`",
+        "`Assets/Tests/EditMode/Combat/BattleTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(10L, boss.Attack);`\n  - 새로 들어옴: `Assert.AreEqual(4L, boss.Attack);`",
+        "`Assets/Tests/EditMode/Combat/BattleUpgradeTests.cs` — 있던 검사(Assert) 6줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(130));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(85));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(116));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(116));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(136));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(91));`",
+        "`Assets/Tests/EditMode/Combat/EnemyStatsTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.AreEqual(8589934594L, EnemyStats.Attack(EnemyKind.Boss, int.MaxValue));`\n  - 새로 들어옴: `Assert.AreEqual(8589934588L, EnemyStats.Attack(EnemyKind.Boss, int.MaxValue));`",
+        "`Assets/Tests/EditMode/Combat/JongnamBossBehaviorTests.cs` — 있던 검사(Assert) 3줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(980));`\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(980));`\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(970));`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(992));`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(992));`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(988));`",
+        "`Assets/Tests/EditMode/Stage/StageProgressFadeTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`",
+        "`Assets/Tests/EditMode/Stage/StageProgressFinalTests.cs` — 있던 검사(Assert) 6줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(boss.MaxHealth, Is.EqualTo(220));`\n  - 지워짐: `Assert.That(boss.Attack, Is.EqualTo(26));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(370));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].Attack, Is.EqualTo(46));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(220));`\n  - 지워짐: `Assert.That(_battle.Enemies[0].Health, Is.EqualTo(220));`\n  - 새로 들어옴: `Assert.That(boss.MaxHealth, Is.EqualTo(1500));`\n  - 새로 들어옴: `Assert.That(boss.Attack, Is.EqualTo(80));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(1500));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].Attack, Is.EqualTo(80));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(1500));`\n  - 새로 들어옴: `Assert.That(_battle.Enemies[0].Health, Is.EqualTo(1500));`",
+        "`Assets/Tests/EditMode/Stage/StageProgressOutcomeTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));`",
+        "`Assets/Tests/EditMode/Stage/StageProgressRoundTests.cs` — 있던 검사(Assert) 2줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(boss.Attack, Is.EqualTo(30));`\n  - 지워짐: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(30));`\n  - 새로 들어옴: `Assert.That(boss.Attack, Is.EqualTo(24));`\n  - 새로 들어옴: `Assert.That(_battle.DiscipleHealth, Is.EqualTo(24));`",
+        "`Assets/Tests/PlayMode/Combat/JongnamBossSpriteTests.cs` — 있던 검사(Assert) 1줄을 지우거나 바꿈\n  - 지워짐: `Assert.That(battle.DiscipleHealth, Is.EqualTo(970), \"스킬 모션도 기존 공격 피해를 유지한다\");`\n  - 새로 들어옴: `Assert.That(battle.DiscipleHealth, Is.EqualTo(988), \"스킬 모션도 기존 공격 피해를 유지한다\");`"
+      ],
+      "assumptions": [
+        "작업 요구사항에 따라 세 사양 문서의 현재 기본값과 완료 조건을 갱신했다. 공개 연결 지점과 계산식은 바꾸지 않았다.",
+        "추가 가정이나 임시 수치는 없다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}

@@ -127,7 +127,7 @@ namespace PlumSword.Core.Tests.Combat
 
             Assert.AreEqual(1, boss.Index);
             Assert.AreEqual(100L, boss.MaxHealth);
-            Assert.AreEqual(10L, boss.Attack);
+            Assert.AreEqual(4L, boss.Attack);
             Assert.AreSame(boss, _battle.Enemies[1]);
             Assert.AreEqual(2, _added.Count);
         }

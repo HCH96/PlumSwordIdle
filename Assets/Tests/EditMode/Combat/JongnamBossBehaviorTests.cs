@@ -29,12 +29,12 @@ namespace PlumSword.Core.Tests.Combat
             var boss = battle.AddEnemy(EnemyKind.Boss, 1, 1);
             for (int i = 0; i < 201; i++) battle.Step();
             Assert.That(boss.AttackCount, Is.EqualTo(3));
-            Assert.That(battle.DiscipleHealth, Is.EqualTo(980));
+            Assert.That(battle.DiscipleHealth, Is.EqualTo(992));
             Assert.That(battle.BossProjectiles.Count, Is.EqualTo(1));
             for (int i = 0; i < 8; i++) battle.Step();
-            Assert.That(battle.DiscipleHealth, Is.EqualTo(980));
+            Assert.That(battle.DiscipleHealth, Is.EqualTo(992));
             battle.Step();
-            Assert.That(battle.DiscipleHealth, Is.EqualTo(970));
+            Assert.That(battle.DiscipleHealth, Is.EqualTo(988));
             Assert.That(battle.BossProjectiles, Is.Empty);
         }
 

@@ -264,7 +264,7 @@ namespace PlumSword.Core.Tests.Combat
 
             Steps(1);
             Assert.AreEqual(90L, boss.Health);
-            Assert.AreEqual(90L, _battle.DiscipleHealth);
+            Assert.AreEqual(96L, _battle.DiscipleHealth);
 
             Steps(449);
             Assert.AreEqual(10L, boss.Health);
@@ -273,7 +273,7 @@ namespace PlumSword.Core.Tests.Combat
             Steps(1);
             Assert.AreEqual(0L, boss.Health);
             Assert.AreEqual(1, _defeated.Count);
-            Assert.AreEqual(50L, _battle.DiscipleHealth);
+            Assert.AreEqual(80L, _battle.DiscipleHealth);
         }
 
         [Test]
@@ -288,7 +288,7 @@ namespace PlumSword.Core.Tests.Combat
 
             Steps(1);
             Assert.AreEqual(130L, boss.Health);
-            Assert.AreEqual(86L, _battle.DiscipleHealth);
+            Assert.AreEqual(92L, _battle.DiscipleHealth);
             Assert.AreEqual(4.0, _battle.DisciplePosition, Tolerance);
             Assert.AreEqual(5.0, boss.Position, Tolerance);
 
@@ -316,7 +316,7 @@ namespace PlumSword.Core.Tests.Combat
             Assert.AreEqual(1.0, _battle.DisciplePosition, Tolerance);
             Assert.AreEqual(130L, boss.Health);
             Assert.AreEqual(0.5, _battle.DiscipleAttackCooldown, Tolerance);
-            Assert.AreEqual(81L, _battle.DiscipleHealth);
+            Assert.AreEqual(87L, _battle.DiscipleHealth);
 
             Steps(24);
             Assert.AreEqual(130L, boss.Health);
@@ -389,7 +389,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void DiscipleAndBossDefeatedSameStep_DiscipleDefeatedFlagIsTrueAtEnemyDefeated()
         {
-            Create(100, 10);
+            Create(100, 4);
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
 
             Steps(1);
@@ -481,7 +481,7 @@ namespace PlumSword.Core.Tests.Combat
         {
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             Steps(1);
-            Assert.AreEqual(90L, _battle.DiscipleHealth);
+            Assert.AreEqual(96L, _battle.DiscipleHealth);
             Assert.AreEqual(1.0, _battle.DiscipleAttackCooldown, Tolerance);
 
             _battle.Reset();

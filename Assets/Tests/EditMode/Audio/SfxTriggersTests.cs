@@ -202,7 +202,7 @@ namespace PlumSword.Core.Tests.Audio
         [Test]
         public void BossAndDiscipleDefeatedTogether_RequestsOnlyPlayerOutcome()
         {
-            Create(attack: 100, health: 10);
+            Create(attack: 100, health: 4);
             stage.Begin(); Drain();
             stage.Tick(StageProgress.SubstageIntroSeconds); Drain();
             battle.AddEnemy(EnemyKind.Boss, 1, 1.0); Drain();

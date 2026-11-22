@@ -62,11 +62,11 @@ namespace PlumSword.Core.Tests.Combat
         {
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             Steps(1);
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));
 
             Assert.That(_upgrades.TryUpgrade(StatType.Health), Is.True);
 
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(116));
             Assert.That(_battle.DiscipleMaxHealth, Is.EqualTo(120));
         }
 
@@ -79,7 +79,7 @@ namespace PlumSword.Core.Tests.Combat
 
             Assert.That(_upgrades.TryUpgrade(StatType.Attack), Is.True);
 
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(110));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(116));
             Assert.That(_battle.DiscipleMaxHealth, Is.EqualTo(120));
         }
 
@@ -88,12 +88,12 @@ namespace PlumSword.Core.Tests.Combat
         {
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             Steps(1);
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));
 
             _upgrades.TryUpgrade(StatType.Health);
             _upgrades.TryUpgrade(StatType.Health);
 
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(130));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(136));
             Assert.That(_battle.DiscipleMaxHealth, Is.EqualTo(140));
         }
 
@@ -180,7 +180,7 @@ namespace PlumSword.Core.Tests.Combat
             Assert.That(_battle.DiscipleHealth, Is.EqualTo(95));
 
             Steps(1);
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(85));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(91));
             Assert.That(boss.Health, Is.EqualTo(100));
 
             Steps(48);

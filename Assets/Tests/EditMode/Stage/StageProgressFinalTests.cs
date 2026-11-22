@@ -51,8 +51,8 @@ namespace PlumSword.Core.Tests.Stage
             var boss = _battle.Enemies[0];
             Assert.That(boss, Is.SameAs(_stage.Boss));
             Assert.That(boss.Kind, Is.EqualTo(EnemyKind.Boss));
-            Assert.That(boss.MaxHealth, Is.EqualTo(220));
-            Assert.That(boss.Attack, Is.EqualTo(26));
+            Assert.That(boss.MaxHealth, Is.EqualTo(1500));
+            Assert.That(boss.Attack, Is.EqualTo(80));
             Assert.That(boss.Position, Is.EqualTo(_battle.DisciplePosition + 24).Within(Tolerance));
             Assert.That(_stage.DefeatedNormalCount, Is.Zero);
             Assert.That(_stage.BarRatio, Is.EqualTo(1.0).Within(Tolerance));
@@ -67,8 +67,8 @@ namespace PlumSword.Core.Tests.Stage
             _stage.Begin();
             Assert.That(_battle.Enemies.Count, Is.EqualTo(1));
             Assert.That(_battle.Enemies[0].Kind, Is.EqualTo(EnemyKind.Boss));
-            Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(370));
-            Assert.That(_battle.Enemies[0].Attack, Is.EqualTo(46));
+            Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(1500));
+            Assert.That(_battle.Enemies[0].Attack, Is.EqualTo(80));
             FightUntilTransition();
             Assert.That(_wallet.Balance, Is.EqualTo(140));
         }
@@ -103,8 +103,8 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_battle.Enemies.Count, Is.EqualTo(1));
             Assert.That(_battle.Enemies[0], Is.Not.SameAs(oldBoss));
             Assert.That(_battle.Enemies[0].Kind, Is.EqualTo(EnemyKind.Boss));
-            Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(220));
-            Assert.That(_battle.Enemies[0].Health, Is.EqualTo(220));
+            Assert.That(_battle.Enemies[0].MaxHealth, Is.EqualTo(1500));
+            Assert.That(_battle.Enemies[0].Health, Is.EqualTo(1500));
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.SubstageIntro));
         }
 

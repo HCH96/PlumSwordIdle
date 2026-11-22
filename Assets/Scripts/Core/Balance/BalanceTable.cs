@@ -12,8 +12,8 @@ namespace PlumSword.Core.Balance
             AttackPerLevel = 2, HealthPerLevel = 20, DiscipleBaseAttack = 10, DiscipleBaseMaxHealth = 100,
             DiscipleAttackInterval = 1, SkillBasePercent = 200, SkillPercentPerInnerLevel = 10, SkillCooldownSeconds = 5, SubstageStep = 0,
             NormalHealth = new GrowthCurve(30, 10, 1), NormalAttack = new GrowthCurve(5, 2, 1),
-            BossHealth = new GrowthCurve(100, 30, 1), BossAttack = new GrowthCurve(10, 4, 1),
-            NormalAttackInterval = 2, BossAttackInterval = 2, FinalBossHealth = 0, FinalBossAttack = 0,
+            BossHealth = new GrowthCurve(100, 30, 1), BossAttack = new GrowthCurve(4, 4, 1),
+            NormalAttackInterval = 2, BossAttackInterval = 2, FinalBossHealth = 1500, FinalBossAttack = 80,
             NormalGold = new GrowthCurve(10, 2, 1), BossGold = new GrowthCurve(50, 10, 1),
             RealmKillsRequired = new[] { 30, 50, 70, 100 }, RealmBonusPercent = new[] { 0, 10, 20, 30, 40 }
         };

@@ -69,7 +69,7 @@ namespace PlumSword.Core.Tests.Combat
             _battle.AddEnemy(EnemyKind.Boss, 2, 1.0);
             _battle.SetHoldPosition(true);
             _battle.Step();
-            Assert.AreEqual(86L, _battle.DiscipleHealth);
+            Assert.AreEqual(92L, _battle.DiscipleHealth);
         }
 
         [Test]

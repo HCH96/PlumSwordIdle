@@ -34,7 +34,7 @@ namespace PlumSword.Core.Tests.Combat
         {
             _battle.AddEnemy(EnemyKind.Boss, 1, 1.0);
             _battle.Step();
-            Assert.AreEqual(90L, _battle.DiscipleHealth);
+            Assert.AreEqual(96L, _battle.DiscipleHealth);
         }
 
         private void DefeatDisciple()
@@ -54,7 +54,7 @@ namespace PlumSword.Core.Tests.Combat
             TakeBossHit();
             Breakthrough(_realm);
             Assert.AreEqual(110L, _battle.DiscipleMaxHealth);
-            Assert.AreEqual(100L, _battle.DiscipleHealth);
+            Assert.AreEqual(106L, _battle.DiscipleHealth);
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace PlumSword.Core.Tests.Combat
             Breakthrough(_realm);
             Assert.IsTrue(_upgrades.TryUpgrade(StatType.Health));
             Assert.AreEqual(132L, _battle.DiscipleMaxHealth);
-            Assert.AreEqual(122L, _battle.DiscipleHealth);
+            Assert.AreEqual(128L, _battle.DiscipleHealth);
         }
 
         [Test]
@@ -106,7 +106,7 @@ namespace PlumSword.Core.Tests.Combat
             _battle = new Battle(_upgrades);
             TakeBossHit();
             Breakthrough(_realm);
-            Assert.AreEqual(90L, _battle.DiscipleHealth);
+            Assert.AreEqual(96L, _battle.DiscipleHealth);
             Assert.AreEqual(110L, _battle.DiscipleMaxHealth);
         }
 

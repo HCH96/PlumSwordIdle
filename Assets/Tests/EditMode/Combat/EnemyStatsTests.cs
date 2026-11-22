@@ -33,9 +33,9 @@ namespace PlumSword.Core.Tests.Combat
             Assert.AreEqual(expected, EnemyStats.MaxHealth(EnemyKind.Boss, stage));
         }
 
-        [TestCase(1, 10L)]
-        [TestCase(2, 14L)]
-        [TestCase(3, 18L)]
+        [TestCase(1, 4L)]
+        [TestCase(2, 8L)]
+        [TestCase(3, 12L)]
         public void Attack_BossByStage_IncreasesByFour(int stage, long expected)
         {
             Assert.AreEqual(expected, EnemyStats.Attack(EnemyKind.Boss, stage));
@@ -50,7 +50,7 @@ namespace PlumSword.Core.Tests.Combat
         [Test]
         public void Attack_BossAtIntMaxStage_DoesNotOverflow()
         {
-            Assert.AreEqual(8589934594L, EnemyStats.Attack(EnemyKind.Boss, int.MaxValue));
+            Assert.AreEqual(8589934588L, EnemyStats.Attack(EnemyKind.Boss, int.MaxValue));
         }
 
         [TestCase(EnemyKind.Normal)]

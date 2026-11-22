@@ -75,7 +75,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_wallet.Balance, Is.EqualTo(50));
             Assert.That(_stage.Phase, Is.EqualTo(StagePhase.FadingOut));
             Assert.That(_stage.StageNumber, Is.EqualTo(1));
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));
             Assert.That(_started, Is.EqualTo(new[] { 1 }));
 
             ArrangeFailedState();

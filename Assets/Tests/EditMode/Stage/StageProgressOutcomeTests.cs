@@ -94,7 +94,7 @@ namespace PlumSword.Core.Tests.Stage
             Assert.That(_stage.FadeAlpha, Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(_battle.Paused, Is.True);
             Assert.That(_upgrades.Locked, Is.True);
-            Assert.That(_battle.DiscipleHealth, Is.EqualTo(90));
+            Assert.That(_battle.DiscipleHealth, Is.EqualTo(96));
         }
 
         [Test]
@@ -151,7 +151,7 @@ namespace PlumSword.Core.Tests.Stage
         [Test]
         public void BossAndDiscipleDefeatedTogether_FailedWithoutBossGold()
         {
-            Create(100, 10);
+            Create(100, 4);
             _stage.Begin();
             _stage.Tick(StageProgress.SubstageIntroSeconds);
             _battle.AddEnemy(EnemyKind.Boss, 1, BossPosition);

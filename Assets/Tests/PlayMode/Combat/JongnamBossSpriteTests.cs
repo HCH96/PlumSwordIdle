@@ -59,7 +59,7 @@ namespace PlumSword.Game.Tests.Combat
                 }
                 Assert.That(attack, Is.True, "일반 공격이 보여야 한다");
                 Assert.That(skill, Is.True, "세 번째 공격에 스킬 동작이 보여야 한다");
-                Assert.That(battle.DiscipleHealth, Is.EqualTo(970), "스킬 모션도 기존 공격 피해를 유지한다");
+                Assert.That(battle.DiscipleHealth, Is.EqualTo(988), "스킬 모션도 기존 공격 피해를 유지한다");
                 Assert.That(enemy.Position, Is.EqualTo(0.8).Within(1e-9));
 
                 battle.SetPaused(true);
