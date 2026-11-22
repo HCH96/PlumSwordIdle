@@ -17,7 +17,9 @@
 - 전체 진행 번호 `StageNumber`는 1 이상이다. 화면상 큰 스테이지는 `(StageNumber - 1) % 5 + 1`, 회차는 `(StageNumber - 1) / 5 + 1`이다. `int.MaxValue`에서 성공하면 번호는 유지한다.
 - `Begin()`은 최초 한 번 큰 스테이지를 배치한다. 전투를 초기화하고, 작은 번호 `SubstageNumber = 1`, 처치 수 0, 보스 없음으로 둔 뒤 첫 무리를 만든다(5스테이지는 위 예외). `StageStarted`와 `Changed`를 보낸다. 다시 부르면 아무 일도 없다.
 - 일반 구간 1~6은 매번 `Random.Next(2, 4)`로 상대 수를 독립적으로 고른다. 현재 제자 위치에서 앞쪽 24유닛을 무리 중심으로 두고 상대 중심 간격을 2유닛으로 배치한다. 예: 중심 24이면 2명은 23·25, 3명은 22·24·26이다. 한 번에 현재 구간의 무리만 배치한다.
-- 현재 무리의 일반 상대를 모두 쓰러뜨리면 0.5초 페이드아웃 후 가려진 순간 다음 구간을 제자의 현재 위치를 기준으로 배치하고 0.5초 페이드인한다. 여섯 번째 무리 뒤에는 7구간의 보스를 제자 앞 24유닛에 배치한다. 전환 중 전투와 강화를 잠그며 페이드인이 끝나면 강화 잠금을 풀고 구간 소개를 보여 준다. 실제 현재 무리에 속한 적만 구간 완료 판단에 포함한다.
+- 현재 무리의 일반 상대를 모두 쓰러뜨리면 설정된 결판 뒤 대기 후 0.5초 페이드아웃하고 가려진 순간 다음 구간을 제자의 현재 위치를 기준으로 배치한 뒤 0.5초 페이드인한다. 여섯 번째 무리 뒤에는 7구간의 보스를 제자 앞 24유닛에 배치한다. 실제 현재 무리에 속한 적만 구간 완료 판단에 포함한다.
+- 대기 시간이 양수인 성공 전환은 보상과 처치 수를 즉시 반영하고 `ClearWait`에서 강화를 잠그고 제자 전진만 막는다. 전투는 계속되지만 전투 알림은 무시하며 보스와 보스 활성 상태는 다음 배치까지 유지한다. 대기가 끝나면 전투를 멈추고 페이드아웃하며, 대기에서 남는 시간은 페이드에 넘긴다. 가려진 순간 제자리 유지를 푼다. 대기 시간이 0이면 바로 페이드아웃한다. 실패는 대기 없이 전환한다. 페이드인이 끝나면 강화 잠금을 풀고 구간 소개를 보여 준다.
+- 성공한 보스의 금화를 지급하고 다음 번호를 기억한 다음 전환 상태에서 `StageCleared`와 `Changed`를 순서대로 보낸다. 일반 구간 성공과 대기 종료 때도 `Changed`를 보낸다. 대기 시간은 설정값에서 1e-9초를 뺀 값 이상이면 끝난 것으로 판정한다.
 - 각 일반 구간과 보스 구간이 시작하면 `SubstageIntro` 상태에서 번호를 1.2초 표시하며 전투를 멈춘다. 강화는 잠그지 않는다. 1회차에서 처음 방문한 큰 스테이지는 기존 테마 소개를 3초 표시한 뒤 구간 번호를 1.2초 표시한다. 테마 소개는 본 큰 스테이지에서는 다시 보이지 않지만, 구간 번호는 매 구간마다 표시한다.
 - 적 처치 보상은 기존 그대로다. 일반 상대는 `10 + 2 × (StageNumber - 1)`, 보스는 `50 + 10 × (StageNumber - 1)` 금화다. 일반 적과 제자가 같은 전투 칸에서 쓰러지면 적의 보상은 지급하지만 구간은 진행하지 않고 실패한다. 보스와 제자가 동시에 쓰러지면 보스 보상 없이 실패한다.
 - 보스를 혼자 이기면 다음 큰 스테이지로, 제자가 쓰러지면 같은 큰 스테이지로 전환한다. 전환 중에는 0.5초 페이드아웃과 0.5초 페이드인을 적용하고 전투·강화를 잠근다. 가려진 순간 전투를 초기화하고 새 큰 스테이지의 1구간(5스테이지는 보스 구간)을 배치한다. 페이드가 끝나면 강화를 풀고 필요한 테마 소개와 구간 소개를 순서대로 보여 준다.
@@ -35,21 +37,23 @@
 | 보스 등장 거리 | 제자 앞 24유닛 |
 | 구간 번호 소개 / 큰 스테이지 이야기 소개 | 1.2초 / 3초 |
 | 페이드아웃 / 페이드인 | 각각 0.5초 |
+| 결판 뒤 대기 | 게임에서 사용할 기본값 1.5초 (임시), 생성자 기본값 0초 |
 | 테마 순서 | 종남, 개방, 남궁, 마교, 천마 |
 | 최종 스테이지(화면상) / 구간 | 5 / 보스 구간(7)만 |
 | 보스 체력 틀 크기 / 중심 | 300×100 UI 단위 / (0, −126) (임시) |
 
 ## 연결 지점
 
-- `StageProgress(Wallet, StatUpgrades, Battle, Random, int startStage = 1, int seenIntroStage = 5)`: 필수 인자 `null`은 예외, 시작 번호는 최소 1, 본 소개 번호는 0~5로 자른다. 생성 시 전투를 시작하지 않는다.
+- `StageProgress(Wallet, StatUpgrades, Battle, Random, int startStage = 1, int seenIntroStage = 5, double clearWaitSeconds = 0.0)`: 필수 인자 `null`은 예외, 시작 번호는 최소 1, 본 소개 번호는 0~5로 자른다. 대기 시간이 음수·NaN·무한대면 `ArgumentOutOfRangeException`. 생성 시 전투를 시작하지 않는다.
+- `ClearWaitSeconds`는 설정된 대기 시간을 읽는다. `DefaultClearWaitSeconds = 1.5`는 게임에서 사용할 임시 상수다.
 - `StageNumber`, `DisplayStageNumber`, `RoundNumber`, `SubstageNumber`(1~7), `Phase`, `HasBegun`, `DefeatedNormalCount`, `Boss`, `IsBossActive`, `IsIntroShowing`, `IsSubstageIntroShowing`, `SeenIntroStage`, `BarRatio`, `FadeAlpha`를 읽는다.
 - `Begin()`과 `Tick(double)`을 호출하고 `StageStarted`, `StageCleared`, `StageFailed`, `Changed`를 구독한다. 스테이지 이벤트의 숫자는 작은 번호가 아니라 전체 큰 스테이지 번호다.
-- `StagePhase`는 `Playing = 0`, `FadingOut = 1`, `FadingIn = 2`, `Intro = 3`, `SubstageIntro = 4`다.
+- `StagePhase`는 `Playing = 0`, `FadingOut = 1`, `FadingIn = 2`, `Intro = 3`, `SubstageIntro = 4`, `ClearWait = 5`다.
 - `StageLayout.SubstagePositions(Random, double center)`는 무리 하나의 2~3개 좌표를 반환한다. `NormalSubstageCount = 6`, `MinSubstageEnemies = 2`, `MaxGroupSize = 3`, `EncounterDistance = 24`, `InGroupSpacing = 2`, `BossDistance = 24`. 기존 `FirstGroupPosition = 6`, `RollGroups`·`Positions`와 `NormalCount`는 이전 호출과 테스트 호환용이며 현재 스테이지 배치에 사용하지 않는다.
 - `public const int StageLayout.FinalDisplayStage = 5`: 일반 구간 없이 최종 보스만 나오는 화면상 큰 스테이지 번호.
 - `StageRewards.NormalGold(int)`와 `BossGold(int)`는 1 미만에 예외를 던진다. `StageText`는 기존 회차·테마·보스 이름과 영문 테마 소개를 제공한다. 1스테이지 소개는 `Mount Hua and Jongnam disciples spar in Mount Hua's training yard.`이다.
 - `public static string StageText.SubstageLabel(int stage, int substage)`: `stage`가 5면 `"FINAL"`, 아니면 `"{stage}-{substage}"`를 문화권과 무관하게 만든다. `stage`가 1~5 밖이거나 `substage`가 1~7 밖이면 `ArgumentOutOfRangeException`을 던진다.
-- 전투는 `Battle.AddEnemy`, `EnemyDefeated`, `EnemyDamaged`, `DiscipleDefeated`, `Reset`, `SetPaused`로 연결하고, 강화는 `SetLocked`, 저장은 `StageStarted`, `StageNumber`, `SeenIntroStage`로 연결한다.
+- 전투는 `Battle.AddEnemy`, `EnemyDefeated`, `EnemyDamaged`, `DiscipleDefeated`, `Reset`, `SetPaused`, `SetHoldPosition`으로 연결하고, 강화는 `SetLocked`, 저장은 `StageStarted`, `StageNumber`, `SeenIntroStage`로 연결한다.
 
 ## 화면
 
@@ -69,6 +73,7 @@
 - 진행 표시 번호, 구간 소개 패, 스테이지 글자(`… · 4-7`)는 모두 `StageText.SubstageLabel`을 쓴다. 5스테이지에서는 `FINAL`이고, 보스 이름은 `HEAVENLY DEMON`이다.
 - 에셋이 없을 때는 기존 진행 UI를 사용한다. 각 구간 시작에는 매화·검 장식 번호 패와 동적으로 생성한 번호를 화면 가운데 1.2초 표시한다. 0.24초 동안 왼쪽에서 이동하며 확대·페이드인하고 마지막 0.24초에 페이드아웃한다. UI는 입력을 가로채지 않으며 그림이 없을 때는 단색 패로 대체한다. 기존 테마 소개 패널은 처음 방문 시에만 따로 표시한다.
 - 전환 페이드 막은 전투 화면만 가린다. UI는 입력을 받지 않는다. 에셋이 없으면 기존 도형 UI를 쓴다.
+- 게임은 성공 판정 뒤 1.5초 기다린 뒤 페이드아웃한다. 성공 전환의 쓰러짐 대기는 이 시간을 뺀 나머지만 기다리며, 필요한 시트가 없으면 추가로 기다리지 않는다. 실패 시 제자 쓰러짐 대기는 그대로다.
 - 제자가 패배하면 판정과 전투 정지는 즉시 처리하고, 화면에서는 쓰러짐 17프레임을 0.075초씩 한 번 보여 준 뒤 기존 0.5초 페이드아웃을 시작한다. 1스테이지에서 마지막 종남 상대 또는 장로를 이겼을 때도 같은 시간 기다린다. 2스테이지의 마지막 일반 상대는 쓰러짐 16프레임을 0.075초씩 보여 준 뒤 페이드아웃한다. 필요한 쓰러짐 그림이 없으면 기다리지 않고 기존 페이드를 쓴다.
 - 3스테이지의 마지막 일반 상대도 쓰러짐 17프레임을 0.075초씩 보여 준 뒤 페이드아웃한다. 두 일반 상대의 쓰러짐 시트 중 하나라도 없으면 기다리지 않는다.
 - 4스테이지의 마지막 일반 상대가 쓰러지면, 마검사·흑갑 호위 쓰러짐 시트가 모두 있을 때 17프레임을 0.075초씩 보여 준 뒤 페이드아웃한다. 둘 중 하나라도 없으면 기다리지 않는다.

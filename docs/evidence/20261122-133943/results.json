@@ -1,0 +1,541 @@
+{
+  "loop": "loop/20261122-133943",
+  "bundle": "clear_wait",
+  "merged_at": "2026-11-22 13:57",
+  "tag": "loop-merged/20261122-133943",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 920,
+      "passed": 920,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 164,
+      "passed": 164,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [],
+    "stats": {
+      "files_changed": 13,
+      "files": [
+        "Assets/Scripts/Core/Combat/Battle.cs",
+        "Assets/Scripts/Core/Stage/StagePhase.cs",
+        "Assets/Scripts/Core/Stage/StageProgress.cs",
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/Stage/StageView.cs",
+        "Assets/Tests/EditMode/Combat/BattleHoldPositionTests.cs",
+        "Assets/Tests/EditMode/Stage/StageProgressClearWaitTests.cs",
+        "Assets/Tests/PlayMode/Stage/StageClearWaitViewTests.cs",
+        "docs/history/081_battle_hold_position.md",
+        "docs/history/082_stage_clear_wait.md",
+        "docs/history/083_clear_wait_view.md",
+        "docs/spec/combat.md",
+        "docs/spec/stage.md"
+      ],
+      "tests_before": 720,
+      "tests_after": 745,
+      "new_tests": [
+        "BattleHoldPositionTests.New_HoldPosition_IsFalse",
+        "BattleHoldPositionTests.Reset_Holding_ClearsHold",
+        "BattleHoldPositionTests.SetHoldPosition_Defeated_ChangesHold",
+        "BattleHoldPositionTests.SetHoldPosition_Paused_ChangesHold",
+        "BattleHoldPositionTests.Step_AfterReleasingHold_Advances",
+        "BattleHoldPositionTests.Step_HoldingWithBossInRange_DiscipleAttacks",
+        "BattleHoldPositionTests.Step_HoldingWithBossInRange_EnemyAttacks",
+        "BattleHoldPositionTests.Step_HoldingWithDistantBoss_DoesNotApproachOrAttack",
+        "BattleHoldPositionTests.Step_HoldingWithoutEnemies_DoesNotAdvance",
+        "BattleHoldPositionTests.Step_Holding_EnemyApproachesAndNoWindUpIsAdded",
+        "BattleHoldPositionTests.Step_SkillAndHold_BlockMovementIndependently",
+        "StageClearWaitViewTests.ClearWait_AfterOnePointTwoSeconds_HasNoFade",
+        "StageClearWaitViewTests.ClearWait_AfterTwoSeconds_HasEnded",
+        "StageClearWaitViewTests.FinalBoss_ClearWait_OnlyWaitsForRemainingDefeatAnimation",
+        "StageClearWaitViewTests.FirstScene_GameRoot_UsesDefaultClearWait",
+        "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+        "StageProgressClearWaitTests.ClearWait_ExtraEnemyDefeated_IsIgnored",
+        "StageProgressClearWaitTests.Constructor_DefaultWait_IsZeroAndGameDefaultIsOneAndHalf",
+        "StageProgressClearWaitTests.Constructor_InvalidWait_Throws",
+        "StageProgressClearWaitTests.DefaultWait_LastNormalDefeated_FadesImmediately",
+        "StageProgressClearWaitTests.DiscipleDefeated_FadesImmediatelyAndNotifiesFailure",
+        "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+        "StageProgressClearWaitTests.Tick_FadeReachesReplacement_ReleasesHold",
+        "StageProgressClearWaitTests.Tick_LargeRemainder_ContinuesThroughBothFades",
+        "StageProgressClearWaitTests.Tick_WaitThenRemainder_StartsFadeAndNotifies"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": [
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/Stage/StageView.cs"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "doc": "081_battle_hold_position.md",
+      "branch": "task/081_battle_hold_position",
+      "agents": "codex(시도 1)",
+      "summary": "전투에 독립적인 제자리 유지 상태와 설정 API를 추가하고 초기화 및 전투 사양을 반영했다. 완료 조건과 스킬 상호작용을 검증하는 에딧 모드 테스트를 작성했으며 Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "`IsHoldingPosition`와 `SetHoldPosition`을 추가했고, 이 값이 참이면 `Step`에서 제자 이동만 건너뛴다(스킬 조건과 OR, 서로 독립). `Reset`에서 값을 해제하는 것도 코드로 확인했다. 완료 조건마다 숫자까지 확인하는 테스트가 있고, 사양 문서도 같이 갱신됐다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Combat/BattleHoldPositionTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다. \"기본 전투\"는 `new Battle(new StatUpgrades(new Wallet(1000), 10, 100))`이다.",
+            "test": "BattleHoldPositionTests (SetUp이 기본 전투를 만든다, 조건 2~9에 테스트가 하나씩 있다. 통과 여부는 루프 실행 결과로 본다)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "기본 전투를 새로 만들면 `IsHoldingPosition`은 `false`다.",
+            "test": "BattleHoldPositionTests.New_HoldPosition_IsFalse",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "기본 전투에서 `SetHoldPosition(true)` 뒤 적 없이 `Step()`을 10번 부르면 `DisciplePosition`은 0이다.",
+            "test": "BattleHoldPositionTests.Step_HoldingWithoutEnemies_DoesNotAdvance",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "이어서 `SetHoldPosition(false)` 뒤 `Step()`을 10번 부르면 `DisciplePosition`은 1.296이다.",
+            "test": "BattleHoldPositionTests.Step_AfterReleasingHold_Advances",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "기본 전투에서 `AddEnemy(Boss, 2, 5.0)`을 두고 `SetHoldPosition(true)` 뒤 `Step()`을 50번 부르면 `DisciplePosition`은 0이고 보스 `Health`는 130이다.",
+            "test": "BattleHoldPositionTests.Step_HoldingWithDistantBoss_DoesNotApproachOrAttack",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "기본 전투에서 `AddEnemy(Boss, 2, 1.0)`을 두고 `SetHoldPosition(true)` 뒤 `Step()` 1번이면 보스 `Health`는 120이다 (제자리에서도 범위 안 적은 공격한다).",
+            "test": "BattleHoldPositionTests.Step_HoldingWithBossInRange_DiscipleAttacks",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "같은 상황에서 `DiscipleHealth`는 86이다 (적도 평소처럼 공격한다).",
+            "test": "BattleHoldPositionTests.Step_HoldingWithBossInRange_EnemyAttacks",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "기본 전투에서 `SetHoldPosition(true)` 뒤 `Reset()`을 부르면 `IsHoldingPosition`은 `false`다.",
+            "test": "BattleHoldPositionTests.Reset_Holding_ClearsHold",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "기본 전투에서 `SetPaused(true)` 상태로 `SetHoldPosition(true)`를 부르면 `IsHoldingPosition`은 `true`다.",
+            "test": "BattleHoldPositionTests.SetHoldPosition_Paused_ChangesHold",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "보고서의 테스트 결과에는 Unity 테스트를 직접 돌리지 않았다고 적혀 있다. 새 테스트의 기대값(1.296, 130, 120, 86)은 실제 실행에서 확인해야 하며, 이 판정은 루프의 테스트 통과에 의존한다."
+          },
+          {
+            "severity": "note",
+            "text": "멈춤·패배 상태에서도 값이 바뀌고 스킬과 제자리 유지가 서로 독립이라는 추가 테스트도 있다 (BattleHoldPositionTests.cs:102, :113). 하지 말 것은 침범하지 않았다: SetPaused·스킬·공격 규칙, Stage/Game 코드를 건드리지 않았다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 908,
+          "passed": 908,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 160,
+          "passed": 160,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "BattleHoldPositionTests.New_HoldPosition_IsFalse",
+        "BattleHoldPositionTests.Reset_Holding_ClearsHold",
+        "BattleHoldPositionTests.SetHoldPosition_Defeated_ChangesHold",
+        "BattleHoldPositionTests.SetHoldPosition_Paused_ChangesHold",
+        "BattleHoldPositionTests.Step_AfterReleasingHold_Advances",
+        "BattleHoldPositionTests.Step_HoldingWithBossInRange_DiscipleAttacks",
+        "BattleHoldPositionTests.Step_HoldingWithBossInRange_EnemyAttacks",
+        "BattleHoldPositionTests.Step_HoldingWithDistantBoss_DoesNotApproachOrAttack",
+        "BattleHoldPositionTests.Step_HoldingWithoutEnemies_DoesNotAdvance",
+        "BattleHoldPositionTests.Step_Holding_EnemyApproachesAndNoWindUpIsAdded",
+        "BattleHoldPositionTests.Step_SkillAndHold_BlockMovementIndependently"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "082_stage_clear_wait.md",
+      "branch": "task/082_stage_clear_wait",
+      "agents": "codex(시도 1)",
+      "summary": "스테이지 성공 뒤 선택적인 결판 대기와 페이드 시간 이월을 구현하고 사양과 에딧 모드 테스트를 추가했다. Unity 테스트는 루프 판정을 기다린다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "ClearWait 단계, 생성자 인자 검사, 대기가 끝난 뒤 남는 시간을 페이드로 넘기는 처리, 가려진 순간의 제자리 유지 해제가 작업 문서대로 구현됐다. 완료 조건마다 숫자까지 확인하는 에딧 모드 테스트가 있다. 전투 코드와 화면 코드는 건드리지 않았고, 사양 문서도 같이 고쳤다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "`Assets/Tests/EditMode/Stage/StageProgressClearWaitTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "StageProgressClearWaitTests 전체 (통과 여부는 루프 실행 결과)",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "공통 준비: `wallet = new Wallet(0)`, `upgrades = new StatUpgrades(wallet, 1000, 10000)`, `battle = new Battle(upgrades)`, `stage = new StageProgress(wallet, upgrades, battle, new MinRandom(), 2, 5, 1.5)`. `Begin()` 뒤 `Tick(1.2)`로 구간 소개를 끝내고, \"결판까지\"는 `Phase`가 `Playing`이 아닐 때까지 `battle.Step()`을 부르는 것(최대 5000번)이다. `MinRandom`은 기존 `Assets/Tests/EditMode/Stage/MinRandom.cs`(구간마다 2명)다.",
+            "test": "StageProgressClearWaitTests.SetUp / FightToDecision",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "생성자에 `clearWaitSeconds`로 −0.1, `double.NaN`, `double.PositiveInfinity`를 주면 각각 `ArgumentOutOfRangeException`을 던진다.",
+            "test": "StageProgressClearWaitTests.Constructor_InvalidWait_Throws (TestCase 3개)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "인자를 주지 않은 `StageProgress`의 `ClearWaitSeconds`는 0이고, `StageProgress.DefaultClearWaitSeconds`는 1.5다.",
+            "test": "StageProgressClearWaitTests.Constructor_DefaultWait_IsZeroAndGameDefaultIsOneAndHalf",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "공통 준비 뒤 결판까지 진행하면 `Phase`는 `ClearWait`이다.",
+            "test": "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "그때 `FadeAlpha`는 0이다.",
+            "test": "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "그때 `battle.Paused`는 `false`다.",
+            "test": "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "그때 `battle.IsHoldingPosition`은 `true`다.",
+            "test": "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "그때 `upgrades.Locked`는 `true`다.",
+            "test": "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "그때 `wallet` 잔액은 24다 (2스테이지 일반 상대 12 × 2).",
+            "test": "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "결판 뒤 `Tick(1.4)`이면 `Phase`는 `ClearWait` 그대로다.",
+            "test": "StageProgressClearWaitTests.Tick_WaitThenRemainder_StartsFadeAndNotifies",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "결판 뒤 `Tick(1.4)`, `Tick(0.2)`이면 `Phase`는 `FadingOut`이고 `FadeAlpha`는 0.2(오차 1e-6)이다.",
+            "test": "StageProgressClearWaitTests.Tick_WaitThenRemainder_StartsFadeAndNotifies",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "같은 상황에서 `battle.Paused`는 `true`다.",
+            "test": "StageProgressClearWaitTests.Tick_WaitThenRemainder_StartsFadeAndNotifies",
+            "verdict": "있음"
+          },
+          {
+            "id": 14,
+            "condition": "결판 뒤 `ClearWait`에서 `FadingOut`으로 바뀌는 `Tick` 안에서 `Changed`가 1번 이상 온다.",
+            "test": "StageProgressClearWaitTests.Tick_WaitThenRemainder_StartsFadeAndNotifies (Tick(1.4)는 Changed 없이 return 하므로 셈은 Tick(0.2)에서 온 것)",
+            "verdict": "있음"
+          },
+          {
+            "id": 15,
+            "condition": "결판 뒤 `Tick(1.6)`, `Tick(0.4)`이면 `SubstageNumber`는 2이고 `Phase`는 `FadingIn`이다.",
+            "test": "StageProgressClearWaitTests.Tick_FadeReachesReplacement_ReleasesHold",
+            "verdict": "있음"
+          },
+          {
+            "id": 16,
+            "condition": "같은 상황에서 `battle.IsHoldingPosition`은 `false`다.",
+            "test": "StageProgressClearWaitTests.Tick_FadeReachesReplacement_ReleasesHold",
+            "verdict": "있음"
+          },
+          {
+            "id": 17,
+            "condition": "결판 뒤 `ClearWait`에서 `battle.AddEnemy(EnemyKind.Normal, 2, battle.DisciplePosition + 0.8)`을 두고 그 적이 쓰러질 때까지 `battle.Step()`을 부르면 잔액은 24 그대로이고 `Phase`는 `ClearWait`이다.",
+            "test": "StageProgressClearWaitTests.ClearWait_ExtraEnemyDefeated_IsIgnored",
+            "verdict": "있음"
+          },
+          {
+            "id": 18,
+            "condition": "공통 준비에서 구간 6개를 모두 이기고(구간마다 결판까지 진행 → `Tick(1.5)` → `Tick(1.0)` → `Tick(1.2)`) 보스까지 결판을 내면 `Phase`는 `ClearWait`이다.",
+            "test": "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+            "verdict": "있음"
+          },
+          {
+            "id": 19,
+            "condition": "같은 상황에서 `StageCleared`는 1번, 값 2로 왔고, 그 알림 안에서 읽은 `Phase`는 `ClearWait`이다.",
+            "test": "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+            "verdict": "있음"
+          },
+          {
+            "id": 20,
+            "condition": "같은 상황에서 잔액은 204다 (일반 12 × 12 + 보스 60).",
+            "test": "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+            "verdict": "있음"
+          },
+          {
+            "id": 21,
+            "condition": "이어서 `Tick(1.5)`, `Tick(0.5)`이면 `StageNumber`는 3이고 `SubstageNumber`는 1이다.",
+            "test": "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+            "verdict": "있음"
+          },
+          {
+            "id": 22,
+            "condition": "같은 상황에서 `battle.IsHoldingPosition`은 `false`다.",
+            "test": "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+            "verdict": "있음"
+          },
+          {
+            "id": 23,
+            "condition": "`clearWaitSeconds`를 주지 않은 `StageProgress`(나머지는 공통 준비와 같음)에서 결판까지 진행하면 `Phase`는 `FadingOut`이고 `battle.Paused`는 `true`다.",
+            "test": "StageProgressClearWaitTests.DefaultWait_LastNormalDefeated_FadesImmediately",
+            "verdict": "있음"
+          },
+          {
+            "id": 24,
+            "condition": "공통 준비를 `new StatUpgrades(wallet, 1, 1)`로 바꿔 제자가 쓰러질 때까지 진행하면 `Phase`는 `FadingOut`이고 `StageFailed`가 1번 온다 (실패는 기다리지 않는다).",
+            "test": "StageProgressClearWaitTests.DiscipleDefeated_FadesImmediatelyAndNotifiesFailure",
+            "verdict": "있음"
+          },
+          {
+            "id": 25,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "기존 BeginTransition 의 XML 주석은 이제 실패 전환에서만 쓰이는데 그 점이 주석에 드러나지 않는다. BeginSuccessTransition 에는 주석이 없다 (Assets/Scripts/Core/Stage/StageProgress.cs:345-371). Tick 의 요약 주석도 ClearWait 를 언급하지 않는다 (StageProgress.cs:167-171). 동작에는 문제가 없다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 920,
+          "passed": 920,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 160,
+          "passed": 160,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "StageProgressClearWaitTests.BossDefeated_WaitsNotifiesAndReplacesStage",
+        "StageProgressClearWaitTests.ClearWait_ExtraEnemyDefeated_IsIgnored",
+        "StageProgressClearWaitTests.Constructor_DefaultWait_IsZeroAndGameDefaultIsOneAndHalf",
+        "StageProgressClearWaitTests.Constructor_InvalidWait_Throws",
+        "StageProgressClearWaitTests.DefaultWait_LastNormalDefeated_FadesImmediately",
+        "StageProgressClearWaitTests.DiscipleDefeated_FadesImmediatelyAndNotifiesFailure",
+        "StageProgressClearWaitTests.LastNormalDefeated_WaitsWithRewardsAndBattleRunning",
+        "StageProgressClearWaitTests.Tick_FadeReachesReplacement_ReleasesHold",
+        "StageProgressClearWaitTests.Tick_LargeRemainder_ContinuesThroughBothFades",
+        "StageProgressClearWaitTests.Tick_WaitThenRemainder_StartsFadeAndNotifies"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [
+        "없음. 공개 연결 지점은 작업 문서에 지정된 형태를 따랐다."
+      ],
+      "human_report": [],
+      "exceptions": []
+    },
+    {
+      "doc": "083_clear_wait_view.md",
+      "branch": "task/083_clear_wait_view",
+      "agents": "codex(시도 1)",
+      "summary": "게임의 결판 뒤 대기 1.5초를 적용하고 쓰러짐 대기에서 경과 시간을 제외했다. 플레이 모드 테스트와 스테이지 사양을 갱신했다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "GameRoot가 DefaultClearWaitSeconds(1.5)를 넘기고, StageView는 ClearWait→FadingOut 성공 전환에서 쓰러짐 대기를 max(0, 쓰러짐 시간 − ClearWaitSeconds)로 정한다. 요구사항과 플레이 모드 완료 조건을 본문의 Assert로 확인했다. 하지 말 것 침범과 화면 코드의 계산은 없다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "화면 코드가 컴파일되고 기존 테스트가 모두 통과한다. 플레이 모드 흐름 테스트(`Assets/Tests/PlayMode/Flow/`)도 포함이다. 흐름 테스트가 시간 제한에 걸리면 제한값을 바꾸지 말고 보고서에 적어 blocked로 보고한다.",
+            "test": "루프의 컴파일·전체 테스트 실행",
+            "verdict": "루프가 판정"
+          },
+          {
+            "id": 2,
+            "condition": "Assets/Tests/PlayMode/Stage/StageClearWaitViewTests.cs`에 아래 조건마다 테스트가 하나 이상 있고 모두 통과한다.",
+            "test": "StageClearWaitViewTests (조건 3·4·5마다 테스트가 하나씩 있고, 최종 보스 남은 대기 테스트가 하나 더 있다)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "첫 씬을 불러와 `[Game]`의 `GameRoot.StageProgress.ClearWaitSeconds`는 1.5다.",
+            "test": "StageClearWaitViewTests.FirstScene_GameRoot_UsesDefaultClearWait",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "StageView`를 `new StageProgress(wallet, new StatUpgrades(wallet, 1000, 10000), battle, new System.Random(1), 2, 5, 1.5)`로 직접 만들고, 구간 소개를 `Tick`으로 끝낸 뒤 결판까지 `battle.Step()`을 부른다. 그 뒤 실제 시간 1.2초가 지났을 때 `Phase`는 `ClearWait`이고 `FadeAlpha`는 0이다.",
+            "test": "StageClearWaitViewTests.ClearWait_AfterOnePointTwoSeconds_HasNoFade",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "같은 상황에서 실제 시간 2.0초가 지났을 때 `Phase`는 `ClearWait`이 아니다.",
+            "test": "StageClearWaitViewTests.ClearWait_AfterTwoSeconds_HasEnded",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "게임을 실행해 구간의 마지막 적을 쓰러뜨리면, 약 1.5초 동안 제자가 공격 자세가 아닌 대기 동작으로 서 있고 피해 숫자가 사라진 뒤 화면이 어두워진다. 에디터에서 재생하며 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          },
+          {
+            "id": 7,
+            "condition": "5스테이지 최종 보스를 이기면 쓰러짐 그림이 끝까지 재생된 뒤 화면이 어두워진다. 에디터에서 확인한다.",
+            "test": "-",
+            "verdict": "사람 확인"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "FinalBoss_ClearWait_OnlyWaitsForRemainingDefeatAnimation(StageClearWaitViewTests.cs:70)은 1.7초에 FadingOut이고 알파가 약 0인지, 2.2초에 알파가 0보다 큰지 본다. 그래서 0.375초 남은 대기를 구별해 낸다. 빼기가 없으면 2.2초에도 알파가 0이라 이 테스트는 실패한다. 완료 조건 밖의 추가 검사다."
+          },
+          {
+            "severity": "note",
+            "text": "사양 문구(docs/spec/stage.md:76)는 작업 문서의 문장을 그대로 옮기지 않았다. 대신 시트가 없을 때와 실패할 때의 동작을 덧붙여 같은 뜻으로 적었다. 코드(StageView.cs:381-412)와 맞는다."
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 920,
+          "passed": 920,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 164,
+          "passed": 164,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "StageClearWaitViewTests.ClearWait_AfterOnePointTwoSeconds_HasNoFade",
+        "StageClearWaitViewTests.ClearWait_AfterTwoSeconds_HasEnded",
+        "StageClearWaitViewTests.FinalBoss_ClearWait_OnlyWaitsForRemainingDefeatAnimation",
+        "StageClearWaitViewTests.FirstScene_GameRoot_UsesDefaultClearWait"
+      ],
+      "screen_files": [
+        "Assets/Scripts/Game/GameRoot.cs",
+        "Assets/Scripts/Game/Stage/StageView.cs"
+      ],
+      "human_conditions": [
+        "게임을 실행해 구간의 마지막 적을 쓰러뜨리면, 약 1.5초 동안 제자가 공격 자세가 아닌 대기 동작으로 서 있고 피해 숫자가 사라진 뒤 화면이 어두워진다. 에디터에서 재생하며 확인한다.",
+        "5스테이지 최종 보스를 이기면 쓰러짐 그림이 끝까지 재생된 뒤 화면이 어두워진다. 에디터에서 확인한다."
+      ],
+      "gate_warnings": [],
+      "assumptions": [],
+      "human_report": [
+        "게임을 실행해 구간의 마지막 적을 쓰러뜨리면, 약 1.5초 동안 제자가 공격 자세가 아닌 대기 동작으로 서 있고 피해 숫자가 사라진 뒤 화면이 어두워지는지 에디터에서 확인한다.",
+        "5스테이지 최종 보스를 이기면 쓰러짐 그림이 끝까지 재생된 뒤 화면이 어두워지는지 에디터에서 확인한다."
+      ],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}
