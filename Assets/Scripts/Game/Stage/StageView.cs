@@ -253,7 +253,7 @@ namespace PlumSword.Game.Stage
             var obj = new GameObject("BossHealthFrame", typeof(RectTransform), typeof(Image));
             var rect = (RectTransform)obj.transform;
             rect.SetParent(canvas.transform, false);
-            PlaceTopCenter(rect, new Vector2(0f, -126f), new Vector2(300f, 100f));
+            PlaceTopCenter(rect, new Vector2(0f, -112f), new Vector2(300f, 100f));
             rect.pivot = Center;
             _bossHealthFrame = obj.GetComponent<Image>();
             _bossHealthFrame.raycastTarget = false;
@@ -267,7 +267,7 @@ namespace PlumSword.Game.Stage
             float left = BossGaugeBounds[i, 0], right = BossGaugeBounds[i, 1];
             float top = BossGaugeBounds[i, 2], bottom = BossGaugeBounds[i, 3];
             var position = new Vector2(((left + right + 1f) / 2f - 1086f) * k,
-                -126f - ((top + bottom + 1f) / 2f - 362f) * k);
+                -112f - ((top + bottom + 1f) / 2f - 362f) * k);
             var size = new Vector2((right - left + 1f) * k, (bottom - top + 1f) * k);
             PlaceTopCenter(rect, position, size);
             rect.pivot = Center;
@@ -480,7 +480,7 @@ namespace PlumSword.Game.Stage
                 if (bossFrame != null) PlaceBossGauge(_barRect, _stage.DisplayStageNumber);
                 else
                 {
-                    PlaceTopCenter(_barRect, new Vector2(0, -126), new Vector2(180, 7));
+                    PlaceTopCenter(_barRect, new Vector2(0, -112), new Vector2(180, 7));
                     _barRect.pivot = Center;
                 }
             }
@@ -498,9 +498,9 @@ namespace PlumSword.Game.Stage
                 _barFill.color = bossActive ? BossFillColor : (useJongnamArt ? JongnamFillColor : NormalFillColor);
             }
 
-            if (_bossNameObject != null && _bossNameObject.activeSelf != bossActive)
+            if (_bossNameObject != null && _bossNameObject.activeSelf)
             {
-                _bossNameObject.SetActive(bossActive);
+                _bossNameObject.SetActive(false);
             }
 
             if (_stageLabel != null)

@@ -15,6 +15,7 @@ namespace PlumSword.Game.Stage
         private Sprite completed, active, empty;
         private TextMeshProUGUI number;
         private RectTransform trackFill;
+        private GameObject track, trackHighlight;
         private StageLabelImages labelArt;
         private Image stageTitle, bossNameArt;
         private RectTransform numberArt;
@@ -57,8 +58,10 @@ namespace PlumSword.Game.Stage
             }
 
             var rail = ImageAt(rect, "Track", null, new Vector2(0, -96), new Vector2(240, 4));
+            preview.track = rail.gameObject;
             rail.color = new Color(.45f, .24f, .19f, .95f);
             var line = ImageAt(rect, "TrackHighlight", null, new Vector2(0, -95.5f), new Vector2(240, 1));
+            preview.trackHighlight = line.gameObject;
             line.color = new Color(.83f, .65f, .42f, .9f);
             var fill = ImageAt(rect, "Progress", null, new Vector2(-120, -96), new Vector2(0, 2));
             fill.rectTransform.pivot = new Vector2(0, .5f);
@@ -103,6 +106,9 @@ namespace PlumSword.Game.Stage
         {
             foreach (var marker in markers) marker.gameObject.SetActive(visible);
             bossMarker.gameObject.SetActive(visible);
+            track.SetActive(visible);
+            trackHighlight.SetActive(visible);
+            trackFill.gameObject.SetActive(visible);
         }
 
         private static Image ImageAt(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)

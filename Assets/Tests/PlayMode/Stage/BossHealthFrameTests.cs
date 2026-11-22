@@ -68,10 +68,10 @@ namespace PlumSword.Game.Tests.Stage
             Assert.That(frame.gameObject.activeSelf, Is.True);
             Assert.That(image.sprite.name, Is.EqualTo("boss_health_frame_" + number));
             Assert.That(image.raycastTarget, Is.False);
-            CheckRect(frame, 0, -126, 300, 100);
+            CheckRect(frame, 0, -112, 300, 100);
             if (number == 1)
             {
-                CheckRect(Rect("StageBar"), 13.7f, -127.4f, 215.6f, 8.3f);
+                CheckRect(Rect("StageBar"), 13.7f, -113.4f, 215.6f, 8.3f);
                 Assert.That(Rect("StageBar").GetSiblingIndex(), Is.LessThan(frame.GetSiblingIndex()));
                 Assert.That(frame.GetSiblingIndex(), Is.LessThan(Rect("BossName").GetSiblingIndex()));
             }
@@ -119,7 +119,7 @@ namespace PlumSword.Game.Tests.Stage
                 StartStage(1);
                 AdvanceToBoss();
                 Assert.That(Rect("BossHealthFrame").gameObject.activeSelf, Is.False);
-                CheckRect(Rect("StageBar"), 0, -126, 180, 7);
+                CheckRect(Rect("StageBar"), 0, -112, 180, 7);
             }
             finally { field.SetValue(null, original); }
         }
