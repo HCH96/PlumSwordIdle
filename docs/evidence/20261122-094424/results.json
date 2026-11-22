@@ -1,0 +1,192 @@
+{
+  "loop": "loop/20261122-094424",
+  "bundle": "flow_test",
+  "merged_at": "2026-11-22 09:50",
+  "tag": "loop-merged/20261122-094424",
+  "base": "integration",
+  "tests": {
+    "EditMode": {
+      "ok": true,
+      "total": 884,
+      "passed": 884,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "ok": true,
+      "total": 155,
+      "passed": 155,
+      "failed": 0,
+      "inconclusive": 0,
+      "skipped": 0,
+      "result": "Passed"
+    }
+  },
+  "gate": {
+    "violations": [],
+    "warnings": [],
+    "stats": {
+      "files_changed": 2,
+      "files": [
+        "Assets/Tests/PlayMode/Flow/OfflineRewardFlowTests.cs",
+        "docs/history/077_flow_offline_reward.md"
+      ],
+      "tests_before": 701,
+      "tests_after": 702,
+      "new_tests": [
+        "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward"
+      ],
+      "need_test_conditions": 0,
+      "human_conditions": [],
+      "screen_files": []
+    }
+  },
+  "tasks": [
+    {
+      "doc": "077_flow_offline_reward.md",
+      "branch": "task/077_flow_offline_reward",
+      "agents": "codex(시도 1)",
+      "summary": "오프라인 보상 수령과 저장, 중복 지급 방지 및 재실행 흐름 테스트를 완성하고 구간 소개 이후 전투 재개를 검사합니다.",
+      "review": {
+        "verdict": "pass",
+        "summary": "테스트 파일 하나와 .meta만 추가했고, 사람의 답변대로 받기 3프레임 뒤에는 SubstageIntro를, Playing이 된 뒤에는 전투 재개를 검사한다. 모든 완료 조건을 숫자까지 Assert로 직접 확인하며 게임 코드와 GameFlow 도우미는 건드리지 않았다.",
+        "criteria": [
+          {
+            "id": 1,
+            "condition": "Assets/Tests/PlayMode/Flow/OfflineRewardFlowTests.cs` 에 아래 조건마다 검사가 있고 모두 통과한다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward",
+            "verdict": "있음"
+          },
+          {
+            "id": 2,
+            "condition": "한 시간 전 저장으로 켜면 `OfflineReward.HasReward` 는 `true`, `OfflineReward.KillCount` 는 360, `OfflineReward.Gold` 는 4320 이다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (HasReward True, KillCount 360, Gold 4320)",
+            "verdict": "있음"
+          },
+          {
+            "id": 3,
+            "condition": "받기 전에는 `Wallet.Balance` 가 100 이다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (\"수령 전 보유 금화\" 100)",
+            "verdict": "있음"
+          },
+          {
+            "id": 4,
+            "condition": "받기 전에는 `Battle.Paused` 가 `true`, `StageProgress.HasBegun` 이 `false`, `AutoSave.Enabled` 가 `false` 다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (세 가지 Assert)",
+            "verdict": "있음"
+          },
+          {
+            "id": 5,
+            "condition": "받기 전에는 `UiCanvas` 아래에 `OfflineRewardOverlay/OfflineRewardWindow/ClaimButton` 이 있다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (\"수령 버튼 존재\", Button 컴포넌트 확인)",
+            "verdict": "있음"
+          },
+          {
+            "id": 6,
+            "condition": "받기를 누른 뒤 `Wallet.Balance` 는 4420 이다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (\"수령 후 보유 금화\" 4420)",
+            "verdict": "있음"
+          },
+          {
+            "id": 7,
+            "condition": "받기를 누른 뒤 `OfflineRewardClaim.State` 는 `OfflineRewardClaimState.Done`, `HasPaid` 는 `true` 다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (State Done, HasPaid True)",
+            "verdict": "있음"
+          },
+          {
+            "id": 8,
+            "condition": "받기를 누른 뒤 `SaveCodec.Decode(store.Text).Data.Gold` 는 4420 이고 `SavedAtUtcTicks` 는 누르기 직전 기록한 시각 이상이다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (saved.Gold 4420, SavedAtUtcTicks >= beforeClaim)",
+            "verdict": "있음"
+          },
+          {
+            "id": 9,
+            "condition": "받기를 누르고 3프레임 뒤 `OfflineRewardOverlay` 는 없고, `StageProgress.HasBegun` 은 `true`, `StageProgress.StageNumber` 는 2, `StageProgress.Phase` 는 `StagePhase.SubstageIntro` 다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (창 닫힘, HasBegun, StageNumber 2, SubstageIntro)",
+            "verdict": "있음"
+          },
+          {
+            "id": 10,
+            "condition": "그 뒤 실제 시간 10초 안에 `StageProgress.Phase` 가 `StagePhase.Playing` 이 되고, 그때 `Battle.Paused` 는 `false` 다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (GameFlow.WaitUntil Playing 10f, 이어서 Paused False)",
+            "verdict": "있음"
+          },
+          {
+            "id": 11,
+            "condition": "받은 뒤 `TryClaim` 을 한 번 더 부르면 `true` 를 돌려주고 `Wallet.Balance` 는 그 직전 값과 같다 (다시 주지 않는다).",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (TryClaim True, balanceBeforeRetry와 같음)",
+            "verdict": "있음"
+          },
+          {
+            "id": 12,
+            "condition": "받은 뒤 다시 켜면 새 루트의 `OfflineReward.HasReward` 는 `false` 이고 `[OfflineRewardView]` 자식이 없다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (새 루트 HasReward False, root.transform.Find(\"[OfflineRewardView]\") Null)",
+            "verdict": "있음"
+          },
+          {
+            "id": 13,
+            "condition": "받은 뒤 다시 켜면 새 루트의 `Wallet.Balance` 는 다시 켜기 직전 저장된 금화와 같고 4420 이상이다.",
+            "test": "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward (savedGoldBeforeRelaunch와 같음, >= 4420)",
+            "verdict": "있음"
+          },
+          {
+            "id": 14,
+            "condition": "기존 테스트가 모두 통과한다.",
+            "test": "루프 전체 테스트 실행",
+            "verdict": "루프가 판정"
+          }
+        ],
+        "findings": [
+          {
+            "severity": "note",
+            "text": "보고서가 두 번 붙어 있다 (보류 전 시도 1의 보고서와 답변 뒤의 보고서). 마지막 보고서가 현재 코드와 맞으므로 문제는 아니다. tasks/doing/077_flow_offline_reward.md"
+          }
+        ],
+        "question": "",
+        "recommendation": "",
+        "reviewer": "claude",
+        "cross": true,
+        "fix_rounds": 0
+      },
+      "tests": {
+        "EditMode": {
+          "ok": true,
+          "total": 884,
+          "passed": 884,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        },
+        "PlayMode": {
+          "ok": true,
+          "total": 155,
+          "passed": 155,
+          "failed": 0,
+          "inconclusive": 0,
+          "skipped": 0,
+          "result": "Passed"
+        }
+      },
+      "new_tests": [
+        "OfflineRewardFlowTests.OneHourOffline_ClaimOnceAndRelaunch_ContinuesWithoutAnotherReward"
+      ],
+      "screen_files": [],
+      "human_conditions": [],
+      "gate_warnings": [],
+      "assumptions": [],
+      "human_report": [
+        "작업 문서는 수령 3프레임 뒤 `Battle.Paused`가 거짓이라고 요구하지만 `docs/spec/stage.md`는 시작 시 1.2초간 구간 소개와 전투 정지를 요구한다. `StageProgress.Begin()`은 구간 소개에서 전투를 다시 멈춘다. 어떤 조건을 우선할지 결정해야 한다."
+      ],
+      "exceptions": []
+    }
+  ],
+  "screenshots": [
+    "game_001s.png",
+    "game_010s.png",
+    "game_030s.png"
+  ],
+  "blocked": []
+}
