@@ -28,7 +28,7 @@ namespace PlumSword.Game.Tests.Flow
         }
 
         [UnityTest]
-        public IEnumerator FreshLaunch_ClearFirstRound_EntersSecondRoundAndSaves()
+        public IEnumerator FreshLaunch_DefeatFinalBoss_ShowsEndingAndClearsSave()
         {
             var store = new MemorySaveStore();
             yield return GameFlow.Relaunch(store, StartEntry.Launch);
